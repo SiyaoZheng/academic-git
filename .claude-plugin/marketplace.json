@@ -1,0 +1,15 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "academic-git-marketplace",
+  "description": "Academic Git — zero-touch CI/CD workflow for solo academic researchers",
+  "owner": { "name": "Adrian" },
+  "plugins": [
+    {
+      "name": "academic-git",
+      "description": "Hooks enforce every process, skills guide creative work. Two-tier CI/CD: commit = cached pipeline + gates, PR = clean-room + gates.",
+      "source": "./",
+      "category": "development",
+      "tags": ["academic", "research", "git", "mcp", "ci-cd"]
+    }
+  ]
+}

@@ -1,1 +1,4 @@
 node_modules/
+references/
+.academic-git.json
+.DS_Store
