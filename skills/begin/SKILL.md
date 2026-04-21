@@ -2,12 +2,14 @@
 name: begin
 description: Triage a task — continue, supplement, or create new Issue. Routes to the correct branch or invokes /create-issue.
 argument-hint: "[task description or #issue-number]"
-allowed-tools: ["Bash", "Read"]
+allowed-tools: ["academic-git"]
 ---
 
 # Begin — Task Triage
 
 When Adrian describes a task, determine whether it maps to an existing Issue or needs a new one.
+
+All git/GitHub operations MUST go through the `academic-git` MCP tools. Never use `git` or `gh` CLI directly.
 
 ## Shortcut
 
@@ -15,10 +17,9 @@ If `$ARGUMENTS` contains `#N` → skip triage, go directly to that Issue's branc
 
 ## Step 1: Gather Context
 
-```bash
-gh issue list --state open --limit 20 --json number,title
-git branch --list 'feat/*'
-```
+Use MCP tools:
+- `list_issues` — get open Issues
+- `list_branches` — get feature branches
 
 ## Step 2: Ask Adrian (AskUserQuestion)
 
@@ -43,20 +44,16 @@ If no open Issues exist → skip to (C).
 
 ### A. Continue existing Issue
 
-```bash
-git switch feat/<slug>
-gh issue view N --json body --jq '.body'
-```
+Use MCP tools:
+- `switch_branch(branch: "feat/<slug>")` — switch to the branch
+- `view_issue(issue: N)` — read the Issue (body + comments = current truth)
 
 Read the checklist, find the next unblocked item (all `→ after:` predecessors are `[x]`), resume working.
 
 ### B. Supplement existing Issue
 
-Invoke `/refine-issue #N` to add new items via append-only comment, then switch:
-
-```bash
-git switch feat/<slug>
-```
+Invoke `/refine-issue #N` to add new items via append-only comment, then:
+- `switch_branch(branch: "feat/<slug>")`
 
 ### C. New Issue
 
@@ -66,13 +63,12 @@ Invoke `/create-issue` with Adrian's task description.
 
 Adrian describes a new task while on `feat/X`:
 1. Auto-commit hook saves current state
-2. `git switch main`
+2. `switch_branch(branch: "main")`
 3. New `/begin` cycle starts
 
 ## When NOT to Use Issues
 
 - No GitHub remote on the project
-- `gh auth status` fails
 - Adrian explicitly says "no issue", "quick fix", or "不用 issue"
 
 In these cases, work directly on main without creating a branch.

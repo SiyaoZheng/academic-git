@@ -1,0 +1,8 @@
+{
+  "name": "academic-git",
+  "version": "0.1.0",
+  "description": "Zero-touch, ADHD-friendly Git workflow for solo academic research. Issue-driven, fully automated, Claude Code powered.",
+  "author": {
+    "name": "Adrian Zheng"
+  }
+}

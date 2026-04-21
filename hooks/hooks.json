@@ -1,0 +1,26 @@
+{
+  "hooks": [
+    {
+      "type": "PreToolUse",
+      "matcher": "Bash",
+      "hook": {
+        "type": "command",
+        "command": "${PLUGIN_DIR}/hooks/git-firewall.sh"
+      }
+    },
+    {
+      "type": "Stop",
+      "hook": {
+        "type": "command",
+        "command": "${PLUGIN_DIR}/hooks/auto-commit.sh"
+      }
+    },
+    {
+      "type": "SessionStart",
+      "hook": {
+        "type": "command",
+        "command": "${PLUGIN_DIR}/hooks/auto-commit.sh"
+      }
+    }
+  ]
+}
