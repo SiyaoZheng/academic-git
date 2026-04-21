@@ -2,7 +2,7 @@
   "mcpServers": {
     "academic-git": {
       "command": "npx",
-      "args": ["tsx", "${PLUGIN_DIR}/mcp/src/server.ts"],
+      "args": ["tsx", "${CLAUDE_PLUGIN_ROOT}/mcp/src/server.ts"],
       "env": {}
     }
   }

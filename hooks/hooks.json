@@ -1,58 +1,93 @@
 {
-  "hooks": [
-    {
-      "type": "PreToolUse",
-      "matcher": "Bash",
-      "hook": {
-        "type": "command",
-        "command": "${PLUGIN_DIR}/hooks/git-firewall.sh"
+  "description": "Academic Git hooks — enforce branch protection, gate checks, and clean-room PR creation",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/hook-runner.sh ${CLAUDE_PLUGIN_ROOT}/skills/git-firewall --block",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/hook-runner.sh ${CLAUDE_PLUGIN_ROOT}/skills/branch-lock --block",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "create_pr",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/hook-runner.sh ${CLAUDE_PLUGIN_ROOT}/skills/review-pr --block",
+            "timeout": 30
+          }
+        ]
       }
-    },
-    {
-      "type": "PreToolUse",
-      "matcher": "Bash",
-      "hook": {
-        "type": "command",
-        "command": "${PLUGIN_DIR}/hooks/hook-runner.sh ${PLUGIN_DIR}/skills/branch-lock --block"
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "commit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/hook-runner.sh ${CLAUDE_PLUGIN_ROOT}/skills/commit",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "merge_pr",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/hook-runner.sh ${CLAUDE_PLUGIN_ROOT}/skills/post-merge",
+            "timeout": 30
+          }
+        ]
       }
-    },
-    {
-      "type": "PreToolUse",
-      "matcher": "create_pr",
-      "hook": {
-        "type": "command",
-        "command": "${PLUGIN_DIR}/hooks/hook-runner.sh ${PLUGIN_DIR}/skills/review-pr --block"
+    ],
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/hook-runner.sh ${CLAUDE_PLUGIN_ROOT}/skills/begin",
+            "timeout": 10
+          }
+        ]
       }
-    },
-    {
-      "type": "PostToolUse",
-      "matcher": "commit",
-      "hook": {
-        "type": "command",
-        "command": "${PLUGIN_DIR}/hooks/hook-runner.sh ${PLUGIN_DIR}/skills/commit"
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/auto-commit.sh",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/hook-runner.sh ${CLAUDE_PLUGIN_ROOT}/skills/begin",
+            "timeout": 10
+          }
+        ]
       }
-    },
-    {
-      "type": "PostToolUse",
-      "matcher": "merge_pr",
-      "hook": {
-        "type": "command",
-        "command": "${PLUGIN_DIR}/hooks/hook-runner.sh ${PLUGIN_DIR}/skills/post-merge"
-      }
-    },
-    {
-      "type": "SessionStart",
-      "hook": {
-        "type": "command",
-        "command": "${PLUGIN_DIR}/hooks/hook-runner.sh ${PLUGIN_DIR}/skills/begin"
-      }
-    },
-    {
-      "type": "Stop",
-      "hook": {
-        "type": "command",
-        "command": "${PLUGIN_DIR}/skills/begin/check.sh --stop"
-      }
-    }
-  ]
+    ]
+  }
 }
