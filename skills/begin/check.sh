@@ -36,12 +36,16 @@ STATUS=$(git status --short 2>/dev/null || echo "(clean)")
 LOCKED=""
 if [ -f ".academic-git.json" ]; then
   LOCKED=$(python3 -c "import json; d=json.load(open('.academic-git.json')); print(d.get('locked_branch',''))" 2>/dev/null || echo "")
+  PIPELINE_RUN=$(python3 -c "import json; d=json.load(open('.academic-git.json')); print(d.get('pipeline',{}).get('run',''))" 2>/dev/null || echo "")
 fi
 
 OUTPUT="[academic-git] Session start — project status:\\n\\n"
 OUTPUT="${OUTPUT}Branch: ${BRANCH}\\n"
 if [ -n "$LOCKED" ]; then
   OUTPUT="${OUTPUT}Locked to: ${LOCKED}\\n"
+fi
+if [ -z "$PIPELINE_RUN" ]; then
+  OUTPUT="${OUTPUT}Pipeline not configured. Use: configure(pipeline_run=\"make test\")\\n"
 fi
 OUTPUT="${OUTPUT}Working tree: ${STATUS}\\n\\n"
 OUTPUT="${OUTPUT}Open Issues:\\n${ISSUES}\\n\\n"

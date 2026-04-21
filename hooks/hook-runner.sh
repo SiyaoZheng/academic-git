@@ -8,6 +8,9 @@
 #
 # Hook events fire this script. It delegates to the skill's scripts.
 # --block flag: exit 2 on check failure (for PreToolUse hooks that can block tool calls)
+#
+# Stdin (tool input JSON) is buffered and forwarded to both condition.sh
+# and check.sh so they can inspect tool arguments.
 
 set -euo pipefail
 
@@ -18,15 +21,18 @@ if [ -z "$SKILL_DIR" ]; then
   exit 0
 fi
 
+# Buffer stdin (tool input JSON) so we can forward it to skill scripts
+INPUT=$(cat)
+
 # --- Condition: should this hook even run? ---
 if [ -f "$SKILL_DIR/condition.sh" ]; then
-  if ! bash "$SKILL_DIR/condition.sh"; then
+  if ! echo "$INPUT" | bash "$SKILL_DIR/condition.sh"; then
     exit 0  # condition not met → silent allow
   fi
 fi
 
 # --- Check: run the actual verification ---
-bash "$SKILL_DIR/check.sh"
+echo "$INPUT" | bash "$SKILL_DIR/check.sh"
 CHECK_EXIT=$?
 
 if [ $CHECK_EXIT -ne 0 ] && [ "$BLOCK_MODE" = "--block" ]; then

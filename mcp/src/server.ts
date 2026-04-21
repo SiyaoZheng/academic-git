@@ -1,8 +1,10 @@
-import { runAllGates, type GateContext } from "./gates.js";
+import { runAllGates, type GateContext, type GateMode } from "./gates.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { execSync } from "child_process";
+import { readFileSync, writeFileSync, existsSync } from "fs";
+import { join } from "path";
 
 // ── Helpers ──
 
@@ -114,6 +116,75 @@ function repoDir(): string {
   const d = process.env.CLAUDE_PROJECT_DIR;
   if (!d) throw new Error("CLAUDE_PROJECT_DIR not set");
   return d;
+}
+
+// ── Config ──
+
+interface AcademicGitConfig {
+  pipeline: { run: string };
+  locked_branch: string;
+  locked_issue: number | null;
+}
+
+const DEFAULT_CONFIG: AcademicGitConfig = {
+  pipeline: { run: "" },
+  locked_branch: "",
+  locked_issue: null,
+};
+
+function configPath(): string {
+  return join(repoDir(), ".academic-git.json");
+}
+
+function readConfig(): AcademicGitConfig {
+  const p = configPath();
+  if (!existsSync(p)) {
+    writeFileSync(p, JSON.stringify(DEFAULT_CONFIG, null, 2) + "\n");
+    return { ...DEFAULT_CONFIG, pipeline: { ...DEFAULT_CONFIG.pipeline } };
+  }
+  return JSON.parse(readFileSync(p, "utf-8"));
+}
+
+function writeConfig(config: AcademicGitConfig): void {
+  writeFileSync(configPath(), JSON.stringify(config, null, 2) + "\n");
+}
+
+function ensureConfig(): AcademicGitConfig {
+  return readConfig();
+}
+
+// ── Gate Context Builder ──
+
+function buildGateContext(issue: number): GateContext {
+  const issueJson = runWithRetry(`gh issue view ${issue} --json body`);
+  const issueBody = JSON.parse(issueJson).body as string;
+
+  const checklist = issueBody
+    .split("\n")
+    .filter((l: string) => /^- \[[x ]\] [A-Z]\./.test(l))
+    .map((l: string) => {
+      const done = /^- \[x\]/.test(l);
+      const letter = l.match(/[A-Z]\./)?.[0]?.replace(".", "") ?? "?";
+      const desc = l.replace(/^- \[[x ]\] [A-Z]\. /, "").replace(/→ after:.*$/, "").trim();
+      return { letter, desc, done };
+    });
+
+  const branch = run("git branch --show-current");
+  const diffStat = runSafe("git diff main...HEAD --stat");
+  const changedFiles = runSafe("git diff main...HEAD --name-only").split("\n").filter(Boolean);
+  const patch = runSafe("git diff main...HEAD");
+  const commits = runSafe("git log main...HEAD --oneline").split("\n").filter(Boolean);
+
+  const ctx: GateContext = {
+    issueBody,
+    issueNumber: issue,
+    checklist,
+    diff: { files: changedFiles, stat: diffStat, patch },
+    commits,
+    branch,
+  };
+
+  return ctx;
 }
 
 // ── MCP Server ──
@@ -287,6 +358,9 @@ server.tool(
     description: z.string().describe("Commit description (imperative mood)"),
   },
   async ({ issue, item, type, description }) => {
+    // Ensure config exists
+    ensureConfig();
+
     // Verify issue exists and item is valid
     const body = runWithRetry(`gh issue view ${issue} --json body --jq '.body'`);
     const itemPattern = new RegExp(`^- \\[ \\] ${item}\\.`, "m");
@@ -312,6 +386,39 @@ server.tool(
       }
     }
 
+    // --- Pipeline check (if configured) ---
+    const config = ensureConfig();
+    if (config.pipeline.run) {
+      try {
+        run(config.pipeline.run, repoDir());
+      } catch (e: any) {
+        return err(`Pipeline FAILED: ${e.message}. Fix before committing.`);
+      }
+    }
+
+    // --- Gate check (block on CRITICAL) ---
+    let gateWarning = "";
+    try {
+      const gateCtx = buildGateContext(issue);
+      const gateResult = runAllGates(gateCtx, "commit");
+      const critical = gateResult.violations.filter(v => v.severity === "CRITICAL");
+      if (critical.length > 0) {
+        return err(
+          `Gate BLOCKED — ${critical.length} CRITICAL violation(s):\n` +
+          critical.map(v => `  ${v.ruleId}: ${v.message}`).join("\n") +
+          `\nRun run_gates(issue=${issue}) for full report.`
+        );
+      }
+      // HIGH violations are advisory for commits
+      const highViolations = gateResult.violations.filter(v => v.severity === "HIGH");
+      if (highViolations.length > 0) {
+        gateWarning = `\n\nAdvisory: ${highViolations.length} HIGH violation(s):\n` +
+          highViolations.map(v => `  ${v.ruleId}: ${v.message}`).join("\n");
+      }
+    } catch {
+      // Gate check fails open (network/auth issues shouldn't block commits)
+    }
+
     // Stage all changes
     run("git add -A");
 
@@ -329,7 +436,7 @@ server.tool(
     const branch = run("git branch --show-current");
     runSafe(`git push -u origin "${branch}"`);
 
-    return text(`Committed: ${msg}\nPushed to ${branch}`);
+    return text(`Committed: ${msg}\nPushed to ${branch}${gateWarning}`);
   }
 );
 
@@ -459,6 +566,9 @@ server.tool(
     body: z.string().describe("PR body (must include Closes #N)"),
   },
   async ({ issue, title, body: prBody }) => {
+    // Ensure config exists
+    ensureConfig();
+
     // Validate all checklist items are done
     const issueBody = runWithRetry(`gh issue view ${issue} --json body --jq '.body'`);
     const unchecked = issueBody.split("\n").filter((l) => /^- \[ \] [A-Z]\./.test(l));
@@ -475,8 +585,34 @@ server.tool(
       return err(`PR body must include "Closes #${issue}"`);
     }
 
+    // --- Gate check (block on CRITICAL + HIGH) ---
+    let advisoryNote = "";
+    try {
+      const gateCtx = buildGateContext(issue);
+      const gateResult = runAllGates(gateCtx, "pr");
+      const blocking = gateResult.violations.filter(
+        v => v.severity === "CRITICAL" || v.severity === "HIGH"
+      );
+      if (blocking.length > 0) {
+        return err(
+          `Gate BLOCKED — ${blocking.length} blocking violation(s):\n` +
+          blocking.map(v => `  [${v.severity}] ${v.ruleId}: ${v.message}`).join("\n") +
+          `\nRun run_gates(issue=${issue}) for full report.`
+        );
+      }
+      // MEDIUM/INFO are advisory for PRs
+      const advisory = gateResult.violations.filter(
+        v => v.severity === "MEDIUM" || v.severity === "INFO"
+      );
+      if (advisory.length > 0) {
+        advisoryNote = `\n\nAdvisory: ${advisory.length} MEDIUM/INFO violation(s) noted in gate report.`;
+      }
+    } catch {
+      // Gate check fails open (network/auth issues shouldn't block PRs)
+    }
+
     const out = runWithRetry(`gh pr create --title ${JSON.stringify(title)} --body ${JSON.stringify(prBody)}`);
-    return text(out);
+    return text(`${out}${advisoryNote}`);
   }
 );
 
@@ -512,6 +648,9 @@ server.tool(
   "Create a new feature branch from main. Naming: feat/<slug>",
   { slug: z.string().describe("Branch slug (lowercase, hyphens, max 40 chars)") },
   async ({ slug }) => {
+    // Ensure config exists
+    ensureConfig();
+
     // Enforce naming
     const clean = slug
       .toLowerCase()
@@ -586,40 +725,39 @@ server.tool(
 server.tool(
   "run_gates",
   "Run all gate checks against the current branch state. Returns structured violation report. Hooks call this automatically; use manually to pre-check.",
-  { issue: z.number().describe("Issue number to check against") },
-  async ({ issue }) => {
-    const issueJson = runWithRetry(`gh issue view ${issue} --json body`);
-    const issueBody = JSON.parse(issueJson).body as string;
+  {
+    issue: z.number().describe("Issue number to check against"),
+    mode: z.enum(["commit", "pr"]).default("pr").describe("Gate mode: 'commit' checks code-level rules, 'pr' adds checklist/convergence checks"),
+  },
+  async ({ issue, mode }) => {
+    // Ensure config exists
+    ensureConfig();
 
-    // Parse checklist
-    const checklist = issueBody
-      .split("\n")
-      .filter((l: string) => /^- \[[x ]\] [A-Z]\./.test(l))
-      .map((l: string) => {
-        const done = /^- \[x\]/.test(l);
-        const letter = l.match(/[A-Z]\./)?.[0]?.replace(".", "") ?? "?";
-        const desc = l.replace(/^- \[[x ]\] [A-Z]\. /, "").replace(/→ after:.*$/, "").trim();
-        return { letter, desc, done };
-      });
-
-    // Get diff
-    const branch = run("git branch --show-current");
-    const diffStat = runSafe("git diff main...HEAD --stat");
-    const changedFiles = runSafe("git diff main...HEAD --name-only").split("\n").filter(Boolean);
-    const patch = runSafe("git diff main...HEAD");
-    const commits = runSafe("git log main...HEAD --oneline").split("\n").filter(Boolean);
-
-    const ctx: GateContext = {
-      issueBody,
-      issueNumber: issue,
-      checklist,
-      diff: { files: changedFiles, stat: diffStat, patch },
-      commits,
-      branch,
-    };
-
-    const result = runAllGates(ctx);
+    const ctx = buildGateContext(issue);
+    const result = runAllGates(ctx, mode);
     return text(JSON.stringify(result, null, 2));
+  }
+);
+
+// ════════════════════════════════════════
+//  CONFIG TOOL
+// ════════════════════════════════════════
+
+server.tool(
+  "configure",
+  "Set project configuration values (pipeline command, branch locking). Creates .academic-git.json if missing.",
+  {
+    pipeline_run: z.string().optional().describe("Command for pipeline on every commit (e.g., 'make test')"),
+    locked_branch: z.string().optional().describe("Lock focus to this branch"),
+    locked_issue: z.number().optional().describe("Issue number for the locked branch"),
+  },
+  async ({ pipeline_run, locked_branch, locked_issue }) => {
+    const config = readConfig();
+    if (pipeline_run !== undefined) config.pipeline.run = pipeline_run;
+    if (locked_branch !== undefined) config.locked_branch = locked_branch;
+    if (locked_issue !== undefined) config.locked_issue = locked_issue;
+    writeConfig(config);
+    return text(`Configuration updated:\n${JSON.stringify(config, null, 2)}`);
   }
 );
 

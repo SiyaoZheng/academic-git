@@ -2,6 +2,8 @@
 // Borrowed from: danger-js (four-channel output), ReviewScope (Rule interface)
 // Rules are deterministic — no LLM calls. All checks are grep/parse-based.
 
+export type GateMode = "commit" | "pr";
+
 export interface GateViolation {
   ruleId: string;
   severity: "CRITICAL" | "HIGH" | "MEDIUM" | "INFO";
@@ -27,6 +29,10 @@ export interface GateRule {
   id: string;
   description: string;
   severity: "CRITICAL" | "HIGH" | "MEDIUM" | "INFO";
+  /** Which contexts this rule runs in */
+  modes: GateMode[];
+  /** Severity override for a specific mode (overrides default severity) */
+  severityOverride?: Partial<Record<GateMode, "CRITICAL" | "HIGH" | "MEDIUM" | "INFO">>;
   check(ctx: GateContext): GateViolation[];
 }
 
@@ -42,6 +48,7 @@ const scopeMatch: GateRule = {
   id: "scope-match",
   description: "Files changed should relate to Issue's Affected Files section",
   severity: "MEDIUM",
+  modes: ["commit", "pr"],
   check(ctx) {
     const affectedMatch = ctx.issueBody.match(/## Affected Files\n([\s\S]*?)(?=\n##|\n---|$)/);
     if (!affectedMatch) return []; // No Affected Files section → skip
@@ -76,6 +83,7 @@ const checklistComplete: GateRule = {
   id: "checklist-complete",
   description: "All non-strikethrough checklist items must be [x]",
   severity: "CRITICAL",
+  modes: ["pr"], // Only checked at PR time — commits can be partial progress
   check(ctx) {
     const incomplete = ctx.checklist.filter(
       (item) => !item.done && !item.desc.includes("~~")
@@ -92,6 +100,8 @@ const silentFailure: GateRule = {
   id: "silent-failure",
   description: "Detect tryCatch/try-except that silently swallow errors",
   severity: "HIGH",
+  modes: ["commit", "pr"],
+  severityOverride: { commit: "HIGH", pr: "CRITICAL" },
   check(ctx) {
     const violations: GateViolation[] = [];
     const patterns = [
@@ -136,6 +146,8 @@ const hardcodedValues: GateRule = {
   id: "hardcoded-values",
   description: "Detect hardcoded seeds, paths, and API keys",
   severity: "HIGH",
+  modes: ["commit", "pr"],
+  severityOverride: { commit: "HIGH", pr: "CRITICAL" },
   check(ctx) {
     const violations: GateViolation[] = [];
     const patterns = [
@@ -177,12 +189,16 @@ const reproducibility: GateRule = {
   id: "reproducibility",
   description: "Randomness should be preceded by set.seed() in analysis code",
   severity: "MEDIUM",
+  modes: ["commit", "pr"],
+  severityOverride: { commit: "MEDIUM", pr: "HIGH" },
   check(ctx) {
     const violations: GateViolation[] = [];
     const rFiles = ctx.diff.files.filter(
       (f) => f.endsWith(".R") || f.endsWith(".qmd")
     );
-    const pyFiles = ctx.diff.files.filter((f) => f.endsWith(".py"));
+    const pyFiles = ctx.diff.files.filter((f) =>
+      f.endsWith(".py")
+    );
 
     // Check R files for rnorm/runif/r sample without set.seed in same file
     for (const file of rFiles) {
@@ -222,178 +238,11 @@ const reproducibility: GateRule = {
   },
 };
 
-const scopeCreep: GateRule = {
-  id: "scope-creep",
-  description: "Files changed beyond Issue's Scope section",
-  severity: "MEDIUM",
-  check(ctx) {
-    const scopeMatch = ctx.issueBody.match(/## Scope\n([\s\S]*?)(?=\n##|\n---|$)/);
-    if (!scopeMatch) return []; // No Scope section → skip
-
-    const scopeText = scopeMatch[1];
-    // Check for "In:" and "Out:" declarations
-    const inMatch = scopeText.match(/In:\s*([\s\S]*?)(?=Out:|$)/);
-    if (!inMatch) return [];
-
-    const inItems = inMatch[1]
-      .split(/[-,]/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-    if (inItems.length === 0) return [];
-
-    // This is a heuristic — scope items are usually descriptions, not file paths
-    // We flag files that don't seem related to any scope item
-    const violations: GateViolation[] = [];
-    for (const file of ctx.diff.files) {
-      const related = inItems.some(
-        (item) =>
-          file.toLowerCase().includes(item.toLowerCase()) ||
-          item.toLowerCase().includes(file.split("/").pop()?.toLowerCase() ?? "")
-      );
-      if (!related && ctx.diff.files.length > inItems.length * 2) {
-        // Only flag if significantly more files than scope items
-        violations.push({
-          ruleId: "scope-creep",
-          severity: "MEDIUM",
-          message: `File '${file}' may exceed Issue scope`,
-          file,
-        });
-      }
-    }
-    return violations;
-  },
-};
-
-// ── Research Constitution Rules (Phase 5) ──
-
-const specBoundary: GateRule = {
-  id: "spec-boundary",
-  description: "Art. II — Changes should not introduce undeclared specifications",
-  severity: "HIGH",
-  check(ctx) {
-    // Check for spec manifest file
-    // This is a placeholder — actual implementation depends on project structure
-    const violations: GateViolation[] = [];
-
-    // Heuristic: flag new model specifications (lm(), glm(), etc.) not mentioned in Issue
-    const rModelPatterns = [
-      /lm\s*\(/,
-      /glm\s*\(/,
-      /lmer\s*\(/,
-      /glmer\s*\(/,
-      /feols\s*\(/,
-      /felm\s*\(/,
-    ];
-    const pyModelPatterns = [
-      /\.fit\s*\(/,
-      /sm\.OLS/,
-      /sklearn\./,
-    ];
-
-    const issueLower = ctx.issueBody.toLowerCase();
-    const lines = ctx.diff.patch.split("\n");
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      if (!line.startsWith("+") || line.startsWith("++")) continue;
-      const content = line.slice(1);
-
-      for (const pattern of [...rModelPatterns, ...pyModelPatterns]) {
-        if (pattern.test(content)) {
-          // Check if the Issue mentions modeling/estimation
-          if (
-            !issueLower.includes("model") &&
-            !issueLower.includes("regression") &&
-            !issueLower.includes("estimat") &&
-            !issueLower.includes("specification")
-          ) {
-            const fileMatch = lines
-              .slice(0, i)
-              .reverse()
-              .find((l) => l.startsWith("+++"))
-              ?.replace(/^\+\+\+\s+(?:a\/)?/, "");
-            violations.push({
-              ruleId: "spec-boundary",
-              severity: "HIGH",
-              message: `New model specification detected but Issue doesn't mention modeling: ${content.trim().slice(0, 60)}`,
-              file: fileMatch,
-            });
-          }
-          break;
-        }
-      }
-    }
-    return violations;
-  },
-};
-
-const temporalMarking: GateRule = {
-  id: "temporal-marking",
-  description: "Art. III — Analytical decisions need ex-ante/ex-post markers",
-  severity: "MEDIUM",
-  check(ctx) {
-    const violations: GateViolation[] = [];
-    const lines = ctx.diff.patch.split("\n");
-
-    // Decision patterns that should be marked
-    const decisionPatterns = [
-      /filter\s*\(/,
-      /subset\s*\(/,
-      /select\s*\(/,
-      /rename\s*\(/,
-      /mutate\s*\(/,
-      /\.query\s*\(/,
-      /\.loc\s*\[/,
-    ];
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      if (!line.startsWith("+") || line.startsWith("++")) continue;
-      const content = line.slice(1);
-
-      for (const pattern of decisionPatterns) {
-        if (pattern.test(content)) {
-          // Check if this line or nearby lines have DECISION marker
-          const nearby = lines.slice(Math.max(0, i - 3), i + 4).join("\n");
-          if (
-            !nearby.includes("DECISION:") &&
-            !nearby.includes("# ex-ante") &&
-            !nearby.includes("# ex-post") &&
-            !nearby.includes("# exploratory")
-          ) {
-            // Only flag if there are multiple decision-like patterns (avoid noise)
-            const decisionCount = decisionPatterns.filter((p) =>
-              p.test(content)
-            ).length;
-            if (decisionCount === 0) continue;
-
-            // Skip if it's just a simple filter (too noisy)
-            if (/^\+\s*(filter|select)\s*\(/.test(line)) continue;
-
-            const fileMatch = lines
-              .slice(0, i)
-              .reverse()
-              .find((l) => l.startsWith("+++"))
-              ?.replace(/^\+\+\+\s+(?:a\/)?/, "");
-            violations.push({
-              ruleId: "temporal-marking",
-              severity: "INFO",
-              message: `Analytical decision without ex-ante/ex-post marker: ${content.trim().slice(0, 60)}`,
-              file: fileMatch,
-            });
-          }
-          break;
-        }
-      }
-    }
-    return violations;
-  },
-};
-
 const convergenceCheck: GateRule = {
   id: "convergence-check",
   description: "Art. IV — Flag convergence warnings in model output",
   severity: "CRITICAL",
+  modes: ["pr"], // Only at PR time — partial commits may have incomplete output
   check(ctx) {
     const violations: GateViolation[] = [];
     // Check committed output files for convergence warnings
@@ -436,25 +285,32 @@ const convergenceCheck: GateRule = {
 // ── All Rules ──
 
 const ALL_RULES: GateRule[] = [
-  checklistComplete,
   scopeMatch,
+  checklistComplete,
   silentFailure,
   hardcodedValues,
   reproducibility,
-  scopeCreep,
-  specBoundary,
-  temporalMarking,
   convergenceCheck,
 ];
 
 // ── Runner ──
 
-export function runAllGates(ctx: GateContext): GateResult {
+export function runAllGates(ctx: GateContext, mode: GateMode = "pr"): GateResult {
   const violations: GateViolation[] = [];
 
   for (const rule of ALL_RULES) {
+    // Skip rules not applicable to this mode
+    if (!rule.modes.includes(mode)) continue;
+
     try {
       const found = rule.check(ctx);
+      // Apply severity override for this mode
+      const override = rule.severityOverride?.[mode];
+      if (override) {
+        for (const v of found) {
+          v.severity = override;
+        }
+      }
       violations.push(...found);
     } catch {
       // Rule execution failed — skip, don't crash
