@@ -1,70 +1,60 @@
 ---
 name: review-pr
-description: Create a PR with full gate checks. Triggered when all Issue checklist items are [x]. Runs gates, generates PR body, performs AI review, then creates PR.
-argument-hint: "[issue-number]"
+description: Review and create a Pull Request. Runs gate checks (CRITICAL + HIGH block PR creation), validates all checklist items are done, generates PR body from commit history. Use this skill whenever all checklist items on an issue are done and you're ready to create a PR, when Adrian says "create PR", "make a PR", "submit this", or when the last item is checked off.
 allowed-tools: ["academic-git"]
 ---
 
-# Review & Create PR
+# Review PR — Gate-Enforced PR Creation
 
-When all checklist items on an Issue are `[x]`, this skill orchestrates PR creation with full verification.
+PR creation is a controlled process: all checklist items must be done, and gate checks must pass before `create_pr` will succeed.
 
-## DISPATCH
+## Workflow
 
-Triggered when:
-- User says "ready for PR", "all done", "create PR"
-- All checklist items on the current Issue are `[x]`
+### Step 1: Generate PR Body
 
-## BEHAVIOR
+```
+generate_pr_body(issue: N)
+```
 
-### 1. Verify Completion
+This maps each commit (via `type(#N/X)` messages) to its checklist item, producing a draft PR body with changes per item and file listing. Review and adjust before proceeding.
 
-MCP tool: `view_issue(issue)` — confirm ALL non-strikethrough items are `[x]`.
-If any unchecked items remain → stop, tell Adrian what's left.
+### Step 2: Create PR
 
-### 2. Run Gates
+```
+create_pr(issue: N, title: "...", body: "<from step 1>")
+```
 
-MCP tool: `run_gates(issue)` — execute all gate checks.
+The MCP tool automatically:
+- Validates all checklist items are `[x]` (uncompleted items block creation)
+- Validates PR body includes `Closes #N`
+- Runs all 9 gate checks — CRITICAL and HIGH violations block the PR
+- MEDIUM/INFO violations are advisory only
 
-Review violations:
-- **CRITICAL** → must fix before PR
-- **HIGH** → should fix, flag to Adrian
-- **MEDIUM/INFO** → informational, note in PR body
+### Step 3: After PR is Created
 
-### 3. Generate PR Body
+The PR URL is returned. Adrian can review in the browser.
 
-MCP tool: `generate_pr_body(issue)` — auto-generate PR body with item-to-commit mapping.
+### Step 4: Merge
 
-Review the draft. Adjust if needed.
+When approved:
+```
+merge_pr(pr: N)
+```
 
-### 4. AI Review
+This squash-merges, deletes the remote branch, switches to main, and pulls.
 
-Claude performs review using the gate results + diff + issue context:
+## Gate Checks (9 Rules, No LLM)
 
-1. **Scope match** — does the PR do what the Issue says?
-2. **Silent failures** — any error swallowing?
-3. **Hardcoded values** — seeds, paths, keys?
-4. **Reproducibility** — set.seed() before randomness?
-5. **Scope creep** — changes beyond Issue scope?
+| Rule | Severity | What It Checks |
+|------|----------|----------------|
+| checklist-complete | CRITICAL | All items checked off |
+| scope-match | HIGH | Diff files match scope declaration |
+| silent-failure | HIGH | No swallowed errors |
+| hardcoded-values | MEDIUM | No magic numbers |
+| reproducibility | MEDIUM | Seeded randomness, fixed params |
+| scope-creep | HIGH | No changes beyond declared scope |
+| spec-boundary | MEDIUM | Art. II — no unbounded specification |
+| temporal-marking | MEDIUM | Art. III — ex post decisions marked |
+| convergence-check | CRITICAL | No convergence warnings |
 
-### 5. Show Adrian
-
-Present the full PR body to Adrian for confirmation before creating.
-
-### 6. Create PR
-
-MCP tool: `create_pr(issue, title, body)`
-
-The PreToolUse hook will automatically run clean-room pipeline + gates before allowing PR creation.
-
-## OUTPUT RULES
-
-- PR body must include `Closes #N`
-- PR body must list changes by checklist item
-- PR body must list all changed files
-- All CRITICAL gate violations must be resolved before PR
-
-## NON-GOALS
-
-- This skill does NOT merge the PR — use `merge_pr` after review
-- This skill does NOT run custom CI — only the configured pipeline + gates
+Run `run_gates(issue: N, mode: "pr")` to pre-check before attempting `create_pr`.

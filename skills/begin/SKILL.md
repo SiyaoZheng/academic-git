@@ -1,6 +1,6 @@
 ---
 name: begin
-description: Triage a task — continue, supplement, or create new Issue. Routes to the correct branch or invokes /create-issue.
+description: Triage a task — continue, supplement, or create new Issue. Routes to the correct branch or invokes /create-issue. Use this skill whenever a session starts, when Adrian describes a new task, says "let's work on", mentions an issue number, or needs to figure out what to work on next. Also use when switching between tasks or resuming work on an existing issue.
 argument-hint: "[task description or #issue-number]"
 allowed-tools: ["academic-git"]
 ---
@@ -9,7 +9,7 @@ allowed-tools: ["academic-git"]
 
 When Adrian describes a task, determine whether it maps to an existing Issue or needs a new one.
 
-All git/GitHub operations MUST go through the `academic-git` MCP tools. Never use `git` or `gh` CLI directly.
+All git/GitHub operations MUST go through the `academic-git` MCP tools. Never use `git` or `gh` CLI directly — the git-firewall hook will block you.
 
 ## Shortcut
 

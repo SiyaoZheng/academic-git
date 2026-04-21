@@ -1,90 +1,42 @@
 ---
 name: refine-issue
-description: Modify an existing Issue — add/remove checklist items, adjust scope, update context. All changes are logged as append-only timestamped comments. Issue body is NEVER modified.
-argument-hint: "#N [description of change]"
+description: Refine an existing GitHub Issue by adding an append-only comment (body is immutable). Adds context, splits scope, or updates acceptance criteria. Use this skill when Adrian wants to add items to an issue, change scope, update requirements, or when /begin routes to option B (supplement existing issue).
 allowed-tools: ["academic-git"]
 ---
 
-# Refine Issue
+# Refine Issue — Append-Only Comments
 
-Modify an existing Issue's checklist, scope, or context. Two rules are absolute:
+The issue body is **immutable** — it's the single source of truth. All changes are made through the `refine_issue` MCP tool, which adds a structured comment to the issue.
 
-1. **Issue body is immutable** — never edit the body after creation
-2. **Append-only comments** — every change is a timestamped comment; comments are never edited or deleted
-
-All git/GitHub operations MUST go through the `academic-git` MCP tools. Never use `git` or `gh` CLI directly.
-
-## Architecture
-
-| Layer | What it holds | Mutability |
-|-------|--------------|------------|
-| Issue body | Original plan (checklist, scope, context) | **Immutable** — frozen at creation |
-| Issue comments | All modifications since creation | **Append-only** — never edit, never delete |
-
-Current truth = body + all comments read sequentially.
-
-## Steps
-
-### 1. Read Current State
-
-MCP tool: `view_issue(issue: N)` — returns body + all comments.
-
-Display the current Issue (body + refinement comments) to Adrian.
-
-### 2. Ask Adrian What to Change (AskUserQuestion)
+## How It Works
 
 ```
-Current Issue #N: <title>
-
-Body (original plan):
-<checklist summary>
-
-Prior refinements:
-<list of refinement comments, if any>
-
-What would you like to change?
-(A) Add checklist items
-(B) Remove/cancel checklist items
-(C) Change scope
-(D) Update context
-(E) Multiple changes
+refine_issue(
+  issue: N,
+  action: "added" | "removed" | "scope-change" | "context-update",
+  items_affected: "A, B, E" or "scope",
+  detail: "What changed",
+  reason: "Why it changed",
+  requested_by: "Adrian"
+)
 ```
 
-### 3. Log the Change
+This produces a timestamped comment:
 
-MCP tool: `refine_issue(issue, action, items_affected, detail, reason, requested_by)`
+```
+**Refinement (2026-04-21 14:30)**
 
-This creates a single timestamped comment documenting the change. The MCP tool enforces the format.
+**Action:** added
+**Items affected:** A, B
+**Detail:** Added new items for convergence checking and spec-boundary validation
 
-Rules:
-- One comment per refinement
-- Always include the reason
-- Never edit the Issue body
+**Reason:** Feedback from review meeting
+**Requested by:** Adrian
+```
 
-### 4. Confirm
+## Rules
 
-Show Adrian the comment before posting it.
-
-## How Claude Reads Current State
-
-When resuming work on an Issue, reconstruct current truth:
-
-1. `view_issue(issue: N)` — returns body + all comments
-2. Apply refinements sequentially:
-   - "Added: F..." → treat F as a new checklist item
-   - "Removed: C..." → treat C as cancelled (skip it)
-   - "Scope change: ..." → update scope understanding
-
-The first unchecked, non-removed item whose `→ after:` predecessors are all `[x]` is the next item.
-
-## DAG Impact
-
-When adding or removing items, check:
-- Adding: cycle? predecessors valid?
-- Removing: dependents affected? Note in comment.
-
-## When NOT to Use This Skill
-
-- Checking off a completed item → MCP tool `check_item`
-- Creating a brand new Issue → `/create-issue`
-- The Issue doesn't exist yet → `/begin`
+1. **Never edit the issue body directly** — the `create_issue` tool validates body format on creation; editing it risks breaking the DAG structure that `commit` and `check_item` depend on
+2. **Read before refining** — use `view_issue(issue: N)` to see the current state including comments
+3. **All refinements are append-only** — this preserves audit trail (Art. VI traceability)
+4. **If scope grows too large** — propose splitting into a new issue and linking via `parent: #N`

@@ -1,19 +1,50 @@
 ---
 name: git-firewall
-description: Block direct git/gh CLI calls — force use of MCP tools instead
+description: Block direct git/gh CLI mutation calls — force routing through academic-git MCP tools. Use this skill whenever a Bash command contains git or gh mutations (commit, push, merge, rebase, checkout, switch, stash, cherry-pick, revert, tag, gh pr create, gh issue create, etc.). Read-only introspection commands (git branch --show-current, git rev-parse, git status) are allowed.
 ---
 
 # Git Firewall
 
-## Purpose
-Prevent direct use of `git` and `gh` CLI commands in Bash tool calls.
-All git operations must go through the academic-git MCP server tools.
+## Why This Exists
 
-## Rules
-1. Block any Bash command containing bare `git` or `gh` invocations.
-2. Allowlisted commands: `git branch --show-current`, `git rev-parse`,
-   `git status --porcelain` (read-only introspection used by hooks themselves).
-3. All mutation operations (commit, push, merge, rebase, etc.) must use MCP tools.
+All mutation operations must go through the `academic-git` MCP tools because they enforce:
+- DAG-validated commit ordering
+- Pipeline execution before commits
+- Gate checks (9 deterministic rules)
+- Append-only issue refinement
+- Branch naming conventions
 
-## Failure Message
-"Direct git/gh CLI usage blocked. Use academic-git MCP tools instead."
+Bypassing MCP tools circumvents these safeguards.
+
+## What Gets Blocked
+
+The `check.sh` script inspects the Bash command for these patterns:
+- `git commit`, `git push`, `git merge`, `git rebase`, `git reset`
+- `git checkout`, `git switch`, `git stash`, `git cherry-pick`, `git revert`, `git tag`
+- `gh pr create`, `gh pr merge`, `gh pr close`
+- `gh issue create`, `gh issue close`, `gh issue edit`, `gh api`
+
+## What's Allowed (Read-Only)
+
+These introspection commands are allowlisted because hooks use them internally:
+- `git branch --show-current`
+- `git rev-parse`
+- `git status --porcelain`
+- `git diff --name-only`
+- `git symbolic-ref`
+- `git remote get-url`
+- `git branch --list`
+
+## MCP Tool Routing
+
+| Blocked CLI | Use MCP Tool Instead |
+|-------------|---------------------|
+| `git commit` | `commit(issue, item, type, description)` |
+| `git push` | Automatic after `commit` |
+| `gh pr create` | `create_pr(issue, title, body)` |
+| `gh pr merge` | `merge_pr(pr)` |
+| `gh issue create` | `create_issue(title, body)` |
+| `gh issue edit` | `refine_issue(issue, action, ...)` |
+| `git switch -c` | `create_branch(slug)` |
+| `git switch` | `switch_branch(branch)` |
+| `git tag -a` | `create_tag(name, message)` |

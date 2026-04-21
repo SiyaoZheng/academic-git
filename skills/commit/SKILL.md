@@ -1,96 +1,42 @@
 ---
 name: commit
-description: Formal commit tied to a specific Issue checklist item. Format type(#N/X) description. Validates DAG, checks off item, pushes. Add `pr` to create PR.
+description: Formal commit tied to a specific Issue checklist item. Format type(#N/X) description. Validates DAG, checks off item, pushes. Add `pr` to create PR. Use this skill whenever you need to commit changes, check off a task item, or save progress on an issue. Do NOT use raw git commit — always route through the academic-git commit tool.
 argument-hint: "[optional: pr]"
 allowed-tools: ["academic-git"]
 ---
 
-# Commit
+# Commit — Formal Commit with DAG Validation
 
-Create a formal commit tied to a specific Issue checklist item.
+Every formal commit is tied to a specific Issue checklist item. The `commit` MCP tool handles staging, commit message formatting, DAG validation, pipeline execution, gate checks, and pushing — all in one call.
 
-All git/GitHub operations MUST go through the `academic-git` MCP tools. Never use `git` or `gh` CLI directly.
+## How It Works
 
-## Two-Tier Commit System
+The `commit` MCP tool takes these parameters:
+- `issue` — the Issue number
+- `item` — the checklist letter (A-Z)
+- `type` — one of: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`
+- `description` — imperative mood, no period
 
-| Tier | When | Message | Issue-linked? |
-|------|------|---------|---------------|
-| **wip** (auto-commit hook) | After every Claude response | `wip: file1, file2` | No — safety net only |
-| **Formal** (this skill) | Checklist item completed | `type(#N/X): description` | Yes — mandatory |
+It produces a commit message: `type(#N/X): description`
 
-## Steps
+### What Happens Automatically
 
-### 1. Read Issue (SSOT)
+1. **DAG check** — all `→ after:` predecessors must be `[x]`, otherwise commit is blocked
+2. **Pipeline check** — if `pipeline.run` is set in `.academic-git.json`, it runs first; failure blocks the commit
+3. **Gate check** — 9 deterministic rules run; CRITICAL violations block the commit, HIGH are advisory
+4. **Stage + commit + push** — if all checks pass, stages all changes, commits, and pushes
 
-MCP tool: `view_issue(issue: N)` — read body + comments to get current truth.
+### Example
 
-### 2. Check Changes
-
-MCP tools:
-- `status()` — what files changed
-- `diff()` — what changed in those files
-
-### 3. Determine Issue + Item
-
-On a `feat/*` branch, the Issue number and current item should be known from context. If unclear, use `list_issues()` + `view_issue()` to determine.
-
-### 4. Validate DAG
-
-The `commit` MCP tool validates DAG automatically — it checks that all predecessors of the item are `[x]` before allowing the commit. If blocked, it returns an error.
-
-### 5. Commit
-
-MCP tool: `commit(issue, item, type, description)`
-
-This tool:
-1. Validates the item exists and is unchecked
-2. Checks DAG predecessors are all `[x]`
-3. Stages all changes (`git add -A`)
-4. Commits with format `type(#N/X): description`
-5. Pushes to remote
-
-### 6. Check Off Item
-
-MCP tool: `check_item(issue, letter)` — toggles `- [ ] X.` → `- [x] X.`
-
-### 7. Check for Completion
-
-After checking off, read the Issue again. If ALL items are `[x]`:
-
-#### PR Flow
-
-MCP tools:
-- `create_pr(issue, title, body)` — validates all items done, requires `Closes #N`
-- `merge_pr(pr)` — squash merge, delete branch, return to main
-
-PR body template:
 ```
-Closes #N
-
-## Summary
-[What was done]
-
-## Changes
-[Key changes by file/area]
-
-## Verification
-[How to verify correctness]
+commit(issue: 7, item: "A", type: "feat", description: "add CI/CD gate enforcement to commit hook")
+→ Produces: feat(#7/A): add CI/CD gate enforcement to commit hook
 ```
 
-If NOT all items done → find next unblocked item and continue.
+## WIP Commits
 
-### 8. Next Item
+For safety-net snapshots that aren't tied to a checklist item, use the `wip` MCP tool instead. WIP commits skip gates and DAG validation.
 
-Read Issue checklist. Find the next `- [ ]` item whose `→ after:` predecessors are all `[x]`. Resume working on that item.
+## After Committing
 
-## Commit Types
-
-| Type | When |
-|------|------|
-| `feat` | New analysis, table, figure |
-| `fix` | Data bug, coding error |
-| `refactor` | Code restructure, no output change |
-| `docs` | Documentation, comments |
-| `test` | Tests, verification |
-| `chore` | Config, dependencies |
-| `perf` | Performance improvement |
+The tool automatically checks off the checklist item (calls `check_item` internally). If this was the last item, consider creating a PR with `generate_pr_body` + `create_pr`.
