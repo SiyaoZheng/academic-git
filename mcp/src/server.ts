@@ -22,6 +22,85 @@ function runSafe(cmd: string, cwd?: string): string {
   }
 }
 
+// ── Retry & Error Classification ──
+// Borrowed from octokit/plugin-retry.js + plugin-throttling.js
+
+const DO_NOT_RETRY_PATTERNS = [
+  /not found/i,
+  /permission denied/i,
+  /authentication failed/i,
+  /401|403|404|422/,
+  /already exists/i,
+];
+
+const RATE_LIMIT_PATTERNS = [
+  /rate limit/i,
+  /api rate limit/i,
+  /secondary rate/i,
+  /429/,
+  /abuse detection/i,
+];
+
+const TRANSIENT_PATTERNS = [
+  /500|502|503/,
+  /connection timed out/i,
+  /network error/i,
+  /ECONNRESET/i,
+  /ETIMEDOUT/i,
+];
+
+function classifyGhError(stderr: string): "retry" | "fail" | "unknown" {
+  if (RATE_LIMIT_PATTERNS.some((p) => p.test(stderr))) return "retry";
+  if (DO_NOT_RETRY_PATTERNS.some((p) => p.test(stderr))) return "fail";
+  if (TRANSIENT_PATTERNS.some((p) => p.test(stderr))) return "retry";
+  return "unknown";
+}
+
+function parseGhError(stderr: string): string {
+  // Try to extract the gh CLI error message from stderr
+  // gh typically outputs: "gh: error: <message>" or "error: <message>"
+  const match = stderr.match(/(?:gh:\s*)?error:\s*(.+)/is);
+  return match?.[1]?.trim() ?? stderr.slice(0, 200);
+}
+
+interface RetryOptions {
+  maxRetries?: number;
+  baseDelayMs?: number;
+}
+
+function runWithRetry(cmd: string, opts?: RetryOptions, cwd?: string): string {
+  const maxRetries = opts?.maxRetries ?? 3;
+  const baseDelayMs = opts?.baseDelayMs ?? 1000;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return run(cmd, cwd);
+    } catch (e: any) {
+      const stderr: string = e.stderr?.trim() ?? e.message ?? "";
+
+      // Last attempt or non-retriable → throw with parsed error
+      if (attempt === maxRetries) {
+        throw new Error(parseGhError(stderr) || cmd + " failed");
+      }
+
+      const classification = classifyGhError(stderr);
+      if (classification === "fail") {
+        throw new Error(parseGhError(stderr) || cmd + " failed");
+      }
+
+      // Only retry on "retry" or "unknown" with quadratic backoff
+      const delayMs = baseDelayMs * (attempt + 1) ** 2;
+      if (classification === "retry" || classification === "unknown") {
+        // Synchronous sleep (acceptable for MCP tool calls)
+        execSync(`sleep ${delayMs / 1000}`, { timeout: delayMs + 1000 });
+      }
+    }
+  }
+
+  // Unreachable, but TypeScript needs it
+  throw new Error(cmd + " failed after retries");
+}
+
 function text(s: string) {
   return { content: [{ type: "text" as const, text: s }] };
 }
@@ -97,7 +176,7 @@ server.tool(
   "List open GitHub Issues for the current repo",
   { limit: z.number().default(20).describe("Max issues to return") },
   async ({ limit }) => {
-    const out = run(`gh issue list --state open --limit ${limit} --json number,title,labels`);
+    const out = runWithRetry(`gh issue list --state open --limit ${limit} --json number,title,labels`);
     return text(out);
   }
 );
@@ -107,7 +186,7 @@ server.tool(
   "View a GitHub Issue (body + comments = current truth)",
   { issue: z.number().describe("Issue number") },
   async ({ issue }) => {
-    const body = run(`gh issue view ${issue} --json title,body,state,comments --jq '{title, body, state, comments: [.comments[] | {body, createdAt, author: .author.login}]}'`);
+    const body = runWithRetry(`gh issue view ${issue} --json title,body,state,comments --jq '{title, body, state, comments: [.comments[] | {body, createdAt, author: .author.login}]}'`);
     return text(body);
   }
 );
@@ -133,7 +212,7 @@ server.tool(
       return err("Issue body must contain at least one checklist item (format: - [ ] A. description)");
     }
 
-    const out = run(`gh issue create --title ${JSON.stringify(title)} --body ${JSON.stringify(body)}`);
+    const out = runWithRetry(`gh issue create --title ${JSON.stringify(title)} --body ${JSON.stringify(body)}`);
     return text(out);
   }
 );
@@ -161,7 +240,7 @@ ${detail}
 **Reason:** ${reason}
 **Requested by:** ${requested_by}`;
 
-    const out = run(`gh issue comment ${issue} --body ${JSON.stringify(comment)}`);
+    const out = runWithRetry(`gh issue comment ${issue} --body ${JSON.stringify(comment)}`);
     return text(out);
   }
 );
@@ -174,7 +253,7 @@ server.tool(
     letter: z.string().regex(/^[A-Z]$/).describe("Checklist item letter (A-Z)"),
   },
   async ({ issue, letter }) => {
-    const body = run(`gh issue view ${issue} --json body --jq '.body'`);
+    const body = runWithRetry(`gh issue view ${issue} --json body --jq '.body'`);
 
     // Only toggle the matching checkbox
     const pattern = new RegExp(`^- \\[ \\] ${letter}\\.`, "m");
@@ -188,7 +267,7 @@ server.tool(
     }
 
     const updated = body.replace(pattern, `- [x] ${letter}.`);
-    run(`gh issue edit ${issue} --body ${JSON.stringify(updated)}`);
+    runWithRetry(`gh issue edit ${issue} --body ${JSON.stringify(updated)}`);
     return text(`Checked off item ${letter} on Issue #${issue}`);
   }
 );
@@ -208,7 +287,7 @@ server.tool(
   },
   async ({ issue, item, type, description }) => {
     // Verify issue exists and item is valid
-    const body = run(`gh issue view ${issue} --json body --jq '.body'`);
+    const body = runWithRetry(`gh issue view ${issue} --json body --jq '.body'`);
     const itemPattern = new RegExp(`^- \\[ \\] ${item}\\.`, "m");
     if (!itemPattern.test(body)) {
       const donePattern = new RegExp(`^- \\[x\\] ${item}\\.`, "m");
@@ -294,11 +373,11 @@ server.tool(
   },
   async ({ issue }) => {
     // Get issue details
-    const issueJson = run(`gh issue view ${issue} --json number,title,body`);
+    const issueJson = runWithRetry(`gh issue view ${issue} --json number,title,body`);
     const { number, title: issueTitle, body: issueBody } = JSON.parse(issueJson);
 
     // Extract checklist items (all — checked and unchecked)
-    const allItems = issueBody
+    const allItems: { letter: string; desc: string; done: boolean }[] = issueBody
       .split("\n")
       .filter((l: string) => /^- \[[x ]\] [A-Z]\./.test(l))
       .map((l: string) => {
@@ -380,7 +459,7 @@ server.tool(
   },
   async ({ issue, title, body: prBody }) => {
     // Validate all checklist items are done
-    const issueBody = run(`gh issue view ${issue} --json body --jq '.body'`);
+    const issueBody = runWithRetry(`gh issue view ${issue} --json body --jq '.body'`);
     const unchecked = issueBody.split("\n").filter((l) => /^- \[ \] [A-Z]\./.test(l));
 
     // Filter out removed items (strikethrough)
@@ -395,7 +474,7 @@ server.tool(
       return err(`PR body must include "Closes #${issue}"`);
     }
 
-    const out = run(`gh pr create --title ${JSON.stringify(title)} --body ${JSON.stringify(prBody)}`);
+    const out = runWithRetry(`gh pr create --title ${JSON.stringify(title)} --body ${JSON.stringify(prBody)}`);
     return text(out);
   }
 );
@@ -405,7 +484,7 @@ server.tool(
   "Squash-merge a PR and delete the branch. Returns to main.",
   { pr: z.number().describe("PR number") },
   async ({ pr }) => {
-    run(`gh pr merge ${pr} --squash --delete-branch`);
+    runWithRetry(`gh pr merge ${pr} --squash --delete-branch`);
     const defaultBranch = runSafe("git symbolic-ref refs/remotes/origin/HEAD").replace("refs/remotes/origin/", "") || "main";
     run(`git switch "${defaultBranch}"`);
     run("git pull");
@@ -418,7 +497,7 @@ server.tool(
   "View a Pull Request",
   { pr: z.number().describe("PR number") },
   async ({ pr }) => {
-    const out = run(`gh pr view ${pr} --json number,title,state,body,url`);
+    const out = runWithRetry(`gh pr view ${pr} --json number,title,state,body,url`);
     return text(out);
   }
 );
