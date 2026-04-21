@@ -1,22 +1,15 @@
 #!/bin/bash
-# Stop hook: ADHD zero-touch git workflow v3
-#
+# Auto-commit: silent wip snapshots. Registered on both Stop and SessionStart.
 # Design: zero interruption. Adrian never notices.
-#
-# 1. After each Claude response → silently detect dirty files → silent auto-commit + push
-# 2. Feature branch with enough commits → non-blocking PR reminder
-# 3. Explicit completion signal → block and request PR creation
-#
 # macOS compatible: does not depend on GNU timeout
 
 set -euo pipefail
 
-# === Dependency check ===
-if ! command -v jq &>/dev/null; then exit 0; fi
 if ! command -v git &>/dev/null; then exit 0; fi
 
-INPUT=$(cat)
-STOP_HOOK_ACTIVE=$(echo "$INPUT" | jq -r '.stop_hook_active // false')
+# Stop hook sends JSON on stdin; SessionStart may send nothing. Handle both.
+INPUT=$(cat 2>/dev/null || echo "")
+STOP_HOOK_ACTIVE=$(echo "$INPUT" | jq -r '.stop_hook_active // false' 2>/dev/null || echo "false")
 
 # Triggered by previous block → skip auto-commit (prevent loop), but still check PR
 SKIP_AUTOCOMMIT=false

@@ -26,6 +26,8 @@
     --orange-light: #fff8c5;
     --purple: #8250df;
     --purple-light: #fbefff;
+    --cyan: #0550ae;
+    --cyan-light: #ddf4ff;
   }
 
   body {
@@ -74,6 +76,39 @@
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.08em;
+  }
+
+  /* ── Principles ── */
+  .principles {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 48px;
+  }
+  .principle {
+    background: var(--bg);
+    padding: 24px;
+    text-align: center;
+  }
+  .principle-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+  .principle-value {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .principle-desc {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    margin-top: 4px;
   }
 
   /* ── Container ── */
@@ -204,38 +239,6 @@
     white-space: pre;
   }
 
-  /* ── Signal Table ── */
-  .signal-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.9rem;
-    margin: 20px 0;
-    margin-left: 56px;
-    max-width: calc(100% - 56px);
-  }
-  .signal-table th {
-    text-align: left;
-    padding: 10px 16px;
-    background: var(--surface);
-    border-bottom: 2px solid var(--border);
-    font-weight: 600;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-  .signal-table td {
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--border);
-  }
-  .signal-table tr:last-child td { border-bottom: none; }
-  .signal-table code {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.8rem;
-    background: var(--surface);
-    padding: 2px 6px;
-    border-radius: 3px;
-  }
-
   /* ── Review Cards ── */
   .review-grid {
     display: grid;
@@ -290,6 +293,75 @@
     color: var(--text-secondary);
   }
 
+  /* ── Architecture Diagram ── */
+  .arch-diagram {
+    margin-left: 56px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    background: var(--surface);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    line-height: 2;
+    overflow-x: auto;
+  }
+  .arch-diagram .layer-label {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .arch-diagram .layer {
+    margin-bottom: 16px;
+  }
+  .arch-diagram .node {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 6px;
+    margin: 2px 4px;
+    font-size: 0.78rem;
+  }
+  .arch-diagram .node-hook { background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent); }
+  .arch-diagram .node-skill { background: var(--purple-light); color: var(--purple); border: 1px solid var(--purple); }
+  .arch-diagram .node-gh { background: var(--green-light); color: var(--green); border: 1px solid var(--green); }
+  .arch-diagram .arrow { color: var(--text-secondary); margin: 0 4px; }
+
+  /* ── Two-tier Table ── */
+  .tier-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin: 16px 0;
+    margin-left: 56px;
+    max-width: calc(100% - 56px);
+  }
+  .tier-table th {
+    text-align: left;
+    padding: 10px 16px;
+    background: var(--surface);
+    border-bottom: 2px solid var(--border);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .tier-table td {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tier-table tr:last-child td { border-bottom: none; }
+  .tier-table code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    background: var(--surface);
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+
   /* ── Connector Line ── */
   .connector {
     margin-left: 19px;
@@ -317,11 +389,11 @@
     <p>A zero-touch, ADHD-friendly Git workflow for solo academic research. Issue-driven. Fully automated. Claude Code powered.</p>
     <div class="stats">
       <div class="stat">
-        <div class="stat-num">4</div>
-        <div class="stat-label">Hooks</div>
+        <div class="stat-num">1</div>
+        <div class="stat-label">Hook</div>
       </div>
       <div class="stat">
-        <div class="stat-num">2</div>
+        <div class="stat-num">4</div>
         <div class="stat-label">Skills</div>
       </div>
       <div class="stat">
@@ -333,185 +405,144 @@
         <div class="stat-label">Git Commands Typed</div>
       </div>
     </div>
+
+    <div class="principles">
+      <div class="principle">
+        <div class="principle-label">Architecture</div>
+        <div class="principle-value">Thick Skill, Thin Harness</div>
+        <div class="principle-desc">CLAUDE.md stays minimal. All logic lives in skills + 1 hook.</div>
+      </div>
+      <div class="principle">
+        <div class="principle-label">Source of Truth</div>
+        <div class="principle-value">Issue = SSOT</div>
+        <div class="principle-desc">Body = original plan (immutable). Comments = changelog (append-only).</div>
+      </div>
+      <div class="principle">
+        <div class="principle-label">Mapping</div>
+        <div class="principle-value">1 Issue = 1 Branch = 1 PR</div>
+        <div class="principle-desc">Each task: one Issue, one <code>feat/&lt;slug&gt;</code>, one squash-merged PR.</div>
+      </div>
+    </div>
   </div>
 </div>
+
+<!-- ══════════════════ ARCHITECTURE ══════════════════ -->
+<section>
+  <div class="container">
+    <h2 class="section-title">Architecture</h2>
+    <p class="section-subtitle">1 hook + 4 skills. No intermediate layers. GitHub is the database.</p>
+
+    <div class="arch-diagram">
+      <div class="layer">
+        <span class="layer-label">Hook (Stop + SessionStart)</span>
+        <span class="node node-hook">auto-commit.sh</span>
+        <span class="arrow">&rarr;</span>
+        <span style="color: var(--text-secondary)">wip snapshots + crash recovery + fire-and-forget push</span>
+      </div>
+      <div class="layer">
+        <span class="layer-label">Skills (Claude invokes directly)</span>
+        <span class="node node-skill">/begin</span>
+        <span class="arrow">&rarr;</span>
+        <span class="node node-skill">/create-issue</span>
+        <span class="arrow">&rarr;</span>
+        <span class="node node-skill">/commit</span>
+        <span class="arrow">&larr;</span>
+        <span class="node node-skill">/refine-issue</span>
+      </div>
+      <div class="layer">
+        <span class="layer-label">GitHub (SSOT)</span>
+        <span class="node node-gh">Issue body</span>
+        <span style="color: var(--text-secondary)">(immutable plan)</span>
+        <span class="arrow">+</span>
+        <span class="node node-gh">Issue comments</span>
+        <span style="color: var(--text-secondary)">(append-only changelog)</span>
+        <span class="arrow">+</span>
+        <span class="node node-gh">Checklist [x]</span>
+        <span style="color: var(--text-secondary)">(progress)</span>
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- ══════════════════ WORKFLOW ══════════════════ -->
 <section>
   <div class="container">
     <h2 class="section-title">Workflow</h2>
-    <p class="section-subtitle">Issue is the Single Source of Truth. Everything else derives from it.</p>
+    <p class="section-subtitle">From session start to PR merge &mdash; zero manual git commands.</p>
 
-    <!-- ── Phase 1: Session Start ── -->
+    <!-- ── Phase 1: Crash Recovery ── -->
     <div class="phase">
       <div class="phase-head">
         <div class="phase-number">1</div>
         <div class="phase-meta">
-          <div class="phase-name">Session Start</div>
-          <div class="phase-trigger">SessionStart hook</div>
+          <div class="phase-name">Crash Recovery</div>
+          <div class="phase-trigger">auto-commit.sh &mdash; SessionStart event</div>
         </div>
       </div>
-      <div class="phase-desc">Commit leftover dirty files from last session. Fire-and-forget push. Current project only.</div>
-
-      <div class="source-block">
-        <div class="source-header" onclick="toggle(this)">
-          <div><span class="source-name">hooks/session-git-sweep.sh</span> <span class="source-desc">Crash recovery + sweep</span></div>
-          <span class="source-toggle">&#9654;</span>
-        </div>
-        <div class="source-body"><pre>#!/bin/bash
-# SessionStart hook: commit leftover dirty files in CURRENT project only
-# Covers: laptop closed, Claude Code crashed, forgot to commit
-
-set -euo pipefail
-
-[ -z "${CLAUDE_PROJECT_DIR:-}" ] &amp;&amp; exit 0
-cd "$CLAUDE_PROJECT_DIR" 2&gt;/dev/null || exit 0
-git rev-parse --git-dir &amp;&gt;/dev/null || exit 0
-
-# Commit leftover dirty files
-DIRTY=$(git status --porcelain 2&gt;/dev/null | head -c 1)
-if [ -n "$DIRTY" ]; then
-  git add -A 2&gt;/dev/null || true
-
-  git reset HEAD -- \
-    '*.env' '*.env.*' \
-    '_targets/' '_targets/**' \
-    '*.Rdata' '*.RData' '*.rds' \
-    '*.feather' '*.parquet' '*.arrow' \
-    '*.pkl' '*.pickle' \
-    '__pycache__/' '.ipynb_checkpoints/' \
-    '.Rhistory' '*.Rproj.user/' \
-    '.DS_Store' 'node_modules/' \
-    2&gt;/dev/null || true
-
-  if ! git diff --cached --quiet 2&gt;/dev/null; then
-    FILE_COUNT=$(git diff --cached --name-only 2&gt;/dev/null | wc -l | tr -d ' ')
-    git commit -m "wip: session-sweep ${FILE_COUNT} files ($(date +%Y-%m-%d))" \
-      --no-verify 2&gt;/dev/null || true
-
-    if git remote get-url origin &amp;&gt;/dev/null; then
-      BRANCH=$(git branch --show-current 2&gt;/dev/null)
-      if [ -n "$BRANCH" ]; then
-        ( git push -u origin "$BRANCH" &amp;&gt;/dev/null &amp;
-          PUSH_PID=$!
-          ( sleep 10 &amp;&amp; kill "$PUSH_PID" 2&gt;/dev/null ) &amp;
-          wait "$PUSH_PID" 2&gt;/dev/null ) &amp;
-        disown
-      fi
-    fi
-
-    osascript -e "display notification \"Session sweep: $(basename \
-      "$CLAUDE_PROJECT_DIR") (${FILE_COUNT} files)\" \
-      with title \"Git Auto-Commit\"" 2&gt;/dev/null || true
-  fi
-fi</pre></div>
+      <div class="phase-desc">
+        Laptop closed? Claude Code crashed? The same <code>auto-commit.sh</code> that runs on Stop also runs on SessionStart.
+        It commits any leftover dirty files as <code>wip:</code> snapshots and pushes in the background. Adrian never notices.
       </div>
     </div>
 
     <div class="connector"></div>
 
-    <!-- ── Phase 2: Context Injection ── -->
+    <!-- ── Phase 2: Task Triage ── -->
     <div class="phase">
       <div class="phase-head">
         <div class="phase-number">2</div>
         <div class="phase-meta">
-          <div class="phase-name">Context Injection + Checklist Enforcement</div>
-          <div class="phase-trigger">UserPromptSubmit hook &mdash; every message</div>
+          <div class="phase-name">Task Triage</div>
+          <div class="phase-trigger">/begin skill</div>
         </div>
       </div>
       <div class="phase-desc">
-        <strong>On main:</strong> show open Issues, ask Adrian to pick Issue + checklist item, or invoke <code>/begin</code>.<br>
-        <strong>On feat/*:</strong> inject SSOT reminder. Force checklist signal at end of every response.
+        Adrian describes what he wants. Claude lists open Issues and asks Adrian to choose via <code>AskUserQuestion</code>:
       </div>
 
-      <table class="signal-table">
-        <thead><tr><th>Signal</th><th>Meaning</th><th>Hook Action</th></tr></thead>
+      <table class="tier-table">
+        <thead><tr><th>Choice</th><th>Action</th><th>Routes To</th></tr></thead>
         <tbody>
           <tr>
-            <td><code>[checklist:done #5/B]</code></td>
-            <td>Item B of Issue #5 is complete</td>
-            <td><span class="tag tag-auto">Auto</span> Toggle checkbox on GitHub</td>
+            <td><strong>A</strong> &mdash; Continue existing Issue</td>
+            <td><code>git switch feat/&lt;slug&gt;</code>, read Issue, resume next unblocked item</td>
+            <td>Work Loop</td>
           </tr>
           <tr>
-            <td><code>[checklist:wip #5/B]</code></td>
-            <td>Still working on item B</td>
-            <td>No action</td>
+            <td><strong>B</strong> &mdash; Supplement existing Issue</td>
+            <td>Add items via <code>/refine-issue</code>, then switch to branch</td>
+            <td><code>/refine-issue</code></td>
           </tr>
           <tr>
-            <td><code>[checklist:unrelated]</code></td>
-            <td>Work doesn't match any item</td>
-            <td><span class="tag tag-block">Block</span> Adrian must explain</td>
+            <td><strong>C</strong> &mdash; New Issue</td>
+            <td>Draft Issue with DAG checklist, Codex reviews, Adrian confirms</td>
+            <td><code>/create-issue</code></td>
           </tr>
         </tbody>
       </table>
 
       <div class="source-block">
         <div class="source-header" onclick="toggle(this)">
-          <div><span class="source-name">hooks/prompt-git-context.sh</span> <span class="source-desc">Context injection + enforcement</span></div>
+          <div><span class="source-name">skills/begin/SKILL.md</span> <span class="source-desc">Task triage &mdash; continue, supplement, or new</span></div>
           <span class="source-toggle">&#9654;</span>
         </div>
-        <div class="source-body"><pre>#!/bin/bash
-# UserPromptSubmit hook: inject git context on every message in a git repo
-#
-# On main: provide open issues + branches, prompt Issue selection or /begin
-# On feat/*: enforce checklist signals, detect task-switching
-
-set -euo pipefail
-
-cd "${CLAUDE_PROJECT_DIR:-$(pwd)}" 2&gt;/dev/null || exit 0
-git rev-parse --git-dir &amp;&gt;/dev/null || exit 0
-
-BRANCH=$(git branch --show-current 2&gt;/dev/null || echo "")
-
-ISSUES=""
-if command -v gh &amp;&gt;/dev/null &amp;&amp; git remote get-url origin &amp;&gt;/dev/null; then
-  ISSUES=$(gh issue list --state open --limit 10 --json number,title \
-    --jq '.[] | "#\(.number) \(.title)"' 2&gt;/dev/null || echo "")
-fi
-
-BRANCHES=$(git branch --list 'feat/*' 2&gt;/dev/null | sed 's/^[* ]*//' || echo "")
-
-case "${BRANCH:-}" in
-  main|master)
-    MSG="[git] On main."
-    [ -n "$ISSUES" ] &amp;&amp; MSG="${MSG} Open issues: ${ISSUES}"
-    [ -n "$BRANCHES" ] &amp;&amp; MSG="${MSG} Feature branches: ${BRANCHES}"
-    MSG="${MSG} If open Issues exist, present them and ask Adrian to pick
-      an Issue + checklist item. If Adrian describes a new task, invoke
-      /begin. If just a question, ignore."
-    ;;
-  feat/*)
-    MSG="[git] On branch ${BRANCH}."
-    [ -n "$ISSUES" ] &amp;&amp; MSG="${MSG} Open issues: ${ISSUES}"
-    MSG="${MSG} SSOT: the Issue checklist is truth. MANDATORY: end EVERY
-      response with exactly one checklist signal —
-      [checklist:done #N/X] if item completed,
-      [checklist:wip #N/X] if still working,
-      or [checklist:unrelated] if no match (triggers block).
-      No exceptions."
-    ;;
-  *)
-    MSG="[git] On branch ${BRANCH}."
-    ;;
-esac
-
-printf '%s' "$MSG"</pre></div>
+        <div class="source-body"><pre id="begin-source"></pre></div>
       </div>
     </div>
 
     <div class="connector"></div>
 
-    <!-- ── Phase 3: Task Creation ── -->
+    <!-- ── Phase 3: Issue Creation ── -->
     <div class="phase">
       <div class="phase-head">
         <div class="phase-number">3</div>
         <div class="phase-meta">
-          <div class="phase-name">Task Creation</div>
-          <div class="phase-trigger">/begin skill</div>
+          <div class="phase-name">Issue Creation</div>
+          <div class="phase-trigger">/create-issue skill</div>
         </div>
       </div>
       <div class="phase-desc">
-        Triage (continue / supplement / new) &rarr; Draft Issue with DAG checklist &rarr; <span class="tag tag-review">Codex</span> reviews &rarr; <span class="tag tag-block">Adrian confirms</span> (the ONLY manual checkpoint) &rarr; Create branch <code>feat/&lt;slug&gt;</code>.
+        Draft Issue with DAG checklist &rarr; <span class="tag tag-review">Codex</span> reviews for duplicates, verifiability, scope &rarr; <span class="tag tag-block">Adrian confirms</span> (the ONLY manual checkpoint) &rarr; Submit to GitHub &rarr; Create <code>feat/&lt;slug&gt;</code> branch &rarr; Start working.
       </div>
 
       <div class="review-grid">
@@ -525,8 +556,8 @@ printf '%s' "$MSG"</pre></div>
           </div>
         </div>
         <div class="review-card">
-          <div class="review-when">Issue Template</div>
-          <div class="review-what">DAG Checklist</div>
+          <div class="review-when">DAG Checklist</div>
+          <div class="review-what">Dependency Graph</div>
           <div class="review-checks">
             <code>- [ ] A. Clean data</code><br>
             <code>- [ ] B. Regression &rarr; after: A</code><br>
@@ -538,7 +569,7 @@ printf '%s' "$MSG"</pre></div>
           <div class="review-when">Adrian Review</div>
           <div class="review-what">Human Checkpoint</div>
           <div class="review-checks">
-            "行" &rarr; submit as-is<br>
+            "行" / "ok" &rarr; submit as-is<br>
             Edit &rarr; incorporate changes<br>
             "不用 issue" &rarr; skip, work on main
           </div>
@@ -547,10 +578,10 @@ printf '%s' "$MSG"</pre></div>
 
       <div class="source-block">
         <div class="source-header" onclick="toggle(this)">
-          <div><span class="source-name">skills/begin/SKILL.md</span> <span class="source-desc">Issue creation, triage, DAG checklist, branch lifecycle</span></div>
+          <div><span class="source-name">skills/create-issue/SKILL.md</span> <span class="source-desc">Issue template, Codex review, branch creation</span></div>
           <span class="source-toggle">&#9654;</span>
         </div>
-        <div class="source-body"><pre id="begin-source"></pre></div>
+        <div class="source-body"><pre id="create-issue-source"></pre></div>
       </div>
     </div>
 
@@ -562,196 +593,55 @@ printf '%s' "$MSG"</pre></div>
         <div class="phase-number">4</div>
         <div class="phase-meta">
           <div class="phase-name">Work Loop</div>
-          <div class="phase-trigger">Stop hooks &times; 2 &mdash; after every Claude response</div>
+          <div class="phase-trigger">auto-commit.sh &mdash; Stop event (after every Claude response)</div>
         </div>
       </div>
       <div class="phase-desc">
-        Two hooks fire simultaneously after every response:<br>
-        <strong>auto-commit.sh</strong> &mdash; silent <code>wip:</code> snapshot (safety net, not a real commit).<br>
-        <strong>checklist-sync.sh</strong> &mdash; parse checklist signal, toggle checkbox on GitHub, or block if unrelated.
+        While Claude works on checklist items, the single hook silently snapshots every change as <code>wip:</code> commits.
+        These are safety nets, not real commits. Background push with 10s kill timer prevents zombie processes.
       </div>
+
+      <table class="tier-table">
+        <thead><tr><th>Commit Type</th><th>When</th><th>Message Format</th><th>Tied to Issue?</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="tag tag-auto">Auto</span> wip snapshot</td>
+            <td>After every Claude response</td>
+            <td><code>wip: file1, file2</code></td>
+            <td>No &mdash; safety net only</td>
+          </tr>
+          <tr>
+            <td><span class="tag tag-skill">Formal</span> /commit</td>
+            <td>When checklist item is done</td>
+            <td><code>type(#N/X): description</code></td>
+            <td>Yes &mdash; mandatory #N + letter X</td>
+          </tr>
+        </tbody>
+      </table>
 
       <div class="source-block">
         <div class="source-header" onclick="toggle(this)">
-          <div><span class="source-name">hooks/auto-commit.sh</span> <span class="source-desc">Silent wip snapshot after every response</span></div>
+          <div><span class="source-name">hooks/auto-commit.sh</span> <span class="source-desc">The ONLY hook &mdash; Stop + SessionStart</span></div>
           <span class="source-toggle">&#9654;</span>
         </div>
-        <div class="source-body"><pre>#!/bin/bash
-# Stop hook: ADHD zero-touch git workflow v3
-# Design: zero interruption. Adrian never notices.
-
-set -euo pipefail
-
-if ! command -v jq &amp;&gt;/dev/null; then exit 0; fi
-if ! command -v git &amp;&gt;/dev/null; then exit 0; fi
-
-INPUT=$(cat)
-STOP_HOOK_ACTIVE=$(echo "$INPUT" | jq -r '.stop_hook_active // false')
-
-SKIP_AUTOCOMMIT=false
-if [ "$STOP_HOOK_ACTIVE" = "true" ]; then
-  SKIP_AUTOCOMMIT=true
-fi
-
-[ -z "${CLAUDE_PROJECT_DIR:-}" ] &amp;&amp; exit 0
-cd "$CLAUDE_PROJECT_DIR" 2&gt;/dev/null || exit 0
-git rev-parse --git-dir &amp;&gt;/dev/null || exit 0
-
-# Merge conflict &rarr; block
-if [ -n "$(git diff --name-only --diff-filter=U 2&gt;/dev/null)" ]; then
-  cat &lt;&lt;'EOF'
-{"decision": "block", "reason": "Merge conflict detected."}
-EOF
-  exit 0
-fi
-
-# Silent auto-commit
-if [ "$SKIP_AUTOCOMMIT" = "false" ]; then
-  DIRTY=$(git status --porcelain 2&gt;/dev/null)
-  if [ -n "$DIRTY" ]; then
-    git add -A 2&gt;/dev/null || true
-    git reset HEAD -- \
-      '*.env' '*.env.*' '_targets/' '_targets/**' \
-      '*.Rdata' '*.RData' '*.rds' \
-      '*.feather' '*.parquet' '*.arrow' \
-      '*.pkl' '*.pickle' \
-      '__pycache__/' '.ipynb_checkpoints/' \
-      '.Rhistory' '*.Rproj.user/' '.DS_Store' 'node_modules/' \
-      2&gt;/dev/null || true
-
-    if ! git diff --cached --quiet 2&gt;/dev/null; then
-      CHANGED_FILES=$(git diff --cached --name-only 2&gt;/dev/null | head -5)
-      FILE_COUNT=$(git diff --cached --name-only 2&gt;/dev/null | wc -l | tr -d ' ')
-      FIRST_FILE=$(echo "$CHANGED_FILES" | head -1)
-
-      if [ "$FILE_COUNT" -le 2 ]; then
-        MSG="wip: ${CHANGED_FILES//$'\n'/, }"
-      else
-        MSG="wip: ${FIRST_FILE} + ${FILE_COUNT} files"
-      fi
-
-      git commit -m "$MSG" --no-verify 2&gt;/dev/null || true
-
-      if git remote get-url origin &amp;&gt;/dev/null; then
-        BRANCH=$(git branch --show-current 2&gt;/dev/null)
-        if [ -n "$BRANCH" ]; then
-          ( git push -u origin "$BRANCH" &amp;&gt;/dev/null &amp;
-            PUSH_PID=$!
-            ( sleep 10 &amp;&amp; kill "$PUSH_PID" 2&gt;/dev/null ) &amp;
-            wait "$PUSH_PID" 2&gt;/dev/null ) &amp;
-          disown
-        fi
-      fi
-    fi
-  fi
-fi
-
-# Claude auto-judges completion via Issue checklist.
-exit 0</pre></div>
-      </div>
-
-      <div class="source-block">
-        <div class="source-header" onclick="toggle(this)">
-          <div><span class="source-name">hooks/checklist-sync.sh</span> <span class="source-desc">Checkbox sync + ADHD block</span></div>
-          <span class="source-toggle">&#9654;</span>
-        </div>
-        <div class="source-body"><pre>#!/bin/bash
-# Stop hook: checklist-sync
-# 1. Parse [checklist:done #N/X] &rarr; check off on Issue
-# 2. [checklist:unrelated] &rarr; BLOCK (anti-ADHD)
-# 3. [checklist:note ...] &rarr; append to Issue body
-
-set -euo pipefail
-
-if ! command -v jq &amp;&gt;/dev/null; then exit 0; fi
-if ! command -v gh &amp;&gt;/dev/null; then exit 0; fi
-
-INPUT=$(cat)
-LAST_MSG=$(echo "$INPUT" | jq -r '.last_assistant_message // ""' \
-  2&gt;/dev/null | tail -20)
-
-cd "${CLAUDE_PROJECT_DIR:-$(pwd)}" 2&gt;/dev/null || exit 0
-git rev-parse --git-dir &amp;&gt;/dev/null || exit 0
-
-BRANCH=$(git branch --show-current 2&gt;/dev/null || echo "")
-[[ "$BRANCH" == feat/* ]] || exit 0
-git remote get-url origin &amp;&gt;/dev/null || exit 0
-
-# Parse: [checklist:done #N/X]
-DONE_MATCH=$(echo "$LAST_MSG" | \
-  grep -oE '\[checklist:done #[0-9]+/[A-Z]\]' | head -1 || echo "")
-
-if [ -n "$DONE_MATCH" ]; then
-  ISSUE_NUM=$(echo "$DONE_MATCH" | grep -oE '#[0-9]+' | tr -d '#')
-  ITEM_LETTER=$(echo "$DONE_MATCH" | grep -oE '/[A-Z]' | tr -d '/')
-  [ -z "$ISSUE_NUM" ] &amp;&amp; exit 0
-  [ -z "$ITEM_LETTER" ] &amp;&amp; exit 0
-
-  BODY=$(gh issue view "$ISSUE_NUM" --json body --jq '.body' \
-    2&gt;/dev/null || echo "")
-  [ -z "$BODY" ] &amp;&amp; exit 0
-
-  # Toggle only the matching checkbox
-  UPDATED_BODY=$(echo "$BODY" | \
-    perl -pe "s/^- \\[ \\] ${ITEM_LETTER}\\./- [x] ${ITEM_LETTER}./m")
-
-  if [ "$BODY" != "$UPDATED_BODY" ]; then
-    gh issue edit "$ISSUE_NUM" --body "$UPDATED_BODY" 2&gt;/dev/null || true
-  fi
-fi
-
-# [checklist:unrelated] &rarr; BLOCK
-UNRELATED=$(echo "$LAST_MSG" | \
-  grep -oE '\[checklist:unrelated\]' | head -1 || echo "")
-if [ -n "$UNRELATED" ]; then
-  jq -n '{"decision":"block","reason":"[ADHD guard] Unrelated work.
-    Adrian: add to Issue, or different task?"}'
-  exit 0
-fi
-
-# [checklist:note ...] &rarr; append
-NOTE_LINE=$(echo "$LAST_MSG" | \
-  grep -oE '\[checklist:note\] .*' | head -1 || echo "")
-if [ -n "$NOTE_LINE" ]; then
-  NOTE_TEXT=$(echo "$NOTE_LINE" | sed 's/\[checklist:note\] //')
-  if [ -z "${ISSUE_NUM:-}" ]; then
-    WIP_MATCH=$(echo "$LAST_MSG" | \
-      grep -oE '\[checklist:wip #[0-9]+/[A-Z]\]' | head -1 || echo "")
-    ISSUE_NUM=$(echo "$WIP_MATCH" | grep -oE '#[0-9]+' | tr -d '#' || echo "")
-  fi
-  if [ -n "${ISSUE_NUM:-}" ] &amp;&amp; [ -n "$NOTE_TEXT" ]; then
-    BODY=$(gh issue view "$ISSUE_NUM" --json body --jq '.body' \
-      2&gt;/dev/null || echo "")
-    if [ -n "$BODY" ]; then
-      TIMESTAMP=$(date '+%Y-%m-%d %H:%M')
-      UPDATED_BODY="${BODY}
-
----
-**Note (${TIMESTAMP})**: ${NOTE_TEXT}"
-      gh issue edit "$ISSUE_NUM" --body "$UPDATED_BODY" \
-        2&gt;/dev/null || true
-    fi
-  fi
-fi
-
-exit 0</pre></div>
+        <div class="source-body"><pre id="autocommit-source"></pre></div>
       </div>
     </div>
 
     <div class="connector"></div>
 
-    <!-- ── Phase 5: Commit ── -->
+    <!-- ── Phase 5: Formal Commit ── -->
     <div class="phase">
       <div class="phase-head">
         <div class="phase-number">5</div>
         <div class="phase-meta">
-          <div class="phase-name">Commit</div>
-          <div class="phase-trigger">/commit skill &mdash; triggered when checklist item is done</div>
+          <div class="phase-name">Formal Commit</div>
+          <div class="phase-trigger">/commit skill &mdash; 1 commit = 1 checklist item</div>
         </div>
       </div>
       <div class="phase-desc">
-        Real commit = one checklist item. Message format: <code>type(#N/X): description</code>.<br>
-        Read Issue first (SSOT) &rarr; Codex reviews staged diff &rarr; commit &rarr; check off item &rarr; push &rarr; check DAG for next unblocked item.
+        Read Issue (SSOT) &rarr; analyze changes &rarr; <span class="tag tag-review">Codex</span> reviews staged diff &rarr; commit as <code>type(#N/X): desc</code> &rarr; check off item <code>[x]</code> on GitHub &rarr; push &rarr; check DAG for next unblocked item.<br>
+        When all items are <code>[x]</code>: auto-create PR with <code>Closes #N</code> &rarr; Codex reviews full diff &rarr; squash merge &rarr; return to main.
       </div>
 
       <div class="review-grid">
@@ -787,7 +677,7 @@ exit 0</pre></div>
 
       <div class="source-block">
         <div class="source-header" onclick="toggle(this)">
-          <div><span class="source-name">skills/commit/SKILL.md</span> <span class="source-desc">Issue-linked commits, Codex review, PR templates</span></div>
+          <div><span class="source-name">skills/commit/SKILL.md</span> <span class="source-desc">Issue-linked commits, Codex review, PR flow</span></div>
           <span class="source-toggle">&#9654;</span>
         </div>
         <div class="source-body"><pre id="commit-source"></pre></div>
@@ -796,17 +686,59 @@ exit 0</pre></div>
 
     <div class="connector"></div>
 
-    <!-- ── Phase 6: Completion ── -->
+    <!-- ── Phase 6: Issue Refinement ── -->
     <div class="phase">
       <div class="phase-head">
         <div class="phase-number">6</div>
+        <div class="phase-meta">
+          <div class="phase-name">Issue Refinement</div>
+          <div class="phase-trigger">/refine-issue skill &mdash; mid-stream scope changes</div>
+        </div>
+      </div>
+      <div class="phase-desc">
+        Scope changed? Need new items? Item no longer needed?
+        <strong>Issue body is never modified.</strong> All changes are logged as timestamped, append-only comments.
+        Claude reconstructs current truth by reading body + all comments sequentially.
+      </div>
+
+      <table class="tier-table">
+        <thead><tr><th>Layer</th><th>What It Holds</th><th>Mutability</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Issue body</td>
+            <td>Original plan (checklist, scope, context)</td>
+            <td><strong>Immutable</strong> &mdash; frozen at creation</td>
+          </tr>
+          <tr>
+            <td>Issue comments</td>
+            <td>All modifications since creation</td>
+            <td><strong>Append-only</strong> &mdash; never edit, never delete</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="source-block">
+        <div class="source-header" onclick="toggle(this)">
+          <div><span class="source-name">skills/refine-issue/SKILL.md</span> <span class="source-desc">Comment-only refinement, append-only audit trail</span></div>
+          <span class="source-toggle">&#9654;</span>
+        </div>
+        <div class="source-body"><pre id="refine-issue-source"></pre></div>
+      </div>
+    </div>
+
+    <div class="connector"></div>
+
+    <!-- ── Phase 7: Completion ── -->
+    <div class="phase">
+      <div class="phase-head">
+        <div class="phase-number">7</div>
         <div class="phase-meta">
           <div class="phase-name">Completion</div>
           <div class="phase-trigger">All checklist items [x] &mdash; fully automatic</div>
         </div>
       </div>
       <div class="phase-desc">
-        Claude detects all items checked &rarr; Codex reviews full diff &rarr; <code>gh pr create --draft</code> with <code>Closes #N</code> &rarr; <code>gh pr merge --squash --delete-branch</code> &rarr; <code>git switch main &amp;&amp; git pull</code>.<br>
+        Claude detects all items checked off &rarr; <span class="tag tag-review">Codex</span> reviews full diff &rarr; <code>gh pr create</code> with <code>Closes #N</code> &rarr; <code>gh pr merge --squash --delete-branch</code> &rarr; <code>git switch main &amp;&amp; git pull</code>.<br>
         No "done" signal from Adrian needed. Milestone deliveries get tags: <code>email-YYYY-MM-DD</code>, <code>meeting-YYYY-MM-DD</code>, <code>conference-YYYY-MM-DD</code>.
       </div>
     </div>
@@ -823,27 +755,27 @@ exit 0</pre></div>
     <div class="guard-grid">
       <div class="guard-card">
         <div class="guard-scenario">Session Start Drift</div>
-        <div class="guard-action">Force Issue + item selection before any work</div>
+        <div class="guard-action"><code>/begin</code> forces Issue + item selection via AskUserQuestion before any work</div>
       </div>
       <div class="guard-card">
         <div class="guard-scenario">Mid-Task Tangent</div>
-        <div class="guard-action"><code>[checklist:unrelated]</code> blocks until explained</div>
+        <div class="guard-action">Mandatory Issue + item parameter on every <code>/commit</code> &mdash; can't commit untracked work</div>
       </div>
       <div class="guard-card">
         <div class="guard-scenario">Scope Creep</div>
-        <div class="guard-action">DAG enforces item ordering; only unblocked items startable</div>
+        <div class="guard-action">DAG enforces item ordering &mdash; only unblocked items startable</div>
       </div>
       <div class="guard-card">
         <div class="guard-scenario">Forgot to Save</div>
-        <div class="guard-action">auto-commit.sh silently snapshots after every response</div>
+        <div class="guard-action"><code>auto-commit.sh</code> silently snapshots after every Claude response</div>
       </div>
       <div class="guard-card">
         <div class="guard-scenario">Crashed / Closed Laptop</div>
-        <div class="guard-action">session-git-sweep.sh commits leftovers on next launch</div>
+        <div class="guard-action"><code>auto-commit.sh</code> commits leftovers on next SessionStart</div>
       </div>
       <div class="guard-card">
         <div class="guard-scenario">Never Says "Done"</div>
-        <div class="guard-action">Claude auto-judges: all checklist [x] = completion</div>
+        <div class="guard-action">Claude auto-judges: all checklist <code>[x]</code> = auto PR + merge</div>
       </div>
     </div>
   </div>
@@ -864,12 +796,23 @@ function toggle(header) {
   t.classList.toggle('open');
 }
 
-// Embed skill files
-fetch('skills/begin/SKILL.md').then(r=>r.text()).then(t=>{document.getElementById('begin-source').textContent=t}).catch(()=>{
-  document.getElementById('begin-source').textContent='(Open this page via a local server to load skill files, or click the file directly)';
-});
-fetch('skills/commit/SKILL.md').then(r=>r.text()).then(t=>{document.getElementById('commit-source').textContent=t}).catch(()=>{
-  document.getElementById('commit-source').textContent='(Open this page via a local server to load skill files, or click the file directly)';
+// Embed source files
+const sources = [
+  { id: 'begin-source', path: 'skills/begin/SKILL.md' },
+  { id: 'create-issue-source', path: 'skills/create-issue/SKILL.md' },
+  { id: 'commit-source', path: 'skills/commit/SKILL.md' },
+  { id: 'refine-issue-source', path: 'skills/refine-issue/SKILL.md' },
+  { id: 'autocommit-source', path: 'hooks/auto-commit.sh' },
+];
+
+sources.forEach(({ id, path }) => {
+  fetch(path)
+    .then(r => r.text())
+    .then(t => { document.getElementById(id).textContent = t; })
+    .catch(() => {
+      document.getElementById(id).textContent =
+        '(Serve via local server to load source: python3 -m http.server)';
+    });
 });
 </script>
 
