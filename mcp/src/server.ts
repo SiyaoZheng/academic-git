@@ -406,9 +406,10 @@ server.tool(
   { pr: z.number().describe("PR number") },
   async ({ pr }) => {
     run(`gh pr merge ${pr} --squash --delete-branch`);
-    run("git switch main");
+    const defaultBranch = runSafe("git symbolic-ref refs/remotes/origin/HEAD").replace("refs/remotes/origin/", "") || "main";
+    run(`git switch "${defaultBranch}"`);
     run("git pull");
-    return text(`PR #${pr} merged. Now on main.`);
+    return text(`PR #${pr} merged. Now on ${defaultBranch}.`);
   }
 );
 
@@ -446,7 +447,8 @@ server.tool(
       return text(`Switched to existing branch ${branch}`);
     }
 
-    run("git switch main");
+    const defaultBranch = runSafe("git symbolic-ref refs/remotes/origin/HEAD").replace("refs/remotes/origin/", "") || "main";
+    run(`git switch "${defaultBranch}"`);
     run("git pull");
     run(`git switch -c "${branch}"`);
     return text(`Created and switched to ${branch}`);
