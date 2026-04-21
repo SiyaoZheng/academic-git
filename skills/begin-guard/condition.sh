@@ -1,7 +1,6 @@
 #!/bin/bash
 # condition.sh for begin-guard skill
-# Run: when Write/Edit is called AND no locked_issue exists in .academic-git.json
-# AND the target file is a project file (not .claude/ config)
+# Run: when Write/Edit/Bash modifies project files AND no locked_issue exists
 set -euo pipefail
 
 cd "${CLAUDE_PROJECT_DIR:-.}" 2>/dev/null || exit 1
@@ -12,14 +11,51 @@ git rev-parse --git-dir &>/dev/null || exit 1
 # Read tool input JSON from stdin
 INPUT=$(cat)
 
+# Extract tool name
+TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // ""' 2>/dev/null || echo "")
+
 # Extract the file path being written/edited
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // .tool_input.path // ""' 2>/dev/null || echo "")
 
-# If no file path found, skip (can't determine target)
-[ -z "$FILE_PATH" ] && exit 1
+# For Bash tool: check if the command writes to a file
+if [ "$TOOL_NAME" = "Bash" ]; then
+  CMD=$(echo "$INPUT" | jq -r '.tool_input.command // ""' 2>/dev/null || echo "")
+
+  # If no command or not a file-writing command → skip
+  # Detect common file-write patterns: > file, >> file, sed -i, tee, cp, mv, dd, install, redirect
+  if echo "$CMD" | grep -qE '\s*>\s|>\s|>>\s|sed\s+-i|tee\s|cp\s|mv\s|install\s+-m|dd\s+of=|python3?\s+-c.*open\(.*["\x27]w'; then
+    # This is a Bash write — condition met, run check
+    :
+  else
+    # Not a write command → skip guard
+    exit 1
+  fi
+
+  # For Bash writes we can't easily determine the target file path
+  # so we skip the config-file allowlist and just check locked_issue
+  if [ -f ".academic-git.json" ]; then
+    LOCKED_ISSUE=$(jq -r '.locked_issue // empty' .academic-git.json 2>/dev/null || echo "")
+    if [ -n "$LOCKED_ISSUE" ]; then
+      # Has locked issue → check branch alignment
+      LOCKED_BRANCH=$(jq -r '.locked_branch // empty' .academic-git.json 2>/dev/null || echo "")
+      CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "")
+      if [ -n "$LOCKED_BRANCH" ] && [ "$CURRENT_BRANCH" != "$LOCKED_BRANCH" ]; then
+        exit 0  # On wrong branch → condition MET (guard should fire)
+      fi
+      exit 1  # Has locked issue, on correct branch → skip guard
+    fi
+  fi
+
+  # No locked_issue → condition MET
+  exit 0
+fi
+
+# For Write/Edit tools: check file path
+if [ -z "$FILE_PATH" ]; then
+  exit 1  # Can't determine target → skip
+fi
 
 # Allow config files without requiring /begin
-# .claude/, .academic-git.json, CLAUDE.md, *.md in project root (docs), .gitignore
 REL_PATH="${FILE_PATH#"$CLAUDE_PROJECT_DIR/"}"
 REL_PATH="${REL_PATH#"$PWD/"}"
 

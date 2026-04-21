@@ -1,7 +1,6 @@
 #!/bin/bash
 # Auto-save: commit + push dirty working tree on Stop.
-# Replaces stash-based auto-commit with real commits for traceability.
-# WIP commits use format: wip(#0): session-sweep N files (DATE)
+# Creates wip(#0) commits for traceability. Never runs on protected branches.
 # macOS compatible: does not depend on GNU timeout
 
 set -euo pipefail
@@ -26,13 +25,28 @@ git rev-parse --git-dir &>/dev/null || exit 0
 # === Check 0: merge conflict → must block ===
 if [ -n "$(git diff --name-only --diff-filter=U 2>/dev/null)" ]; then
   cat <<'EOF'
-{"decision": "block", "reason": "Merge conflict detected. Resolve conflicts first (git diff --name-only --diff-filter=U to see conflicted files), then git add and commit."}
+{"hookSpecificOutput": {"hookEventName": "Stop", "permissionDecision": "deny", "permissionDecisionReason": "Merge conflict detected. Resolve conflicts first (git diff --name-only --diff-filter=U to see conflicted files), then git add and commit."}}
 EOF
   exit 0
 fi
 
-# === Check 1: commit dirty working tree ===
+# === Check 1: commit dirty working tree (ONLY on feature branches) ===
 if [ "$SKIP_AUTOSAVE" = "false" ]; then
+  BRANCH=$(git branch --show-current 2>/dev/null || echo "")
+
+  # Skip protected branches — never auto-commit on main/master/develop/trunk
+  case "${BRANCH:-}" in
+    ""|main|master|develop|trunk|release/*|hotfix/*)
+      # On protected branch: only stash, do not commit or push
+      DIRTY=$(git status --porcelain 2>/dev/null)
+      if [ -n "$DIRTY" ]; then
+        STASH_MSG="auto-save: $(date +%Y-%m-%dT%H:%M)"
+        git stash push -m "$STASH_MSG" --include-untracked 2>/dev/null || true
+      fi
+      exit 0
+      ;;
+  esac
+
   DIRTY=$(git status --porcelain 2>/dev/null)
   if [ -n "$DIRTY" ]; then
     FILE_COUNT=$(echo "$DIRTY" | wc -l | tr -d ' ')
@@ -40,10 +54,16 @@ if [ "$SKIP_AUTOSAVE" = "false" ]; then
     COMMIT_MSG="wip(#0): session-sweep ${FILE_COUNT} files (${DATE})"
 
     # Stage all changes (including untracked)
-    git add -A 2>/dev/null || true
+    if ! git add -A 2>/dev/null; then
+      echo "[academic-git] WARNING: git add -A failed during auto-save" >&2
+      exit 0
+    fi
 
-    # Commit with WIP format — no gates, no pipeline, just a save point
-    git commit -m "$COMMIT_MSG" 2>/dev/null || true
+    # Commit with WIP format
+    if ! git commit -m "$COMMIT_MSG" 2>/dev/null; then
+      echo "[academic-git] WARNING: git commit failed during auto-save" >&2
+      exit 0
+    fi
 
     # Push if remote exists
     if git remote get-url origin &>/dev/null; then
@@ -61,9 +81,10 @@ if [ "$SKIP_AUTOSAVE" = "false" ]; then
         return $ret
       }
 
-      BRANCH=$(git branch --show-current 2>/dev/null || echo "")
       if [ -n "$BRANCH" ]; then
-        _timeout 15 git push origin "$BRANCH" 2>/dev/null || true
+        if ! _timeout 15 git push origin "$BRANCH" 2>/dev/null; then
+          echo "[academic-git] WARNING: git push failed during auto-save. Local commit exists but is not on origin." >&2
+        fi
       fi
     fi
   fi
@@ -133,7 +154,5 @@ if [ -z "$AHEAD" ] || [ "$AHEAD" -lt 1 ]; then
 fi
 
 # Output suggestion to create PR
-cat <<EOF
-{"supplementary_output": "[academic-git] Branch '${BRANCH}' has ${AHEAD} commits ahead of ${MAIN_BRANCH} with no open PR. Consider running create_pr when ready."}
-EOF
+echo "[academic-git] Branch '${BRANCH}' has ${AHEAD} commits ahead of ${MAIN_BRANCH} with no open PR. Consider running create_pr when ready."
 exit 0

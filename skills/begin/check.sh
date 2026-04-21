@@ -1,6 +1,7 @@
 #!/bin/bash
 # check.sh for begin skill
 # Non-blocking: output project state summary + enforcement warnings
+# Uses plain stdout for SessionStart/Stop hooks (per Claude Code docs)
 set -euo pipefail
 
 [ -z "${CLAUDE_PROJECT_DIR:-}" ] && exit 0
@@ -15,8 +16,8 @@ MAIN_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|ref
 [ -z "$MAIN_BRANCH" ] && MAIN_BRANCH="main"
 AHEAD=$(git log --oneline "origin/${MAIN_BRANCH}..HEAD" 2>/dev/null | wc -l | tr -d ' ' || echo "0")
 
-# Build output parts
-OUTPUT="Branch: ${BRANCH:-unknown} | Dirty files: ${DIRTY:-0} | Commits ahead: ${AHEAD:-0}"
+# Build output
+echo "Branch: ${BRANCH:-unknown} | Dirty files: ${DIRTY:-0} | Commits ahead: ${AHEAD:-0}"
 
 # --- Enforcement: check locked_issue ---
 LOCKED_ISSUE=""
@@ -27,23 +28,21 @@ if [ -f ".academic-git.json" ]; then
 fi
 
 if [ -z "$LOCKED_ISSUE" ]; then
-  OUTPUT="${OUTPUT}\\n\\n[academic-git] No issue locked. Run /begin to pick or create an issue. Writing code will be blocked until /begin completes."
+  echo ""
+  echo "[academic-git] No issue locked. Run /begin to pick or create an issue. Writing code will be blocked until /begin completes."
 fi
 
 # --- Enforcement: auto-switch to locked branch ---
 if [ -n "$LOCKED_BRANCH" ] && [ "$BRANCH" != "$LOCKED_BRANCH" ]; then
   if git rev-parse --verify "$LOCKED_BRANCH" &>/dev/null; then
     git switch "$LOCKED_BRANCH" 2>/dev/null || true
-    OUTPUT="${OUTPUT}\\n\\n[academic-git] Switched back to locked branch '${LOCKED_BRANCH}'."
+    echo ""
+    echo "[academic-git] Switched back to locked branch '${LOCKED_BRANCH}'."
   else
-    OUTPUT="${OUTPUT}\\n\\n[academic-git] Locked branch '${LOCKED_BRANCH}' does not exist locally. Run /begin to resolve."
+    echo ""
+    echo "[academic-git] Locked branch '${LOCKED_BRANCH}' does not exist locally. Run /begin to resolve."
   fi
 fi
-
-# Output as JSON supplementary_output
-cat <<EOF
-{"supplementary_output": "${OUTPUT}"}
-EOF
 
 # Exit 0 always — this is informational, never blocking
 exit 0
