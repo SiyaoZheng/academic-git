@@ -31,6 +31,16 @@
             "timeout": 30
           }
         ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/hook-runner.sh ${CLAUDE_PLUGIN_ROOT}/skills/begin-guard --block",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "PostToolUse": [

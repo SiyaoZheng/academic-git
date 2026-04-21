@@ -1,6 +1,7 @@
 #!/bin/bash
-# Auto-stash: save dirty working tree on Stop/SessionStart without polluting DAG.
-# Uses git stash instead of wip commit + push — no gate bypass, no untraceable commits.
+# Auto-save: commit + push dirty working tree on Stop.
+# Replaces stash-based auto-commit with real commits for traceability.
+# WIP commits use format: wip(#0): session-sweep N files (DATE)
 # macOS compatible: does not depend on GNU timeout
 
 set -euo pipefail
@@ -11,10 +12,10 @@ if ! command -v git &>/dev/null; then exit 0; fi
 INPUT=$(cat 2>/dev/null || echo "")
 STOP_HOOK_ACTIVE=$(echo "$INPUT" | jq -r '.stop_hook_active // false' 2>/dev/null || echo "false")
 
-# Triggered by previous block → skip auto-stash (prevent loop), but still check PR
-SKIP_AUTOSTASH=false
+# Triggered by previous block → skip auto-save (prevent loop)
+SKIP_AUTOSAVE=false
 if [ "$STOP_HOOK_ACTIVE" = "true" ]; then
-  SKIP_AUTOSTASH=true
+  SKIP_AUTOSAVE=true
 fi
 
 # === Enter project directory ===
@@ -30,13 +31,41 @@ EOF
   exit 0
 fi
 
-# === Check 1: stash dirty working tree (non-blocking) ===
-if [ "$SKIP_AUTOSTASH" = "false" ]; then
+# === Check 1: commit dirty working tree ===
+if [ "$SKIP_AUTOSAVE" = "false" ]; then
   DIRTY=$(git status --porcelain 2>/dev/null)
   if [ -n "$DIRTY" ]; then
-    # Stash with descriptive message — does not create a commit, does not push, does not bypass gates
-    STASH_MSG="auto-save: $(date +%Y-%m-%dT%H:%M)"
-    git stash push -m "$STASH_MSG" --include-untracked 2>/dev/null || true
+    FILE_COUNT=$(echo "$DIRTY" | wc -l | tr -d ' ')
+    DATE=$(date +%Y-%m-%d)
+    COMMIT_MSG="wip(#0): session-sweep ${FILE_COUNT} files (${DATE})"
+
+    # Stage all changes (including untracked)
+    git add -A 2>/dev/null || true
+
+    # Commit with WIP format — no gates, no pipeline, just a save point
+    git commit -m "$COMMIT_MSG" 2>/dev/null || true
+
+    # Push if remote exists
+    if git remote get-url origin &>/dev/null; then
+      # macOS-compatible timeout for push
+      _timeout() {
+        local secs=$1; shift
+        "$@" &
+        local pid=$!
+        ( sleep "$secs" && kill "$pid" 2>/dev/null ) &
+        local watchdog=$!
+        wait "$pid" 2>/dev/null || true
+        local ret=$?
+        kill "$watchdog" 2>/dev/null || true
+        wait "$watchdog" 2>/dev/null || true
+        return $ret
+      }
+
+      BRANCH=$(git branch --show-current 2>/dev/null || echo "")
+      if [ -n "$BRANCH" ]; then
+        _timeout 15 git push origin "$BRANCH" 2>/dev/null || true
+      fi
+    fi
   fi
 fi
 
@@ -98,11 +127,13 @@ if [ -z "$MAIN_BRANCH" ]; then
 fi
 [ -z "$MAIN_BRANCH" ] && MAIN_BRANCH="main"
 
-AHEAD=$(git rev-list --count "origin/${MAIN_BRANCH}".."${BRANCH}" 2>/dev/null || echo "0")
+AHEAD=$(git rev-list --count "origin/${MAIN_BRANCH}..${BRANCH}" 2>/dev/null || echo "0")
 if [ -z "$AHEAD" ] || [ "$AHEAD" -lt 1 ]; then
   exit 0
 fi
 
-# Claude auto-judges completion via Issue checklist — no human signal needed.
-# This hook only auto-stashes; PR creation is handled by Claude when the task is done.
+# Output suggestion to create PR
+cat <<EOF
+{"supplementary_output": "[academic-git] Branch '${BRANCH}' has ${AHEAD} commits ahead of ${MAIN_BRANCH} with no open PR. Consider running create_pr when ready."}
+EOF
 exit 0

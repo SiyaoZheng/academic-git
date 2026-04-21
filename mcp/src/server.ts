@@ -124,12 +124,14 @@ interface AcademicGitConfig {
   pipeline: { run: string };
   locked_branch: string;
   locked_issue: number | null;
+  checkpoint_count: number;
 }
 
 const DEFAULT_CONFIG: AcademicGitConfig = {
   pipeline: { run: "" },
   locked_branch: "",
   locked_issue: null,
+  checkpoint_count: 0,
 };
 
 function configPath(): string {
