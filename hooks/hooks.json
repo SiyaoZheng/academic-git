@@ -9,17 +9,49 @@
       }
     },
     {
-      "type": "Stop",
+      "type": "PreToolUse",
+      "matcher": "Bash",
       "hook": {
         "type": "command",
-        "command": "${PLUGIN_DIR}/hooks/auto-commit.sh"
+        "command": "${PLUGIN_DIR}/hooks/hook-runner.sh ${PLUGIN_DIR}/skills/branch-lock --block"
+      }
+    },
+    {
+      "type": "PreToolUse",
+      "matcher": "create_pr",
+      "hook": {
+        "type": "command",
+        "command": "${PLUGIN_DIR}/hooks/hook-runner.sh ${PLUGIN_DIR}/skills/review-pr --block"
+      }
+    },
+    {
+      "type": "PostToolUse",
+      "matcher": "commit",
+      "hook": {
+        "type": "command",
+        "command": "${PLUGIN_DIR}/hooks/hook-runner.sh ${PLUGIN_DIR}/skills/commit"
+      }
+    },
+    {
+      "type": "PostToolUse",
+      "matcher": "merge_pr",
+      "hook": {
+        "type": "command",
+        "command": "${PLUGIN_DIR}/hooks/hook-runner.sh ${PLUGIN_DIR}/skills/post-merge"
       }
     },
     {
       "type": "SessionStart",
       "hook": {
         "type": "command",
-        "command": "${PLUGIN_DIR}/hooks/auto-commit.sh"
+        "command": "${PLUGIN_DIR}/hooks/hook-runner.sh ${PLUGIN_DIR}/skills/begin"
+      }
+    },
+    {
+      "type": "Stop",
+      "hook": {
+        "type": "command",
+        "command": "${PLUGIN_DIR}/skills/begin/check.sh --stop"
       }
     }
   ]
