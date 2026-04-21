@@ -40,7 +40,7 @@ Hook wiring in `hooks/hooks.json`:
 | `PostToolUse` | `commit` | `commit` | No (output only) |
 | `PostToolUse` | `merge_pr` | `post-merge` | No (output only) |
 | `SessionStart` | — | `begin` | No |
-| `Stop` | — | `begin` (wip) | No |
+| `Stop` | — | `auto-commit` + `begin` | No |
 
 ## MCP Server Structure (`mcp/src/server.ts`)
 
@@ -49,7 +49,7 @@ Helpers: `run()`, `runSafe()` (local git), `runWithRetry()` (gh API with quadrat
 Tools organized by category:
 - Read: `status`, `diff`, `log`, `current_branch`
 - Issues: `list_issues`, `view_issue`, `create_issue`, `refine_issue`, `check_item`
-- Commits: `commit` (DAG-validated), `wip` (safety net)
+- Commits: `commit` (DAG-validated)
 - PRs: `generate_pr_body`, `create_pr`, `merge_pr`, `view_pr`
 - Branches: `create_branch`, `switch_branch`, `list_branches`
 - Tags: `create_tag`

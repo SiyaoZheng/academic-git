@@ -440,35 +440,6 @@ server.tool(
   }
 );
 
-server.tool(
-  "wip",
-  "Create a wip snapshot commit (safety net, not a formal commit). Auto adds, commits, and pushes.",
-  {},
-  async () => {
-    run("git add -A");
-
-    const staged = runSafe("git diff --cached --stat");
-    if (!staged) {
-      return text("Nothing to commit (clean)");
-    }
-
-    const files = run("git diff --cached --name-only").split("\n");
-    const msg =
-      files.length <= 2
-        ? `wip: ${files.join(", ")}`
-        : `wip: ${files[0]} + ${files.length} files`;
-
-    run(`git commit -m ${JSON.stringify(msg)} --no-verify`);
-
-    const branch = runSafe("git branch --show-current");
-    if (branch) {
-      runSafe(`git push -u origin "${branch}"`);
-    }
-
-    return text(`wip committed: ${msg}`);
-  }
-);
-
 // ════════════════════════════════════════
 //  PR TOOLS
 // ════════════════════════════════════════

@@ -1,7 +1,6 @@
 ---
 name: commit
-description: Formal commit tied to a specific Issue checklist item. Format type(#N/X) description. Validates DAG, checks off item, pushes. Add `pr` to create PR. Use this skill whenever you need to commit changes, check off a task item, or save progress on an issue. Do NOT use raw git commit — always route through the academic-git commit tool.
-argument-hint: "[optional: pr]"
+description: Formal commit tied to a specific Issue checklist item. Format type(#N/X) description. Validates DAG, checks off item, pushes. Use this skill whenever you need to commit changes, check off a task item, or save progress on an issue. Do NOT use raw git commit — always route through the academic-git commit tool.
 allowed-tools: ["academic-git"]
 ---
 
@@ -33,9 +32,9 @@ commit(issue: 7, item: "A", type: "feat", description: "add CI/CD gate enforceme
 → Produces: feat(#7/A): add CI/CD gate enforcement to commit hook
 ```
 
-## WIP Commits
+## Mid-Task Progress
 
-For safety-net snapshots that aren't tied to a checklist item, use the `wip` MCP tool instead. WIP commits skip gates and DAG validation.
+If you need to save progress mid-task without completing a checklist item, use `git stash` — it preserves working tree state without creating a commit that bypasses gates or pollutes the DAG.
 
 ## After Committing
 

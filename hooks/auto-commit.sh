@@ -1,6 +1,6 @@
 #!/bin/bash
-# Auto-commit: silent wip snapshots. Registered on both Stop and SessionStart.
-# Design: zero interruption. Adrian never notices.
+# Auto-stash: save dirty working tree on Stop/SessionStart without polluting DAG.
+# Uses git stash instead of wip commit + push — no gate bypass, no untraceable commits.
 # macOS compatible: does not depend on GNU timeout
 
 set -euo pipefail
@@ -11,10 +11,10 @@ if ! command -v git &>/dev/null; then exit 0; fi
 INPUT=$(cat 2>/dev/null || echo "")
 STOP_HOOK_ACTIVE=$(echo "$INPUT" | jq -r '.stop_hook_active // false' 2>/dev/null || echo "false")
 
-# Triggered by previous block → skip auto-commit (prevent loop), but still check PR
-SKIP_AUTOCOMMIT=false
+# Triggered by previous block → skip auto-stash (prevent loop), but still check PR
+SKIP_AUTOSTASH=false
 if [ "$STOP_HOOK_ACTIVE" = "true" ]; then
-  SKIP_AUTOCOMMIT=true
+  SKIP_AUTOSTASH=true
 fi
 
 # === Enter project directory ===
@@ -30,54 +30,13 @@ EOF
   exit 0
 fi
 
-# === Check 1: silent auto-commit (non-blocking) ===
-if [ "$SKIP_AUTOCOMMIT" = "false" ]; then
+# === Check 1: stash dirty working tree (non-blocking) ===
+if [ "$SKIP_AUTOSTASH" = "false" ]; then
   DIRTY=$(git status --porcelain 2>/dev/null)
   if [ -n "$DIRTY" ]; then
-    # Exclude files that shouldn't be committed
-    # Add all first, then reset exclusions
-    git add -A 2>/dev/null || true
-
-    # Exclude large and sensitive files
-    git reset HEAD -- \
-      '*.env' '*.env.*' \
-      '_targets/' '_targets/**' \
-      '*.Rdata' '*.RData' '*.rds' \
-      '*.feather' '*.parquet' '*.arrow' \
-      '*.pkl' '*.pickle' \
-      '__pycache__/' '.ipynb_checkpoints/' \
-      '.Rhistory' '*.Rproj.user/' \
-      '.DS_Store' \
-      'node_modules/' \
-      2>/dev/null || true
-
-    # Check if anything remains staged after exclusions
-    if ! git diff --cached --quiet 2>/dev/null; then
-      # Generate commit message from changed files
-      CHANGED_FILES=$(git diff --cached --name-only 2>/dev/null | head -5)
-      FILE_COUNT=$(git diff --cached --name-only 2>/dev/null | wc -l | tr -d ' ')
-      FIRST_FILE=$(echo "$CHANGED_FILES" | head -1)
-
-      if [ "$FILE_COUNT" -le 2 ]; then
-        MSG="wip: ${CHANGED_FILES//$'\n'/, }"
-      else
-        MSG="wip: ${FIRST_FILE} + ${FILE_COUNT} files"
-      fi
-
-      git commit -m "$MSG" --no-verify 2>/dev/null || true
-
-      # 静默 push（有 remote 才推，background + hard kill 防僵尸）
-      if git remote get-url origin &>/dev/null; then
-        BRANCH=$(git branch --show-current 2>/dev/null)
-        if [ -n "$BRANCH" ]; then
-          ( git push -u origin "$BRANCH" &>/dev/null &
-            PUSH_PID=$!
-            ( sleep 10 && kill "$PUSH_PID" 2>/dev/null ) &
-            wait "$PUSH_PID" 2>/dev/null ) &
-          disown
-        fi
-      fi
-    fi
+    # Stash with descriptive message — does not create a commit, does not push, does not bypass gates
+    STASH_MSG="auto-save: $(date +%Y-%m-%dT%H:%M)"
+    git stash push -m "$STASH_MSG" --include-untracked 2>/dev/null || true
   fi
 fi
 
@@ -109,7 +68,7 @@ _timeout() {
 
 # PR cache (repo+branch composite key)
 REPO_ID=$(git rev-parse --show-toplevel 2>/dev/null | md5 -q 2>/dev/null || echo "unknown")
-CACHE_FILE="/tmp/claude-hook-pr-${REPO_ID}-${BRANCH//\//-}"
+CACHE_FILE="/tmp/claude-hook-pr-${REPO_ID}-${BRANCH//\\//-}"
 CACHE_TTL=300
 NOW=$(date +%s)
 CACHE_MTIME=$(stat -f %m "$CACHE_FILE" 2>/dev/null || echo 0)
@@ -145,5 +104,5 @@ if [ -z "$AHEAD" ] || [ "$AHEAD" -lt 1 ]; then
 fi
 
 # Claude auto-judges completion via Issue checklist — no human signal needed.
-# This hook only auto-commits; PR creation is handled by Claude when the task is done.
+# This hook only auto-stashes; PR creation is handled by Claude when the task is done.
 exit 0
