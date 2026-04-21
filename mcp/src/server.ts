@@ -287,6 +287,90 @@ server.tool(
 // ════════════════════════════════════════
 
 server.tool(
+  "generate_pr_body",
+  "Generate a PR body draft by mapping git diff changes to Issue checklist items. Returns a filled template for review before create_pr.",
+  {
+    issue: z.number().describe("Issue number this PR will close"),
+  },
+  async ({ issue }) => {
+    // Get issue details
+    const issueJson = run(`gh issue view ${issue} --json number,title,body`);
+    const { number, title: issueTitle, body: issueBody } = JSON.parse(issueJson);
+
+    // Extract checklist items (all — checked and unchecked)
+    const allItems = issueBody
+      .split("\n")
+      .filter((l: string) => /^- \[[x ]\] [A-Z]\./.test(l))
+      .map((l: string) => {
+        const done = /^- \[x\]/.test(l);
+        const letter = l.match(/[A-Z]\./)?.[0]?.replace(".", "") ?? "?";
+        const desc = l.replace(/^- \[[x ]\] [A-Z]\. /, "").replace(/→ after:.*$/, "").trim();
+        return { letter, desc, done };
+      });
+
+    // Get diff stats: files changed per commit, grouped
+    const diffStat = runSafe("git diff main...HEAD --stat");
+    const changedFiles = runSafe("git diff main...HEAD --name-only")
+      .split("\n")
+      .filter(Boolean);
+
+    // Get commit log with messages (to infer which item each commit belongs to)
+    const commitLog = runSafe("git log main...HEAD --oneline");
+
+    // Map commits to items using commit message pattern type(#N/X):
+    const commitsByItem: Record<string, string[]> = {};
+    for (const line of commitLog.split("\n").filter(Boolean)) {
+      const m = line.match(/\(#\d+\/([A-Z])\)/);
+      if (m) {
+        const letter = m[1];
+        if (!commitsByItem[letter]) commitsByItem[letter] = [];
+        commitsByItem[letter].push(line);
+      }
+    }
+
+    // Build changes section for each item
+    const changeLines = allItems
+      .map(({ letter, desc, done }) => {
+        const commits = commitsByItem[letter] ?? [];
+        const commitStr = commits.length > 0 ? commits.map((c) => `  - ${c}`).join("\n") : "  - (no commits tagged to this item)";
+        return `- [${done ? "x" : " "}] **${letter}. ${desc}**\n${commitStr}`;
+      })
+      .join("\n\n");
+
+    // Files summary
+    const filesSummary =
+      changedFiles.length > 0
+        ? changedFiles.map((f: string) => `- \`${f}\``).join("\n")
+        : "- (no file changes detected)";
+
+    const prBodyDraft = `## Summary
+
+Closes #${number}
+
+## Changes by Checklist Item
+
+${changeLines}
+
+## Files Changed
+
+${filesSummary}
+
+## Diff Stat
+
+\`\`\`
+${diffStat || "(empty diff)"}
+\`\`\``;
+
+    return text(
+      `**Issue #${number}: ${issueTitle}**\n\n` +
+      `---\n\n` +
+      `Suggested PR body (review before calling create_pr):\n\n` +
+      prBodyDraft
+    );
+  }
+);
+
+server.tool(
   "create_pr",
   "Create a Pull Request. Validates all checklist items are [x] before allowing PR creation.",
   {
