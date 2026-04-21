@@ -1,3 +1,4 @@
+import { runAllGates, type GateContext } from "./gates.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
@@ -575,6 +576,50 @@ server.tool(
     run(`git tag -a "${name}" -m ${JSON.stringify(message)}`);
     runSafe(`git push origin "${name}"`);
     return text(`Tag ${name} created and pushed`);
+  }
+);
+
+// ════════════════════════════════════════
+//  GATE TOOLS
+// ════════════════════════════════════════
+
+server.tool(
+  "run_gates",
+  "Run all gate checks against the current branch state. Returns structured violation report. Hooks call this automatically; use manually to pre-check.",
+  { issue: z.number().describe("Issue number to check against") },
+  async ({ issue }) => {
+    const issueJson = runWithRetry(`gh issue view ${issue} --json body`);
+    const issueBody = JSON.parse(issueJson).body as string;
+
+    // Parse checklist
+    const checklist = issueBody
+      .split("\n")
+      .filter((l: string) => /^- \[[x ]\] [A-Z]\./.test(l))
+      .map((l: string) => {
+        const done = /^- \[x\]/.test(l);
+        const letter = l.match(/[A-Z]\./)?.[0]?.replace(".", "") ?? "?";
+        const desc = l.replace(/^- \[[x ]\] [A-Z]\. /, "").replace(/→ after:.*$/, "").trim();
+        return { letter, desc, done };
+      });
+
+    // Get diff
+    const branch = run("git branch --show-current");
+    const diffStat = runSafe("git diff main...HEAD --stat");
+    const changedFiles = runSafe("git diff main...HEAD --name-only").split("\n").filter(Boolean);
+    const patch = runSafe("git diff main...HEAD");
+    const commits = runSafe("git log main...HEAD --oneline").split("\n").filter(Boolean);
+
+    const ctx: GateContext = {
+      issueBody,
+      issueNumber: issue,
+      checklist,
+      diff: { files: changedFiles, stat: diffStat, patch },
+      commits,
+      branch,
+    };
+
+    const result = runAllGates(ctx);
+    return text(JSON.stringify(result, null, 2));
   }
 );
 
