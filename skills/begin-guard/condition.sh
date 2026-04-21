@@ -56,7 +56,7 @@ if [ -z "$FILE_PATH" ]; then
 fi
 
 # Allow config files without requiring /begin
-REL_PATH="${FILE_PATH#"$CLAUDE_PROJECT_DIR/"}"
+REL_PATH="${FILE_PATH#"${CLAUDE_PROJECT_DIR:-}/"}"
 REL_PATH="${REL_PATH#"$PWD/"}"
 
 case "$REL_PATH" in

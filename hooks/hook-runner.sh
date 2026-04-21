@@ -32,8 +32,8 @@ if [ -f "$SKILL_DIR/condition.sh" ]; then
 fi
 
 # --- Check: run the actual verification ---
-echo "$INPUT" | bash "$SKILL_DIR/check.sh"
-CHECK_EXIT=$?
+CHECK_EXIT=0
+echo "$INPUT" | bash "$SKILL_DIR/check.sh" || CHECK_EXIT=$?
 
 if [ $CHECK_EXIT -ne 0 ] && [ "$BLOCK_MODE" = "--block" ]; then
   exit 2  # PreToolUse: block the tool call

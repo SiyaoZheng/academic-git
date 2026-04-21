@@ -14,11 +14,11 @@ if [ -n "$LOCKED_BRANCH" ] && [ "$CURRENT_BRANCH" != "$LOCKED_BRANCH" ]; then
   cat <<EOF
 {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny", "permissionDecisionReason": "Wrong branch: you are on '${CURRENT_BRANCH}' but locked to '${LOCKED_BRANCH}'. Run switch_branch('${LOCKED_BRANCH}') or /begin to change task."}}
 EOF
-  exit 0
+  exit 1  # Signal failure so hook-runner can block with exit 2
 fi
 
 # No locked issue at all
 cat <<EOF
 {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny", "permissionDecisionReason": "No issue locked. Run /begin to pick or create an issue before writing code. This ensures every change is traceable to an issue."}}
 EOF
-exit 0
+exit 1  # Signal failure so hook-runner can block with exit 2
