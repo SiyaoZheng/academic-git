@@ -282,6 +282,151 @@ const convergenceCheck: GateRule = {
   },
 };
 
+const scopeCreep: GateRule = {
+  id: "scope-creep",
+  description: "Changes should not exceed the scope declared in the Issue",
+  severity: "HIGH",
+  modes: ["commit", "pr"],
+  severityOverride: { commit: "MEDIUM", pr: "HIGH" },
+  check(ctx) {
+    const scopeMatch = ctx.issueBody.match(/## Scope\n([\s\S]*?)(?=\n##|\n---|$)/);
+    if (!scopeMatch) return [];
+
+    const scopeText = scopeMatch[1].toLowerCase();
+
+    // If there's an "Out of scope" section, check diff files against it
+    const outOfScopeMatch = scopeText.match(/out of scope[:\s]*([\s\S]*?)(?=\n\n|\n##|$)/i);
+    if (!outOfScopeMatch) return [];
+
+    const violations: GateViolation[] = [];
+    const outOfScopeItems = outOfScopeMatch[1]
+      .split("\n")
+      .filter((l) => l.trim().startsWith("-"))
+      .map((l) => l.replace(/^-\s*/, "").trim())
+      .filter(Boolean);
+
+    for (const item of outOfScopeItems) {
+      // Check if any diff file matches an out-of-scope item
+      const matching = ctx.diff.files.filter(
+        (f) => f.toLowerCase().includes(item.toLowerCase()) || item.toLowerCase().includes(f.toLowerCase())
+      );
+      if (matching.length > 0) {
+        violations.push({
+          ruleId: "scope-creep",
+          severity: "HIGH",
+          message: `File '${matching[0]}' appears to be out of scope: "${item}"`,
+          file: matching[0],
+        });
+      }
+    }
+
+    return violations;
+  },
+};
+
+const specBoundary: GateRule = {
+  id: "spec-boundary",
+  description: "Art. II — Specification space must be explicitly bounded; no unbounded expansion",
+  severity: "MEDIUM",
+  modes: ["commit", "pr"],
+  severityOverride: { commit: "INFO", pr: "MEDIUM" },
+  check(ctx) {
+    const violations: GateViolation[] = [];
+
+    // Check if the issue has a declared spec boundary
+    const hasScope = /## Scope/.test(ctx.issueBody);
+    const hasSpecBoundary = /specification|spec boundary|spec space|adhoc|exploratory/i.test(ctx.issueBody);
+
+    if (!hasScope) {
+      // No scope section at all — flag as spec boundary violation
+      violations.push({
+        ruleId: "spec-boundary",
+        severity: "MEDIUM",
+        message: "Issue has no ## Scope section — specification space is unbounded (Art. II)",
+      });
+      return violations;
+    }
+
+    // Check if refinement comments expand scope without marking as exploratory
+    // This is a heuristic: if the diff has files not in Affected Files AND not in Scope,
+    // it suggests specification expansion
+    if (hasScope && !hasSpecBoundary) {
+      const affectedMatch = ctx.issueBody.match(/## Affected Files\n([\s\S]*?)(?=\n##|\n---|$)/);
+      const scopeMatch2 = ctx.issueBody.match(/## Scope\n([\s\S]*?)(?=\n##|\n---|$)/);
+
+      if (affectedMatch && scopeMatch2) {
+        const declared = affectedMatch[1]
+          .split("\n")
+          .filter((l) => l.trim().startsWith("-"))
+          .map((l) => l.replace(/^-\s*`?/, "").replace(/`?\s*$/, "").trim())
+          .filter(Boolean);
+
+        const undeclared = ctx.diff.files.filter(
+          (f) => !declared.some((d) => f === d || f.startsWith(d.replace(/\/$/, "")))
+        );
+
+        if (undeclared.length > 3) {
+          violations.push({
+            ruleId: "spec-boundary",
+            severity: "MEDIUM",
+            message: `${undeclared.length} files changed beyond declared Affected Files — possible unbounded spec expansion (Art. II)`,
+          });
+        }
+      }
+    }
+
+    return violations;
+  },
+};
+
+const temporalMarking: GateRule = {
+  id: "temporal-marking",
+  description: "Art. III — Ex post decisions must be explicitly marked in commit messages or issue comments",
+  severity: "MEDIUM",
+  modes: ["commit", "pr"],
+  severityOverride: { commit: "INFO", pr: "MEDIUM" },
+  check(ctx) {
+    const violations: GateViolation[] = [];
+
+    // Heuristic: commits that change analysis parameters (coefficients, thresholds,
+    // model specs) without mentioning "ex post" or "post-hoc" may violate Art. III.
+    const paramChangePatterns = [
+      /set\.seed\s*\(\s*\d+\)/,
+      /threshold\s*=\s*\d/,
+      /cutoff\s*=\s*\d/,
+      /alpha\s*=\s*0\.\d/,
+      /lambda\s*=\s*\d/,
+      /n_estimators\s*=\s*\d/,
+      /max_depth\s*=\s*\d/,
+    ];
+
+    const hasParamChange = ctx.diff.patch.split("\n").some((line) => {
+      if (!line.startsWith("+") || line.startsWith("++")) return false;
+      return paramChangePatterns.some((p) => p.test(line));
+    });
+
+    if (!hasParamChange) return violations;
+
+    // Check if any commit message mentions ex post / post-hoc / exploratory
+    const hasTemporalMark = ctx.commits.some((c) =>
+      /ex post|post-hoc|exploratory|retroactive/i.test(c)
+    );
+
+    // Check if issue comments mention refinement with ex post
+    const hasRefinementMark = /ex post|post-hoc|exploratory|retroactive/i.test(ctx.issueBody);
+
+    if (hasParamChange && !hasTemporalMark && !hasRefinementMark) {
+      violations.push({
+        ruleId: "temporal-marking",
+        severity: "MEDIUM",
+        message: "Parameter changes detected without ex post / post-hoc marking in commits or issue (Art. III)",
+      });
+    }
+
+    return violations;
+  },
+};
+
 // ── All Rules ──
 
 const ALL_RULES: GateRule[] = [
@@ -290,6 +435,9 @@ const ALL_RULES: GateRule[] = [
   silentFailure,
   hardcodedValues,
   reproducibility,
+  scopeCreep,
+  specBoundary,
+  temporalMarking,
   convergenceCheck,
 ];
 

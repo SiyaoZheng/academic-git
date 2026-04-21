@@ -1,55 +1,17 @@
 #!/bin/bash
 # check.sh for begin skill
-# SessionStart + Stop hook: output project state + wip snapshot on stop
+# Non-blocking: output project state summary for session context
 set -euo pipefail
 
-cd "${CLAUDE_PROJECT_DIR:-.}" 2>/dev/null || exit 0
+[ -z "${CLAUDE_PROJECT_DIR:-}" ] && exit 0
+cd "$CLAUDE_PROJECT_DIR" 2>/dev/null || exit 0
+git rev-parse --git-dir &>/dev/null || exit 0
 
-IS_STOP="${1:-}"
+BRANCH=$(git branch --show-current 2>/dev/null || echo "")
+DIRTY=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+AHEAD=$(git log --oneline 'origin/main..HEAD' 2>/dev/null | wc -l | tr -d ' ' || echo "0")
 
-# --- If Stop hook: wip auto-commit ---
-if [ "$IS_STOP" = "--stop" ]; then
-  DIRTY=$(git status --porcelain 2>/dev/null || echo "")
-  if [ -n "$DIRTY" ]; then
-    git add -A 2>/dev/null || true
-    STAGED=$(git diff --cached --stat 2>/dev/null || echo "")
-    if [ -n "$STAGED" ]; then
-      FILES=$(git diff --cached --name-only 2>/dev/null | head -3 | tr '\n' ', ' | sed 's/,$//')
-      MSG="wip: ${FILES}"
-      git commit -m "${MSG}" --no-verify 2>/dev/null || true
-      BRANCH=$(git branch --show-current 2>/dev/null || echo "")
-      if [ -n "$BRANCH" ]; then
-        git push -u origin "${BRANCH}" 2>/dev/null || true
-      fi
-      echo "{\"supplementary_output\": \"[academic-git] Wip snapshot committed.\"}"
-    fi
-  fi
-  exit 0
-fi
+echo "Branch: ${BRANCH:-unknown} | Dirty files: ${DIRTY:-0} | Commits ahead: ${AHEAD:-0}"
 
-# --- SessionStart: output project state ---
-ISSUES=$(gh issue list --state open --limit 10 2>/dev/null || echo "(gh not available)")
-BRANCH=$(git branch --show-current 2>/dev/null || echo "(unknown)")
-STATUS=$(git status --short 2>/dev/null || echo "(clean)")
-
-# Check for locked branch
-LOCKED=""
-if [ -f ".academic-git.json" ]; then
-  LOCKED=$(python3 -c "import json; d=json.load(open('.academic-git.json')); print(d.get('locked_branch',''))" 2>/dev/null || echo "")
-  PIPELINE_RUN=$(python3 -c "import json; d=json.load(open('.academic-git.json')); print(d.get('pipeline',{}).get('run',''))" 2>/dev/null || echo "")
-fi
-
-OUTPUT="[academic-git] Session start — project status:\\n\\n"
-OUTPUT="${OUTPUT}Branch: ${BRANCH}\\n"
-if [ -n "$LOCKED" ]; then
-  OUTPUT="${OUTPUT}Locked to: ${LOCKED}\\n"
-fi
-if [ -z "$PIPELINE_RUN" ]; then
-  OUTPUT="${OUTPUT}Pipeline not configured. Use: configure(pipeline_run=\"make test\")\\n"
-fi
-OUTPUT="${OUTPUT}Working tree: ${STATUS}\\n\\n"
-OUTPUT="${OUTPUT}Open Issues:\\n${ISSUES}\\n\\n"
-OUTPUT="${OUTPUT}Pick an issue to work on, or say 'new task' to create one."
-
-echo "{\"supplementary_output\": \"${OUTPUT}\"}"
+# Exit 0 always — this is informational, never blocking
 exit 0

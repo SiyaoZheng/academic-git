@@ -1,12 +1,13 @@
 #!/bin/bash
 # check.sh for review-pr skill
-# PreToolUse hook (BLOCKING): supplementary check before PR creation
-# Clean-room pipeline + gates are enforced by the create_pr MCP tool before gh pr create.
-# This hook is kept as a defense-in-depth layer for any cases where the MCP tool
-# is bypassed (e.g., direct gh pr create).
+# Non-blocking defense-in-depth: the create_pr MCP tool already validates
+# all checklist items are done and runs all 9 gates.
+# This hook runs before create_pr as a PreToolUse check, but since the MCP
+# tool enforces the same rules, we pass through here.
+# If someone bypasses MCP and uses `gh pr create` directly, the git-firewall
+# hook blocks that instead.
 set -euo pipefail
 
 cd "${CLAUDE_PROJECT_DIR:-.}" 2>/dev/null || exit 0
 
-# No additional checks — pipeline + gates are enforced by the MCP tool.
 exit 0

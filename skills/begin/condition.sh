@@ -1,7 +1,5 @@
 #!/bin/bash
 # condition.sh for begin skill
-# Run: on session start if there are open issues
+# Always active — run on every session start and stop
 set -euo pipefail
-
-cd "${CLAUDE_PROJECT_DIR:-.}" 2>/dev/null || exit 1
-gh issue list --state open --limit 1 2>/dev/null | grep -q .
+exit 0
