@@ -30,6 +30,7 @@
     ],
     "defaultPrompt": [
       "Use academic-git for issue-driven research work.",
+      "Use codex-gh-issue-start for new GitHub issues.",
       "Run academic-git lint before pushing.",
       "Prepare an academic-git PR."
     ],

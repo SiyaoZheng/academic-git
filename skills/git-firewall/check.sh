@@ -10,6 +10,10 @@ if [ -z "$command_str" ]; then
   exit 0
 fi
 
+if [[ "$command_str" == *"codex-gh-issue-start"* ]]; then
+  exit 0
+fi
+
 # Allowlisted read-only commands (used by hooks themselves)
 ALLOWED_PATTERNS=(
   'git branch --show-current'
@@ -51,7 +55,11 @@ BLOCKED_PATTERNS=(
 
 for pattern in "${BLOCKED_PATTERNS[@]}"; do
   if [[ "$command_str" == *"$pattern"* ]]; then
-    echo "BLOCKED: Direct '$pattern' detected. Use academic-git MCP tools instead." >&2
+    if [ "$pattern" = "gh issue create" ]; then
+      echo "BLOCKED: Direct '$pattern' detected. Use /codex-gh-issue-start instead." >&2
+    else
+      echo "BLOCKED: Direct '$pattern' detected. Use academic-git MCP tools instead." >&2
+    fi
     exit 1
   fi
 done
