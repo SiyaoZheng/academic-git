@@ -9,6 +9,12 @@
             "type": "command",
             "command": "bash \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/session-start.sh\"",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/hook-runner.sh\" \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/skills/os-noise-guard\"",
+            "timeout": 20,
+            "statusMessage": "Cleaning OS metadata noise"
           }
         ]
       }
@@ -81,6 +87,12 @@
             "command": "python3 \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/github-issue-stop-audit.py\"",
             "timeout": 30,
             "statusMessage": "Auditing academic-git issue start workflow"
+          },
+          {
+            "type": "command",
+            "command": "ACADEMIC_GIT_OS_NOISE_STRICT=true bash \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/hook-runner.sh\" \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/skills/os-noise-guard\" --block",
+            "timeout": 20,
+            "statusMessage": "Cleaning OS metadata noise"
           },
           {
             "type": "command",
