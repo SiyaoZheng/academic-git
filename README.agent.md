@@ -42,7 +42,7 @@ The repository is organized around a thin execution layer and a thicker workflow
 ## Recommended Workflow
 
 1. Triage the task with the `begin` skill.
-2. If this is new work, use the `codex-gh-issue-start` skill route so issue-start policy and DAG validation happen before any GitHub or git mutation.
+2. If this is new work, use the `codex-gh-issue-start` skill route so issue-start policy and DAG validation happen before the MCP `start_issue` mutation creates the GitHub Issue, branch, and worktree.
 3. If the task already exists, switch to the linked branch and continue there.
 4. Keep the work scoped to the issue or task boundary.
 5. Use the `commit` skill for formal commits tied to checklist items.
@@ -78,7 +78,7 @@ npm test
 - Never run `git checkout`.
 - Prefer the provided skills and MCP tools over raw `git` or `gh` commands.
 - Use the issue-start workflow for new issue-bound work.
-- Treat `codex-gh-issue-start` as a hook-skill-MCP entrypoint: hooks guard, the skill validates policy, and MCP-owned tools must own mutation. Do not call a shell bootstrap adapter.
+- Treat `codex-gh-issue-start` as a hook-skill-MCP entrypoint and Issue SSOT boundary: hooks guard, the skill validates policy, and the MCP `start_issue` tool owns issue/branch/worktree mutation. Do not call a shell bootstrap adapter or split a new implementation task across separate issue and branch tools.
 - Keep issue, branch, and worktree aligned when the task is issue-bound.
 - Preserve user changes unless the user explicitly asks for a revert.
 - Treat hooks as enforcement, not suggestions.

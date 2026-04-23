@@ -47,11 +47,11 @@ These introspection commands are allowlisted because hooks use them internally:
 | `git merge` | `merge-pr` skill, then `merge_pr(pr)` |
 | `gh pr merge` | `merge-pr` skill, then `merge_pr(pr)` |
 | `gh pr close` | `close_pr(pr, comment?, delete_branch?)` |
-| `gh issue create` | `create_issue(title, body, labels?, assignees?, milestone?)` |
+| `gh issue create` | `/codex-gh-issue-start` + `start_issue(...)` for implementation work; `create_issue(...)` only for standalone bookkeeping issues |
 | `gh issue edit` | `refine_issue(issue, action, ...)` |
 | `gh issue close` | `close_issue(issue, comment?, reason?, duplicate_of?)` |
-| `git switch -c` | `create_branch(branch)` |
+| `git switch -c` | `/codex-gh-issue-start` + `start_issue(...)` for implementation work; `create_branch(branch)` only for explicit non-issue repair work |
 | `git switch` | `switch_branch(branch)` |
-| `git checkout -b` | `create_branch(branch)` |
+| `git checkout -b` | `/codex-gh-issue-start` + `start_issue(...)` for implementation work; `create_branch(branch)` only for explicit non-issue repair work |
 | `git checkout` | `switch_branch(branch)` |
 | `git tag -a` | `create_tag(name, message)` |
