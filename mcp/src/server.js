@@ -10,6 +10,7 @@ const path_1 = require("path");
 const command_js_1 = require("./command.js");
 const gh_js_1 = require("./gh.js");
 const git_js_1 = require("./git.js");
+const issue_start_js_1 = require("./issue-start.js");
 const merge_cleanup_js_1 = require("./merge-cleanup.js");
 // ── Helpers ──
 function run(cmd, cwd) {
@@ -199,6 +200,7 @@ const MCP_TOOL_NAMES = new Set([
     "list_issues",
     "view_issue",
     "create_issue",
+    "start_issue",
     "refine_issue",
     "check_item",
     "close_issue",
@@ -369,7 +371,7 @@ server.tool("view_issue", "View a GitHub Issue (body + comments = current truth)
     const body = runWithRetry(`gh issue view ${issue} --json title,body,state,comments --jq '{title, body, state, comments: [.comments[] | {body, createdAt, author: .author.login}]}'`);
     return text(body);
 });
-server.tool("create_issue", "Create a standalone GitHub Issue. Use /codex-gh-issue-start when you need a new issue plus linked branch and worktree.", {
+server.tool("create_issue", "Create a standalone bookkeeping GitHub Issue only. For implementation work, use /codex-gh-issue-start and start_issue so the Issue, branch, and worktree are created together.", {
     title: zod_1.z.string().describe("Issue title"),
     body: zod_1.z.string().describe("Issue body"),
     labels: zod_1.z.array(zod_1.z.string()).optional().describe("Optional labels to apply"),
@@ -379,6 +381,70 @@ server.tool("create_issue", "Create a standalone GitHub Issue. Use /codex-gh-iss
     const args = (0, gh_js_1.ghIssueCreateArgs)(title, body, { labels, assignees, milestone });
     const out = runGhWithRetry(args);
     return text(out);
+});
+server.tool("start_issue", "SSOT issue-start primitive: validate the issue body, then create the GitHub Issue plus linked codex/issue-* branch and dedicated sibling worktree without switching the current worktree.", {
+    title: zod_1.z.string().describe("Issue title"),
+    body: zod_1.z.string().describe("Issue body in codex-gh-issue-start DAG format"),
+    labels: zod_1.z.array(zod_1.z.string()).optional().describe("Optional labels to apply"),
+    assignees: zod_1.z.array(zod_1.z.string()).optional().describe("Optional assignees to add"),
+    milestone: zod_1.z.string().optional().describe("Optional milestone"),
+    branch_slug: zod_1.z.string().optional().describe("Optional short slug source; defaults to the title"),
+    base_ref: zod_1.z.string().optional().describe("Optional branch start point; defaults to the repository default base ref"),
+    worktree_path: zod_1.z.string().optional().describe("Optional dedicated worktree path; defaults to a sibling academic-git.issue-N-slug path"),
+}, async ({ title, body, labels, assignees, milestone, branch_slug, base_ref, worktree_path }) => {
+    for (const value of [title, branch_slug ?? "", base_ref ?? "", worktree_path ?? ""]) {
+        if (value.includes("\n") || value.includes("\0")) {
+            return err("Invalid issue-start input: title, slug, base_ref, and worktree_path must not contain newlines or NUL bytes");
+        }
+    }
+    if (worktree_path && (0, fs_1.existsSync)(worktree_path)) {
+        return err(`Dedicated worktree path already exists before issue creation: ${worktree_path}`);
+    }
+    try {
+        (0, command_js_1.runFileWithInput)("python3", [(0, path_1.join)(repoDir(), "skills", "codex-gh-issue-start", "validate_body.py"), "-"], body, repoDir());
+    }
+    catch (e) {
+        const detail = e.stderr?.toString().trim() ?? e.message;
+        return err(`Issue body failed codex-gh-issue-start validation: ${detail}`);
+    }
+    const issueOutput = runGhWithRetry((0, gh_js_1.ghIssueCreateArgs)(title, body, { labels, assignees, milestone }));
+    const issue = (0, issue_start_js_1.parseIssueNumber)(issueOutput);
+    const slugSource = branch_slug ?? title;
+    const branch = (0, issue_start_js_1.issueBranchName)(issue, slugSource);
+    const worktreePath = worktree_path ?? (0, issue_start_js_1.defaultIssueWorktreePath)(repoDir(), issue, slugSource);
+    const startPoint = base_ref ?? defaultBaseRef();
+    if (gitRefExists(`refs/heads/${branch}`)) {
+        return err(`Issue #${issue} was created, but branch already exists: ${branch}`);
+    }
+    if ((0, fs_1.existsSync)(worktreePath)) {
+        return err(`Issue #${issue} was created, but dedicated worktree path already exists: ${worktreePath}`);
+    }
+    try {
+        (0, command_js_1.runFile)("git", (0, issue_start_js_1.gitCreateBranchNoSwitchArgs)(branch, startPoint), repoDir());
+    }
+    catch (e) {
+        const detail = e.stderr?.toString().trim() ?? e.message;
+        return err(`Issue #${issue} was created, but branch creation failed for ${branch}: ${detail}`);
+    }
+    try {
+        (0, command_js_1.runFile)("git", (0, issue_start_js_1.gitWorktreeAddArgs)(worktreePath, branch), repoDir());
+    }
+    catch (e) {
+        const detail = e.stderr?.toString().trim() ?? e.message;
+        return err(`Issue #${issue} and branch ${branch} were created, but worktree creation failed: ${detail}`);
+    }
+    const worktreeConfig = normalizeConfig({
+        locked_branch: branch,
+        locked_issue: issue,
+    });
+    (0, fs_1.writeFileSync)((0, path_1.join)(worktreePath, ".academic-git.json"), JSON.stringify(worktreeConfig, null, 2) + "\n");
+    return text([
+        `Issue #${issue}: ${title}`,
+        `Branch: ${branch}`,
+        `Worktree: ${worktreePath}`,
+        `Start point: ${startPoint}`,
+        issueOutput,
+    ].join("\n"));
 });
 server.tool("refine_issue", "Add a refinement comment to an Issue. Body is NEVER modified — all changes via append-only comments.", {
     issue: zod_1.z.number().describe("Issue number"),
@@ -688,7 +754,7 @@ server.tool("view_pr", "View a Pull Request", { pr: zod_1.z.number().describe("P
 // ════════════════════════════════════════
 //  BRANCH TOOLS
 // ════════════════════════════════════════
-server.tool("create_branch", "Create a new branch and switch to it. Defaults to the current HEAD unless a start point is provided.", {
+server.tool("create_branch", "Legacy/repair helper to create a non-issue branch and switch to it. For new implementation work, use start_issue so the Issue, branch, and worktree remain one SSOT unit.", {
     branch: zod_1.z.string().describe("New branch name"),
     start_point: zod_1.z.string().optional().describe("Optional start point; defaults to HEAD"),
 }, async ({ branch, start_point }) => {

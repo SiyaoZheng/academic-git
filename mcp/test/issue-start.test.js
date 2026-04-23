@@ -8,6 +8,14 @@ const test = require("node:test");
 const repoRoot = path.join(__dirname, "..", "..");
 const skillCheck = path.join(repoRoot, "skills", "codex-gh-issue-start", "check.sh");
 const issueShellGuard = path.join(repoRoot, "hooks", "codex", "github-issue-shell-guard.py");
+const {
+  defaultIssueWorktreePath,
+  gitCreateBranchNoSwitchArgs,
+  gitWorktreeAddArgs,
+  issueBranchName,
+  parseIssueNumber,
+  slugifyIssueTitle,
+} = require("../src/issue-start.js");
 
 function validIssueBody() {
   return [
@@ -109,4 +117,33 @@ test("issue-start hook does not allow raw gh issue create through an env bypass"
   const decision = JSON.parse(result.stdout);
   assert.equal(decision.hookSpecificOutput.permissionDecision, "deny");
   assert.match(decision.hookSpecificOutput.permissionDecisionReason, /Direct gh issue create is blocked/);
+});
+
+test("issue-start helpers derive auditable branch and worktree names", () => {
+  assert.equal(slugifyIssueTitle("Make turn metadata headers ASCII-safe for non-ASCII workspace paths"), "make-turn-metadata-headers-ascii-safe");
+  assert.equal(issueBranchName(41, "Make turn metadata headers ASCII-safe"), "codex/issue-41-make-turn-metadata-headers-ascii-safe");
+  assert.equal(
+    defaultIssueWorktreePath("/Users/siyaozheng/Documents/论文/academic-git", 41, "Make turn metadata headers ASCII-safe"),
+    "/Users/siyaozheng/Documents/论文/academic-git.issue-41-make-turn-metadata-headers-ascii-safe"
+  );
+});
+
+test("issue-start helpers preserve argv-safe git branch and worktree operations", () => {
+  assert.deepEqual(gitCreateBranchNoSwitchArgs("codex/issue-41-start-issue", "origin/master"), [
+    "branch",
+    "codex/issue-41-start-issue",
+    "origin/master",
+  ]);
+  assert.deepEqual(gitWorktreeAddArgs("/tmp/academic-git.issue-41-start-issue", "codex/issue-41-start-issue"), [
+    "worktree",
+    "add",
+    "/tmp/academic-git.issue-41-start-issue",
+    "codex/issue-41-start-issue",
+  ]);
+});
+
+test("issue-start helper parses issue number from gh output", () => {
+  assert.equal(parseIssueNumber("https://github.com/SiyaoZheng/academic-git/issues/41"), 41);
+  assert.equal(parseIssueNumber("Created issue #42"), 42);
+  assert.throws(() => parseIssueNumber("created but no issue number"), /Could not parse issue number/);
 });

@@ -147,7 +147,15 @@ test("routing helper prefers route over allow fragments", () => {
 test("routing helper routes branch creation", () => {
   const result = renderRouting("git switch -c feature");
   assert.equal(result.decision, "route");
-  assert.equal(result.tool, "create_branch");
+  assert.equal(result.tool, "start_issue");
+  assert.match(result.reason, /SSOT unit/);
+});
+
+test("routing helper routes raw issue creation through issue-start SSOT", () => {
+  const result = renderRouting("gh issue create --title Test");
+  assert.equal(result.decision, "route");
+  assert.equal(result.tool, "start_issue");
+  assert.match(result.reason, /standalone bookkeeping/);
 });
 
 test("routing helper routes merge commands through the merge-pr workflow", () => {
