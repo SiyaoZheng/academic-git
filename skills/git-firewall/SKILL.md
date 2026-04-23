@@ -1,6 +1,6 @@
 ---
 name: git-firewall
-description: Block direct git/gh CLI mutation calls — force routing through academic-git MCP tools. Use this skill whenever a Bash command contains git or gh mutations (commit, push, merge, rebase, checkout, switch, stash, cherry-pick, revert, tag, gh pr create, gh issue create, etc.). Read-only introspection commands (git branch --show-current, git rev-parse, git status) are allowed.
+description: Internal hook policy, not a primary user workflow. Blocks direct git/gh CLI mutations and keeps Codex routed through academic-git MCP tools.
 ---
 
 # Git Firewall

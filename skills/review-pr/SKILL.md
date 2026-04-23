@@ -1,6 +1,6 @@
 ---
 name: review-pr
-description: Review and create a Pull Request. Runs gate checks (CRITICAL + HIGH block PR creation), validates all checklist items are done, generates PR body from commit history. Use this skill whenever all checklist items on an issue are done and you're ready to create a PR, when Adrian says "create PR", "make a PR", "submit this", or when the last item is checked off.
+description: Prepare and explain a Pull Request. Generates/reviews PR body and preflights local gates, while GitHub Actions plus branch protection are the final server-side merge gate.
 allowed-tools: ["academic-git"]
 ---
 

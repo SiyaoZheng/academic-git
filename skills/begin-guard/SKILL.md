@@ -1,6 +1,6 @@
 ---
 name: begin-guard
-description: Block Write/Edit until /begin has locked an issue and branch. Enforces the "1 Issue = 1 Branch = 1 PR" rule by making it impossible to write code without an active issue.
+description: Internal hook policy, not a primary user workflow. Blocks writes until /begin has locked an issue and branch; use the begin skill as the normal entrypoint.
 allowed-tools: ["academic-git"]
 ---
 

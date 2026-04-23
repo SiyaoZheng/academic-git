@@ -1,6 +1,6 @@
 ---
 name: post-merge
-description: Cleanup after PR merge — verify clean state on main, close linked issues. Use this skill after a PR is merged, when Adrian says "merge done", "cleanup", or when the merge_pr tool has been called and you need to verify the repo is clean.
+description: Post-merge follow-up after GitHub Actions and branch protection have accepted a PR. Verifies clean state, summarizes open issues, and guides the next task.
 allowed-tools: ["academic-git"]
 ---
 

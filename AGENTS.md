@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
 
 ## Build & Type-Check
 
@@ -78,3 +78,12 @@ Tools organized by category:
 - **Formal commits**: the MCP `commit` tool still runs configured commit-time checks and gates before staging, committing, and pushing.
 
 Pipeline commands are project-specific, not hardcoded. First use: ask the user what the verification command is.
+
+
+<claude-mem-context>
+# Memory Context
+
+# [academic-git] recent context, 2026-04-23 11:02am GMT+8
+
+No previous sessions found.
+</claude-mem-context>

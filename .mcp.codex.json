@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "academic-git": {
+      "command": "/Users/siyaozheng/plugins/academic-git/scripts/start-mcp.sh",
+      "note": "System-level Codex launcher for the academic-git MCP server."
+    }
+  }
+}

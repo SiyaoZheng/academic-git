@@ -1,6 +1,6 @@
 ---
 name: branch-lock
-description: Enforce branch protection rules — block commits to main, master, or release/* branches. Use this skill whenever a commit is attempted on a protected branch, when someone tries to work directly on main, or when switching to a protected branch with uncommitted changes.
+description: Internal hook policy, not a primary user workflow. Provides local branch safety before GitHub branch protection becomes the server-side merge gate.
 ---
 
 # Branch Lock

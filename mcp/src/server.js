@@ -104,8 +104,10 @@ function repoDir() {
 }
 const DEFAULT_CONFIG = {
     pipeline: { run: "" },
+    lint: {},
     locked_branch: "",
     locked_issue: null,
+    checkpoint_count: 0,
 };
 function configPath() {
     return (0, path_1.join)(repoDir(), ".academic-git.json");
@@ -114,15 +116,42 @@ function readConfig() {
     const p = configPath();
     if (!(0, fs_1.existsSync)(p)) {
         (0, fs_1.writeFileSync)(p, JSON.stringify(DEFAULT_CONFIG, null, 2) + "\n");
-        return { ...DEFAULT_CONFIG, pipeline: { ...DEFAULT_CONFIG.pipeline } };
+        return normalizeConfig(DEFAULT_CONFIG);
     }
-    return JSON.parse((0, fs_1.readFileSync)(p, "utf-8"));
+    return normalizeConfig(JSON.parse((0, fs_1.readFileSync)(p, "utf-8")));
 }
 function writeConfig(config) {
     (0, fs_1.writeFileSync)(configPath(), JSON.stringify(config, null, 2) + "\n");
 }
 function ensureConfig() {
     return readConfig();
+}
+function normalizeConfig(raw) {
+    return {
+        ...DEFAULT_CONFIG,
+        ...raw,
+        pipeline: { ...DEFAULT_CONFIG.pipeline, ...(raw.pipeline ?? {}) },
+        lint: { ...DEFAULT_CONFIG.lint, ...(raw.lint ?? {}) },
+        renv: raw.renv ? { ...raw.renv } : undefined,
+        project: raw.project ? { ...raw.project } : undefined,
+    };
+}
+function runLintCommand(cmd, cwd) {
+    try {
+        const stdout = (0, child_process_1.execSync)(cmd, {
+            cwd,
+            encoding: "utf-8",
+            timeout: 120_000,
+            env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
+        });
+        return { ok: true, output: stdout.trim() };
+    }
+    catch (e) {
+        const stdout = e.stdout?.toString().trim() ?? "";
+        const stderr = e.stderr?.toString().trim() ?? "";
+        const message = e.message?.toString().trim() ?? "";
+        return { ok: false, output: [stdout, stderr, message].filter(Boolean).join("\n") };
+    }
 }
 // ── Gate Context Builder ──
 function buildGateContext(issue) {
@@ -514,16 +543,59 @@ server.tool("run_gates", "Run all gate checks against the current branch state. 
     return text(JSON.stringify(result, null, 2));
 });
 // ════════════════════════════════════════
+//  LINT TOOLS
+// ════════════════════════════════════════
+server.tool("lint", "Run configured local data-science lint checks. Academic Git intentionally supports only Python and R lint here.", {
+    target: zod_1.z.enum(["all", "python", "r"]).default("all").describe("Which configured lint command to run"),
+}, async ({ target }) => {
+    const config = ensureConfig();
+    const lintConfig = config.lint ?? {};
+    const requested = target === "all" ? ["python", "r"] : [target];
+    const results = [];
+    let failed = false;
+    for (const name of requested) {
+        const cmd = lintConfig[name]?.trim();
+        if (!cmd) {
+            results.push(`[academic-git] lint.${name}: not configured`);
+            continue;
+        }
+        const result = runLintCommand(cmd, repoDir());
+        const output = result.output ? `\n${result.output}` : "";
+        if (result.ok) {
+            results.push(`[academic-git] lint.${name}: passed\n$ ${cmd}${output}`);
+        }
+        else {
+            failed = true;
+            results.push(`[academic-git] lint.${name}: FAILED\n$ ${cmd}${output}`);
+        }
+    }
+    const body = results.join("\n\n");
+    return failed ? err(body) : text(body || "[academic-git] No lint commands configured.");
+});
+// ════════════════════════════════════════
 //  CONFIG TOOL
 // ════════════════════════════════════════
-server.tool("configure", "Set project configuration values (pipeline command, branch locking). Creates .academic-git.json if missing.", {
+server.tool("configure", "Set project configuration values (pipeline command, Python/R lint commands, branch locking). Creates .academic-git.json if missing.", {
     pipeline_run: zod_1.z.string().optional().describe("Command for pipeline on every commit (e.g., 'make test')"),
+    pipeline_clean_run: zod_1.z.string().optional().describe("Command for a clean remote/PR verification run"),
+    lint_python: zod_1.z.string().optional().describe("Local Python lint command, e.g. 'ruff check .'"),
+    lint_r: zod_1.z.string().optional().describe("Local R lint command, e.g. 'Rscript -e \"lintr::lint_dir()\"'"),
+    renv_working_directory: zod_1.z.string().optional().describe("Directory containing renv.lock, e.g. 'code'"),
     locked_branch: zod_1.z.string().optional().describe("Lock focus to this branch"),
     locked_issue: zod_1.z.number().optional().describe("Issue number for the locked branch"),
-}, async ({ pipeline_run, locked_branch, locked_issue }) => {
+}, async ({ pipeline_run, pipeline_clean_run, lint_python, lint_r, renv_working_directory, locked_branch, locked_issue }) => {
     const config = readConfig();
     if (pipeline_run !== undefined)
         config.pipeline.run = pipeline_run;
+    if (pipeline_clean_run !== undefined)
+        config.pipeline.clean_run = pipeline_clean_run;
+    if (lint_python !== undefined)
+        config.lint.python = lint_python;
+    if (lint_r !== undefined)
+        config.lint.r = lint_r;
+    if (renv_working_directory !== undefined) {
+        config.renv = { ...(config.renv ?? {}), working_directory: renv_working_directory };
+    }
     if (locked_branch !== undefined)
         config.locked_branch = locked_branch;
     if (locked_issue !== undefined)

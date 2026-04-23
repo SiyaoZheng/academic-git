@@ -1,0 +1,38 @@
+{
+  "name": "academic-git",
+  "version": "0.2.0-codex",
+  "description": "System-level Codex plugin for issue-driven academic Git workflows with local hooks, skills, MCP tools, lint, and HPC CI scaffolding guidance.",
+  "author": {
+    "name": "Adrian"
+  },
+  "license": "MIT",
+  "keywords": [
+    "academic",
+    "research",
+    "git",
+    "mcp",
+    "hooks",
+    "codex"
+  ],
+  "skills": "./skills/",
+  "hooks": "./hooks.json",
+  "mcpServers": "./.mcp.codex.json",
+  "interface": {
+    "displayName": "Academic Git",
+    "shortDescription": "Issue-driven academic Git workflow with local hooks, lint, and HPC CI",
+    "longDescription": "System-level Codex plugin for academic research repositories. Skills guide issue, commit, lint, PR, and merge workflows; local Codex hooks protect opted-in repositories and preserve work with Stop auto-commit; project scaffolds can install GitHub Actions and SJTU HPC self-hosted CI gates.",
+    "developerName": "Adrian",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Use academic-git for issue-driven research work.",
+      "Run academic-git lint before pushing.",
+      "Prepare an academic-git PR."
+    ],
+    "brandColor": "#1F4B99"
+  }
+}
