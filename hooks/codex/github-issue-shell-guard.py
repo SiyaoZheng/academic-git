@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Block shell commands that bypass the codex-gh-issue-start workflow."""
+"""Block shell commands that bypass or revive the codex-gh-issue-start workflow."""
 
 from __future__ import annotations
 
@@ -119,6 +119,13 @@ def has_worktree_add(command: str) -> bool:
     return False
 
 
+def has_removed_issue_start_adapter(command: str) -> bool:
+    return any(
+        command_basename(token) in {"codex-gh-issue-start", "codex-gh-issue-start.py"}
+        for token in shell_tokens(command)
+    )
+
+
 def main() -> int:
     try:
         payload = json.load(sys.stdin)
@@ -129,11 +136,12 @@ def main() -> int:
     if not isinstance(command, str) or not command.strip():
         return 0
 
-    if "CODEX_ALLOW_RAW_GH_ISSUE_CREATE=1" in command:
-        return 0
-
-    if "codex-gh-issue-start" in command:
-        return 0
+    if has_removed_issue_start_adapter(command):
+        return deny(
+            "The codex-gh-issue-start shell bootstrap adapter has been removed. "
+            "Use the skill/MCP issue-start route; do not invoke scripts/codex-gh-issue-start "
+            "or codex-gh-issue-start.py from Bash."
+        )
 
     if HELP_RE.search(command):
         return 0
@@ -142,7 +150,8 @@ def main() -> int:
         reason = routing_reason(command)
         if not reason:
             reason = (
-                "blocked raw gh issue create; route to create_issue or /codex-gh-issue-start based on whether a dedicated worktree is required"
+                "blocked raw gh issue create; route to create_issue for standalone issue bookkeeping "
+                "or the codex-gh-issue-start skill/MCP path for issue-bound code work"
             )
         return deny(
             reason
@@ -152,14 +161,14 @@ def main() -> int:
         if has_issue_develop_flag(command, "--checkout") or has_issue_develop_flag(command, "-c"):
             return deny(
                 "`gh issue develop --checkout` is not allowed in academic-git. "
-                "Use `/codex-gh-issue-start`, or pair `gh issue develop` with "
+                "Use the codex-gh-issue-start skill/MCP path, or pair `gh issue develop` with "
                 "`git worktree add` so no existing worktree is switched."
             )
         if not has_worktree_add(command):
             return deny(
                 "`gh issue develop` must be paired with `git worktree add` in "
-                "the same repair step. Prefer `/codex-gh-issue-start`, which "
-                "creates the issue-linked branch in a dedicated worktree."
+                "the same repair step. For new issue-bound work, use the "
+                "codex-gh-issue-start skill/MCP path instead of a shell adapter."
             )
 
     return 0

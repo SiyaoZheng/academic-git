@@ -2,10 +2,10 @@
   "version": 1,
   "entries": [
     {
-      "decision": "allow",
+      "decision": "deny",
       "match": "(^|[^[:alnum:]_])(?:/)?codex-gh-issue-start([[:space:]]|$)",
-      "reason": "Allow the system-level issue-start workflow.",
-      "policy": "issue-start-workflow"
+      "reason": "The codex-gh-issue-start shell bootstrap adapter has been removed. Use the skill/MCP issue-start route; do not invoke a shell adapter.",
+      "policy": "issue-start-no-shell-adapter"
     },
     {
       "decision": "allow",

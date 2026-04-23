@@ -171,10 +171,7 @@ def connector_issue_created(event: dict[str, Any]) -> bool:
 
 
 def hook_maintenance_command(command: str) -> bool:
-    return (
-        "hooks/codex/github-issue-" in command
-        or "scripts/codex-gh-issue-start" in command and "--dry-run" in command
-    )
+    return "hooks/codex/github-issue-" in command
 
 
 def current_branch(cwd: str | None) -> str:
@@ -232,12 +229,12 @@ def main() -> int:
 
     if connector_created and not (used_issue_start or (used_develop and used_worktree_add)):
         return block(
-            "blocked connector-created issue: route future issue-bound work through /codex-gh-issue-start; if the issue already exists, pair gh issue develop with git worktree add"
+            "blocked connector-created issue: route future issue-bound work through the codex-gh-issue-start skill/MCP path; if the issue already exists, pair gh issue develop with git worktree add"
         )
 
     if raw_issue_create and not (used_develop and used_worktree_add):
         return block(
-            "blocked raw gh issue create: route to create_issue for issue-only bookkeeping or /codex-gh-issue-start for issue-bound code work"
+            "blocked raw gh issue create: route to create_issue for issue-only bookkeeping or the codex-gh-issue-start skill/MCP path for issue-bound code work"
         )
 
     if used_develop_checkout:
