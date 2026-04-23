@@ -40,3 +40,34 @@ jobs:
           github_action_config.auto_review: "true"
           github_action_config.auto_describe: "true"
           github_action_config.auto_improve: "true"
+          github_action_config.pr_actions: '["opened", "reopened", "ready_for_review", "synchronize"]'
+
+      - name: Approve pull request
+        if: >-
+          ${{
+            github.event_name == 'pull_request' &&
+            github.event.pull_request.draft == false
+          }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          gh pr review "$PR_URL" \
+            --approve \
+            --body "PR Agent completed successfully; approving for automatic merge."
+
+      - name: Merge pull request
+        if: >-
+          ${{
+            github.event_name == 'pull_request' &&
+            github.event.pull_request.draft == false
+          }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          gh pr merge "$PR_URL" \
+            --squash \
+            --delete-branch \
+            --match-head-commit "$PR_HEAD_SHA"
