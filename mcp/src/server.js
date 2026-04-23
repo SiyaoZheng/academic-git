@@ -7,6 +7,8 @@ const zod_1 = require("zod");
 const child_process_1 = require("child_process");
 const fs_1 = require("fs");
 const path_1 = require("path");
+const command_js_1 = require("./command.js");
+const gh_js_1 = require("./gh.js");
 // ── Helpers ──
 function run(cmd, cwd) {
     return (0, child_process_1.execSync)(cmd, {
@@ -23,9 +25,6 @@ function runSafe(cmd, cwd) {
     catch (e) {
         return e.stderr?.trim() ?? e.message;
     }
-}
-function shellArgs(values) {
-    return values.map((value) => JSON.stringify(value)).join(" ");
 }
 function splitNonEmptyLines(value) {
     return value.split("\n").map((line) => line.trim()).filter(Boolean);
@@ -64,7 +63,7 @@ function defaultBaseRef() {
     return gitRefExists(`refs/remotes/origin/${branch}`) ? `origin/${branch}` : branch;
 }
 function defaultBranchRange() {
-    return `${shellArgs([defaultBaseRef()])}...HEAD`;
+    return `${(0, command_js_1.shellArgs)([defaultBaseRef()])}...HEAD`;
 }
 // ── Retry & Error Classification ──
 // Borrowed from octokit/plugin-retry.js + plugin-throttling.js
@@ -131,6 +130,34 @@ function runWithRetry(cmd, opts, cwd) {
     }
     // Unreachable, but TypeScript needs it
     throw new Error(cmd + " failed after retries");
+}
+function runGhWithRetry(args, opts, cwd) {
+    const maxRetries = opts?.maxRetries ?? 3;
+    const baseDelayMs = opts?.baseDelayMs ?? 1000;
+    const preview = (0, command_js_1.commandPreview)("gh", args);
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            return (0, command_js_1.runFile)("gh", args, cwd ?? repoDir());
+        }
+        catch (e) {
+            const stderr = e.stderr?.toString().trim() ?? e.message ?? "";
+            // Last attempt or non-retriable -> throw with parsed error
+            if (attempt === maxRetries) {
+                throw new Error(parseGhError(stderr) || preview + " failed");
+            }
+            const classification = classifyGhError(stderr);
+            if (classification === "fail") {
+                throw new Error(parseGhError(stderr) || preview + " failed");
+            }
+            // Only retry on "retry" or "unknown" with quadratic backoff
+            const delayMs = baseDelayMs * (attempt + 1) ** 2;
+            if (classification === "retry" || classification === "unknown") {
+                (0, child_process_1.execSync)(`sleep ${delayMs / 1000}`, { timeout: delayMs + 1000 });
+            }
+        }
+    }
+    // Unreachable, but TypeScript needs it
+    throw new Error(preview + " failed after retries");
 }
 function text(s) {
     return { content: [{ type: "text", text: s }] };
@@ -294,7 +321,7 @@ server.tool("create_issue", "Create a new GitHub Issue. Body MUST follow the DAG
     if (checklistLines.length === 0) {
         return err("Issue body must contain at least one checklist item (format: - [ ] A. description)");
     }
-    const out = runWithRetry(`gh issue create --title ${JSON.stringify(title)} --body ${JSON.stringify(body)}`);
+    const out = runGhWithRetry((0, gh_js_1.ghIssueCreateArgs)(title, body));
     return text(out);
 });
 server.tool("refine_issue", "Add a refinement comment to an Issue. Body is NEVER modified — all changes via append-only comments.", {
@@ -315,7 +342,7 @@ ${detail}
 
 **Reason:** ${reason}
 **Requested by:** ${requested_by}`;
-    const out = runWithRetry(`gh issue comment ${issue} --body ${JSON.stringify(comment)}`);
+    const out = runGhWithRetry((0, gh_js_1.ghIssueCommentArgs)(issue, comment));
     return text(out);
 });
 server.tool("check_item", "Check off a completed checklist item on an Issue. Only toggles the specific item — no other body changes allowed.", {
@@ -334,7 +361,7 @@ server.tool("check_item", "Check off a completed checklist item on an Issue. Onl
         return err(`Item ${letter} not found in Issue #${issue}`);
     }
     const updated = body.replace(pattern, `- [x] ${letter}.`);
-    runWithRetry(`gh issue edit ${issue} --body ${JSON.stringify(updated)}`);
+    runGhWithRetry((0, gh_js_1.ghIssueEditBodyArgs)(issue, updated));
     return text(`Checked off item ${letter} on Issue #${issue}`);
 });
 // ════════════════════════════════════════
@@ -393,13 +420,13 @@ server.tool("commit", "Create a formal commit tied to a specific Issue checklist
             preStaged.map((p) => `  ${p}`).join("\n"));
     }
     if (requestedPaths.length > 0) {
-        run(`git add -- ${shellArgs(requestedPaths)}`);
+        run(`git add -- ${(0, command_js_1.shellArgs)(requestedPaths)}`);
     }
     else {
         run("git add -A");
     }
     const unstageRequested = () => {
-        const pathspec = requestedPaths.length > 0 ? shellArgs(requestedPaths) : ".";
+        const pathspec = requestedPaths.length > 0 ? (0, command_js_1.shellArgs)(requestedPaths) : ".";
         runSafe(`git restore --staged -- ${pathspec}`);
     };
     const staged = runSafe("git diff --cached --stat");
@@ -552,7 +579,7 @@ server.tool("create_pr", "Create a Pull Request. Validates all checklist items a
     catch {
         // Gate check fails open (network/auth issues shouldn't block PRs)
     }
-    const out = runWithRetry(`gh pr create --title ${JSON.stringify(title)} --body ${JSON.stringify(prBody)}`);
+    const out = runGhWithRetry((0, gh_js_1.ghPrCreateArgs)(title, prBody));
     return text(`${out}${advisoryNote}`);
 });
 server.tool("merge_pr", "Squash-merge a PR and delete the branch. Returns to the default branch.", { pr: zod_1.z.number().describe("PR number") }, async ({ pr }) => {
