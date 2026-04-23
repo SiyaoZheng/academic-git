@@ -68,6 +68,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_REPO: ${{ github.repository }}
         run: |
           linked_issues=$(
             gh pr view "$PR_URL" \
@@ -84,6 +85,7 @@ jobs:
           while IFS= read -r issue_number; do
             [ -n "$issue_number" ] || continue
             gh issue close "$issue_number" \
+              --repo "$GH_REPO" \
               --comment "Closed automatically after merge of $PR_URL"
           done <<EOF
           $linked_issues
