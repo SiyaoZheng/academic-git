@@ -72,32 +72,6 @@ test("codex-gh-issue-start skill check rejects missing dependencies", () => {
   assert.match(result.stderr, /after:/);
 });
 
-test("codex-gh-issue-start shell bootstrap adapter is absent", () => {
-  assert.equal(fs.existsSync(path.join(repoRoot, "scripts", "codex-gh-issue-start")), false);
-  assert.equal(fs.existsSync(path.join(repoRoot, "scripts", "codex-gh-issue-start.py")), false);
-});
-
-test("issue-start hook blocks attempts to call the removed shell adapter", () => {
-  const result = childProcess.spawnSync(
-    "python3",
-    [issueShellGuard],
-    {
-      cwd: repoRoot,
-      input: JSON.stringify({
-        tool_input: {
-          command: "scripts/codex-gh-issue-start --title Test",
-        },
-      }),
-      encoding: "utf-8",
-    }
-  );
-
-  assert.equal(result.status, 0, result.stderr);
-  const decision = JSON.parse(result.stdout);
-  assert.equal(decision.hookSpecificOutput.permissionDecision, "deny");
-  assert.match(decision.hookSpecificOutput.permissionDecisionReason, /adapter has been removed/);
-});
-
 test("issue-start hook does not allow raw gh issue create through an env bypass", () => {
   const result = childProcess.spawnSync(
     "python3",

@@ -25,7 +25,7 @@ The repository is organized around a thin execution layer and a thicker workflow
 - `mcp/` contains the thin MCP server that exposes Git/GitHub primitives.
 - `hooks/` contains enforcement hooks that block unsafe or out-of-policy actions.
 - `skills/` contains workflow playbooks and operational guidance.
-- `scripts/` contains helper scripts only. Issue-start shell bootstrap adapters are not allowed to become separate policy authorities.
+- `scripts/` contains helper scripts only. Issue-start policy lives in skills and MCP-owned tools.
 - `.codex-plugin/` contains plugin metadata used by the local Codex setup.
 - `index.html` provides a visual overview page.
 - `README.md` is the human-facing overview.
@@ -78,7 +78,7 @@ npm test
 - Never run `git checkout`.
 - Prefer the provided skills and MCP tools over raw `git` or `gh` commands.
 - Use the issue-start workflow for new issue-bound work.
-- Treat `codex-gh-issue-start` as a hook-skill-MCP entrypoint and Issue SSOT boundary: hooks guard, the skill validates policy, and the MCP `start_issue` tool owns issue/branch/worktree mutation. Do not call a shell bootstrap adapter or split a new implementation task across separate issue and branch tools.
+- Treat `codex-gh-issue-start` as a hook-skill-MCP entrypoint and Issue SSOT boundary: hooks guard, the skill validates policy, and the MCP `start_issue` tool owns issue/branch/worktree mutation. Do not split a new implementation task across separate issue and branch tools.
 - Keep issue, branch, and worktree aligned when the task is issue-bound.
 - Preserve user changes unless the user explicitly asks for a revert.
 - Treat hooks as enforcement, not suggestions.

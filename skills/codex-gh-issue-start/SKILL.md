@@ -1,13 +1,13 @@
 ---
 name: codex-gh-issue-start
-description: Validate and route new issue-bound work through the skill-owned issue-start workflow. Use this skill whenever Adrian asks to create an issue, track a new implementation task, or start new issue-bound work. Do not use the GitHub connector, standalone MCP issue-only tools, bare gh issue create, or removed shell bootstrap adapters for issue-bound code work.
+description: Validate and route new issue-bound work through the skill-owned issue-start workflow. Use this skill whenever Adrian asks to create an issue, track a new implementation task, or start new issue-bound work. Do not use the GitHub connector, standalone MCP issue-only tools, or bare gh issue create for issue-bound code work.
 argument-hint: "[issue title or task description]"
 allowed-tools: ["Bash", "academic-git"]
 ---
 
 # Codex GitHub Issue Start
 
-Use this skill as the internal issue-start routine for academic-git. It owns the issue-start policy and body contract, then routes mutation through MCP-owned tools rather than a shell bootstrap adapter.
+Use this skill as the internal issue-start routine for academic-git. It owns the issue-start policy and body contract, then routes mutation through MCP-owned tools.
 
 ## Architecture Contract
 
@@ -16,9 +16,8 @@ Use this skill as the internal issue-start routine for academic-git. It owns the
 - Hooks are involuntary guards. They block bare `gh issue create`, `gh issue develop --checkout`, and any attempt to skip this skill's issue-body check.
 - This skill owns workflow judgment, the issue body template, and the DAG checklist validation. The executable check is `skills/codex-gh-issue-start/check.sh`.
 - MCP tools own ordinary auditable GitHub and Git mutations, such as issue-only bookkeeping, append-only issue refinement, commits, PRs, gates, and lint.
-- Shell bootstrap adapters are not part of this contract. Do not call or recreate `scripts/codex-gh-issue-start` or `scripts/codex-gh-issue-start.py`.
 
-Ex post decision, 2026-04-23: remove the issue-start shell bootstrap adapter. The skill remains the policy/check boundary; mutation must move through MCP-owned tools or an explicitly implemented MCP issue-start primitive.
+Mutation must move through MCP-owned tools or an explicitly implemented MCP issue-start primitive.
 
 ## When To Use
 
@@ -32,12 +31,11 @@ Ex post decision, 2026-04-23: remove the issue-start shell bootstrap adapter. Th
 - Do not call the GitHub connector issue tool.
 - Do not recreate or call standalone `create_issue` when the task also needs the linked branch/worktree; use this skill instead.
 - Do not run bare `gh issue create` or `gh issue new`.
-- Do not run or recreate `scripts/codex-gh-issue-start` or `scripts/codex-gh-issue-start.py`.
 - Do not run any form of `git checkout`.
 
 ## Issue Body Template
 
-Create a body with these sections before invoking the script:
+Create a body with these sections before running the skill check:
 
 ```markdown
 ## Context
