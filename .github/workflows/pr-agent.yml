@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: PR Agent action step
-        uses: SiyaoZheng/pr-agent@kimi-extra-body-reasoning
+        uses: SiyaoZheng/pr-agent@8f4d796ba4f0d251067eda12255e626e68867720
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
