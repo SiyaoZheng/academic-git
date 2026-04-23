@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: PR Agent action step
-        uses: the-pr-agent/pr-agent@main
+        uses: SiyaoZheng/pr-agent@8f4d796ba4f0d251067eda12255e626e68867720
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -35,6 +35,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.KIMI_API_KEY }}
           ANTHROPIC_BASE_URL: https://api.kimi.com/coding
           LITELLM.EXTRA_HEADERS: '{"Authorization": "Bearer ${{ secrets.KIMI_API_KEY }}"}'
+          LITELLM.EXTRA_BODY: '{"reasoning":{"enabled":true}}'
 
           github_action_config.auto_review: "true"
           github_action_config.auto_describe: "true"
