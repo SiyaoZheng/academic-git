@@ -6,6 +6,7 @@ const stdio_js_1 = require("@modelcontextprotocol/sdk/server/stdio.js");
 const zod_1 = require("zod");
 const child_process_1 = require("child_process");
 const fs_1 = require("fs");
+const os_1 = require("os");
 const path_1 = require("path");
 // ── Helpers ──
 function run(cmd, cwd) {
@@ -96,6 +97,27 @@ function text(s) {
 function err(s) {
     return { content: [{ type: "text", text: `ERROR: ${s}` }], isError: true };
 }
+function withTempBodyFile(body, fn) {
+    const dir = (0, fs_1.mkdtempSync)((0, path_1.join)((0, os_1.tmpdir)(), "academic-git-"));
+    const path = (0, path_1.join)(dir, "body.md");
+    try {
+        (0, fs_1.writeFileSync)(path, body, "utf-8");
+        return fn(path);
+    }
+    finally {
+        (0, fs_1.rmSync)(dir, { recursive: true, force: true });
+    }
+}
+function normalizeIssueBody(body) {
+    if (!body.includes("\n") && body.includes("\\n")) {
+        return body.replace(/\\n/g, "\n");
+    }
+    return body;
+}
+function readIssueBody(issue) {
+    const issueJson = runWithRetry(`gh issue view ${issue} --json body`);
+    return normalizeIssueBody(JSON.parse(issueJson).body);
+}
 function repoDir() {
     return projectDirFromEnv() ?? process.cwd();
 }
@@ -157,8 +179,7 @@ function runLintCommand(cmd, cwd) {
 }
 // ── Gate Context Builder ──
 function buildGateContext(issue) {
-    const issueJson = runWithRetry(`gh issue view ${issue} --json body`);
-    const issueBody = JSON.parse(issueJson).body;
+    const issueBody = readIssueBody(issue);
     const checklist = issueBody
         .split("\n")
         .filter((l) => /^- \[[x ]\] [A-Z]\./.test(l))
@@ -234,7 +255,7 @@ server.tool("create_issue", "Create a new GitHub Issue. Body MUST follow the DAG
     if (checklistLines.length === 0) {
         return err("Issue body must contain at least one checklist item (format: - [ ] A. description)");
     }
-    const out = runWithRetry(`gh issue create --title ${JSON.stringify(title)} --body ${JSON.stringify(body)}`);
+    const out = withTempBodyFile(body, (bodyFile) => runWithRetry(`gh issue create --title ${JSON.stringify(title)} --body-file ${JSON.stringify(bodyFile)}`));
     return text(out);
 });
 server.tool("refine_issue", "Add a refinement comment to an Issue. Body is NEVER modified — all changes via append-only comments.", {
@@ -255,14 +276,14 @@ ${detail}
 
 **Reason:** ${reason}
 **Requested by:** ${requested_by}`;
-    const out = runWithRetry(`gh issue comment ${issue} --body ${JSON.stringify(comment)}`);
+    const out = withTempBodyFile(comment, (bodyFile) => runWithRetry(`gh issue comment ${issue} --body-file ${JSON.stringify(bodyFile)}`));
     return text(out);
 });
 server.tool("check_item", "Check off a completed checklist item on an Issue. Only toggles the specific item — no other body changes allowed.", {
     issue: zod_1.z.number().describe("Issue number"),
     letter: zod_1.z.string().regex(/^[A-Z]$/).describe("Checklist item letter (A-Z)"),
 }, async ({ issue, letter }) => {
-    const body = runWithRetry(`gh issue view ${issue} --json body --jq '.body'`);
+    const body = readIssueBody(issue);
     // Only toggle the matching checkbox
     const pattern = new RegExp(`^- \\[ \\] ${letter}\\.`, "m");
     if (!pattern.test(body)) {
@@ -274,7 +295,7 @@ server.tool("check_item", "Check off a completed checklist item on an Issue. Onl
         return err(`Item ${letter} not found in Issue #${issue}`);
     }
     const updated = body.replace(pattern, `- [x] ${letter}.`);
-    runWithRetry(`gh issue edit ${issue} --body ${JSON.stringify(updated)}`);
+    withTempBodyFile(updated, (bodyFile) => runWithRetry(`gh issue edit ${issue} --body-file ${JSON.stringify(bodyFile)}`));
     return text(`Checked off item ${letter} on Issue #${issue}`);
 });
 // ════════════════════════════════════════
@@ -289,7 +310,7 @@ server.tool("commit", "Create a formal commit tied to a specific Issue checklist
     // Ensure config exists
     ensureConfig();
     // Verify issue exists and item is valid
-    const body = runWithRetry(`gh issue view ${issue} --json body --jq '.body'`);
+    const body = readIssueBody(issue);
     const itemPattern = new RegExp(`^- \\[ \\] ${item}\\.`, "m");
     if (!itemPattern.test(body)) {
         const donePattern = new RegExp(`^- \\[x\\] ${item}\\.`, "m");
@@ -365,7 +386,8 @@ server.tool("generate_pr_body", "Generate a PR body draft by mapping git diff ch
 }, async ({ issue }) => {
     // Get issue details
     const issueJson = runWithRetry(`gh issue view ${issue} --json number,title,body`);
-    const { number, title: issueTitle, body: issueBody } = JSON.parse(issueJson);
+    const { number, title: issueTitle, body } = JSON.parse(issueJson);
+    const issueBody = normalizeIssueBody(body);
     // Extract checklist items (all — checked and unchecked)
     const allItems = issueBody
         .split("\n")
@@ -436,7 +458,7 @@ server.tool("create_pr", "Create a Pull Request. Validates all checklist items a
     // Ensure config exists
     ensureConfig();
     // Validate all checklist items are done
-    const issueBody = runWithRetry(`gh issue view ${issue} --json body --jq '.body'`);
+    const issueBody = readIssueBody(issue);
     const unchecked = issueBody.split("\n").filter((l) => /^- \[ \] [A-Z]\./.test(l));
     // Filter out removed items (strikethrough)
     const realUnchecked = unchecked.filter((l) => !l.includes("~~"));
@@ -468,7 +490,7 @@ server.tool("create_pr", "Create a Pull Request. Validates all checklist items a
     catch {
         // Gate check fails open (network/auth issues shouldn't block PRs)
     }
-    const out = runWithRetry(`gh pr create --title ${JSON.stringify(title)} --body ${JSON.stringify(prBody)}`);
+    const out = withTempBodyFile(prBody, (bodyFile) => runWithRetry(`gh pr create --title ${JSON.stringify(title)} --body-file ${JSON.stringify(bodyFile)}`));
     return text(`${out}${advisoryNote}`);
 });
 server.tool("merge_pr", "Squash-merge a PR and delete the branch. Returns to main.", { pr: zod_1.z.number().describe("PR number") }, async ({ pr }) => {

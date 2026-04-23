@@ -3,7 +3,8 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { execSync } from "child_process";
-import { readFileSync, writeFileSync, existsSync } from "fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { tmpdir } from "os";
 import { join } from "path";
 
 // ── Helpers ──
@@ -112,6 +113,29 @@ function err(s: string) {
   return { content: [{ type: "text" as const, text: `ERROR: ${s}` }], isError: true };
 }
 
+function withTempBodyFile<T>(body: string, fn: (path: string) => T): T {
+  const dir = mkdtempSync(join(tmpdir(), "academic-git-"));
+  const path = join(dir, "body.md");
+  try {
+    writeFileSync(path, body, "utf-8");
+    return fn(path);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+function normalizeIssueBody(body: string): string {
+  if (!body.includes("\n") && body.includes("\\n")) {
+    return body.replace(/\\n/g, "\n");
+  }
+  return body;
+}
+
+function readIssueBody(issue: number): string {
+  const issueJson = runWithRetry(`gh issue view ${issue} --json body`);
+  return normalizeIssueBody(JSON.parse(issueJson).body as string);
+}
+
 function repoDir(): string {
   return projectDirFromEnv() ?? process.cwd();
 }
@@ -196,8 +220,7 @@ function runLintCommand(cmd: string, cwd: string): { ok: boolean; output: string
 // ── Gate Context Builder ──
 
 function buildGateContext(issue: number): GateContext {
-  const issueJson = runWithRetry(`gh issue view ${issue} --json body`);
-  const issueBody = JSON.parse(issueJson).body as string;
+  const issueBody = readIssueBody(issue);
 
   const checklist = issueBody
     .split("\n")
@@ -324,7 +347,9 @@ server.tool(
       return err("Issue body must contain at least one checklist item (format: - [ ] A. description)");
     }
 
-    const out = runWithRetry(`gh issue create --title ${JSON.stringify(title)} --body ${JSON.stringify(body)}`);
+    const out = withTempBodyFile(body, (bodyFile) =>
+      runWithRetry(`gh issue create --title ${JSON.stringify(title)} --body-file ${JSON.stringify(bodyFile)}`)
+    );
     return text(out);
   }
 );
@@ -352,7 +377,9 @@ ${detail}
 **Reason:** ${reason}
 **Requested by:** ${requested_by}`;
 
-    const out = runWithRetry(`gh issue comment ${issue} --body ${JSON.stringify(comment)}`);
+    const out = withTempBodyFile(comment, (bodyFile) =>
+      runWithRetry(`gh issue comment ${issue} --body-file ${JSON.stringify(bodyFile)}`)
+    );
     return text(out);
   }
 );
@@ -365,7 +392,7 @@ server.tool(
     letter: z.string().regex(/^[A-Z]$/).describe("Checklist item letter (A-Z)"),
   },
   async ({ issue, letter }) => {
-    const body = runWithRetry(`gh issue view ${issue} --json body --jq '.body'`);
+    const body = readIssueBody(issue);
 
     // Only toggle the matching checkbox
     const pattern = new RegExp(`^- \\[ \\] ${letter}\\.`, "m");
@@ -379,7 +406,9 @@ server.tool(
     }
 
     const updated = body.replace(pattern, `- [x] ${letter}.`);
-    runWithRetry(`gh issue edit ${issue} --body ${JSON.stringify(updated)}`);
+    withTempBodyFile(updated, (bodyFile) =>
+      runWithRetry(`gh issue edit ${issue} --body-file ${JSON.stringify(bodyFile)}`)
+    );
     return text(`Checked off item ${letter} on Issue #${issue}`);
   }
 );
@@ -402,7 +431,7 @@ server.tool(
     ensureConfig();
 
     // Verify issue exists and item is valid
-    const body = runWithRetry(`gh issue view ${issue} --json body --jq '.body'`);
+    const body = readIssueBody(issue);
     const itemPattern = new RegExp(`^- \\[ \\] ${item}\\.`, "m");
     if (!itemPattern.test(body)) {
       const donePattern = new RegExp(`^- \\[x\\] ${item}\\.`, "m");
@@ -493,7 +522,8 @@ server.tool(
   async ({ issue }) => {
     // Get issue details
     const issueJson = runWithRetry(`gh issue view ${issue} --json number,title,body`);
-    const { number, title: issueTitle, body: issueBody } = JSON.parse(issueJson);
+    const { number, title: issueTitle, body } = JSON.parse(issueJson);
+    const issueBody = normalizeIssueBody(body as string);
 
     // Extract checklist items (all — checked and unchecked)
     const allItems: { letter: string; desc: string; done: boolean }[] = issueBody
@@ -581,7 +611,7 @@ server.tool(
     ensureConfig();
 
     // Validate all checklist items are done
-    const issueBody = runWithRetry(`gh issue view ${issue} --json body --jq '.body'`);
+    const issueBody = readIssueBody(issue);
     const unchecked = issueBody.split("\n").filter((l) => /^- \[ \] [A-Z]\./.test(l));
 
     // Filter out removed items (strikethrough)
@@ -622,7 +652,9 @@ server.tool(
       // Gate check fails open (network/auth issues shouldn't block PRs)
     }
 
-    const out = runWithRetry(`gh pr create --title ${JSON.stringify(title)} --body ${JSON.stringify(prBody)}`);
+    const out = withTempBodyFile(prBody, (bodyFile) =>
+      runWithRetry(`gh pr create --title ${JSON.stringify(title)} --body-file ${JSON.stringify(bodyFile)}`)
+    );
     return text(`${out}${advisoryNote}`);
   }
 );
