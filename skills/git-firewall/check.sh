@@ -51,6 +51,10 @@ BLOCKED_PATTERNS=(
 
 for pattern in "${BLOCKED_PATTERNS[@]}"; do
   if [[ "$command_str" == *"$pattern"* ]]; then
+    if [ "$pattern" = "gh issue create" ]; then
+      echo "BLOCKED: Direct 'gh issue create' detected. Use codex-gh-issue-start so the Issue, linked branch, and dedicated worktree are created together." >&2
+      exit 1
+    fi
     echo "BLOCKED: Direct '$pattern' detected. Use academic-git MCP tools instead." >&2
     exit 1
   fi

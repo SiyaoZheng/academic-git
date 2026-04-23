@@ -37,13 +37,13 @@ These introspection commands are allowlisted because hooks use them internally:
 
 ## MCP Tool Routing
 
-| Blocked CLI | Use MCP Tool Instead |
+| Blocked CLI | Use Instead |
 |-------------|---------------------|
 | `git commit` | `commit(issue, item, type, description)` |
 | `git push` | Automatic after `commit` |
 | `gh pr create` | `create_pr(issue, title, body)` |
 | `gh pr merge` | `merge_pr(pr)` |
-| `gh issue create` | `create_issue(title, body)` |
+| `gh issue create` | `codex-gh-issue-start --title ... --body-file ...` |
 | `gh issue edit` | `refine_issue(issue, action, ...)` |
 | `git switch -c` | `create_branch(slug)` |
 | `git switch` | `switch_branch(branch)` |

@@ -15,9 +15,16 @@ fi
 
 # Check for git/gh commands
 # Match: starts with git/gh, or contains && git, || git, ; git, | git, $( git, ` git
+if echo "$CMD" | grep -qE '(^|\s|&&|\|\||;|\||\$\(|`)(\s*)gh\s+issue\s+create\b'; then
+  cat <<'EOF'
+{"decision": "block", "reason": "Direct gh issue create is blocked. Use codex-gh-issue-start so the Issue, linked branch, and dedicated worktree are created together."}
+EOF
+  exit 0
+fi
+
 if echo "$CMD" | grep -qE '(^|\s|&&|\|\||;|\||\$\(|`)(\s*)(git|gh)\s'; then
   cat <<'EOF'
-{"decision": "block", "reason": "Direct git/gh commands are blocked. Use academic-git MCP tools instead: commit, create_issue, check_item, switch_branch, create_branch, create_pr, merge_pr, refine_issue, status, diff, log, list_issues, view_issue, view_pr, list_branches, create_tag, wip, current_branch."}
+{"decision": "block", "reason": "Direct git/gh commands are blocked. Use academic-git MCP tools for existing workflow actions, and codex-gh-issue-start for new implementation Issues."}
 EOF
   exit 0
 fi

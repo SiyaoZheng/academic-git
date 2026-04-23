@@ -1,15 +1,15 @@
 ---
 name: begin
-description: Triage a task — continue, supplement, or create new Issue. Routes to the correct branch or invokes /create-issue. Use this skill whenever a session starts, when Adrian describes a new task, says "let's work on", mentions an issue number, or needs to figure out what to work on next. Also use when switching between tasks or resuming work on an existing issue.
+description: Triage a task — continue, supplement, or create a new Issue. Routes to the correct issue worktree or prepares a codex-gh-issue-start command. Use this skill whenever a session starts, when Adrian describes a new task, says "let's work on", mentions an issue number, or needs to figure out what to work on next. Also use when switching between tasks or resuming work on an existing issue.
 argument-hint: "[task description or #issue-number]"
-allowed-tools: ["academic-git"]
+allowed-tools: ["academic-git", "Bash"]
 ---
 
 # Begin — Task Triage
 
 When Adrian describes a task, determine whether it maps to an existing Issue or needs a new one.
 
-All git/GitHub operations MUST go through the `academic-git` MCP tools. Never use `git` or `gh` CLI directly — the git-firewall hook will block you.
+For new Codex implementation issues, use the local `codex-gh-issue-start` CLI so the Issue, linked branch, and dedicated worktree are created together. For existing academic-git operations, prefer MCP tools unless the current workflow explicitly calls for `gh issue develop` plus `git worktree add`.
 
 ## Shortcut
 
@@ -57,14 +57,19 @@ Invoke `/refine-issue #N` to add new items via append-only comment, then:
 
 ### C. New Issue
 
-Invoke `/create-issue` with Adrian's task description.
+Draft the Issue body with the `/create-issue` template, then create it with:
+
+```bash
+codex-gh-issue-start --title "<title>" --body-file - --repo OWNER/REPO --base <default-branch>
+```
+
+The command creates the GitHub Issue, assigns it to Adrian by default, creates the linked `codex/issue-<number>-<slug>` branch, and opens that branch in a dedicated worktree. Continue work from the printed `worktree:` path.
 
 ## Task Switching
 
 Adrian describes a new task while on `feat/X`:
 1. Auto-commit hook saves current state
-2. `switch_branch(branch: "main")`
-3. New `/begin` cycle starts
+2. New `/begin` cycle starts in the appropriate issue worktree
 
 ## When NOT to Use Issues
 

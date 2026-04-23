@@ -356,7 +356,7 @@ server.tool(
 
 server.tool(
   "create_issue",
-  "Create a new GitHub Issue. Body MUST follow the DAG checklist template (Context, Task with letter IDs + dependencies, Scope, Affected Files, Verification).",
+  "Validate a DAG checklist Issue body. Codex implementation Issues must be created with codex-gh-issue-start so the Issue, linked branch, and dedicated worktree are created together.",
   {
     title: z.string().describe("Issue title — concise, action-oriented"),
     body: z.string().describe("Issue body — must include ## Context, ## Task (DAG checklist), ## Scope, ## Affected Files, ## Verification"),
@@ -375,8 +375,10 @@ server.tool(
       return err("Issue body must contain at least one checklist item (format: - [ ] A. description)");
     }
 
-    const out = runWithRetry(`gh issue create --title ${JSON.stringify(title)} --body ${JSON.stringify(body)}`);
-    return text(out);
+    return err(
+      "Issue body template is valid, but MCP create_issue is disabled for Codex implementation work. " +
+      `Use: codex-gh-issue-start --title ${JSON.stringify(title)} --body-file - --repo OWNER/REPO --base <default-branch>`
+    );
   }
 );
 

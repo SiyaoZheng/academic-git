@@ -272,7 +272,7 @@ server.tool("view_issue", "View a GitHub Issue (body + comments = current truth)
     const body = runWithRetry(`gh issue view ${issue} --json title,body,state,comments --jq '{title, body, state, comments: [.comments[] | {body, createdAt, author: .author.login}]}'`);
     return text(body);
 });
-server.tool("create_issue", "Create a new GitHub Issue. Body MUST follow the DAG checklist template (Context, Task with letter IDs + dependencies, Scope, Affected Files, Verification).", {
+server.tool("create_issue", "Validate a DAG checklist Issue body. Codex implementation Issues must be created with codex-gh-issue-start so the Issue, linked branch, and dedicated worktree are created together.", {
     title: zod_1.z.string().describe("Issue title — concise, action-oriented"),
     body: zod_1.z.string().describe("Issue body — must include ## Context, ## Task (DAG checklist), ## Scope, ## Affected Files, ## Verification"),
 }, async ({ title, body }) => {
@@ -287,8 +287,8 @@ server.tool("create_issue", "Create a new GitHub Issue. Body MUST follow the DAG
     if (checklistLines.length === 0) {
         return err("Issue body must contain at least one checklist item (format: - [ ] A. description)");
     }
-    const out = runWithRetry(`gh issue create --title ${JSON.stringify(title)} --body ${JSON.stringify(body)}`);
-    return text(out);
+    return err("Issue body template is valid, but MCP create_issue is disabled for Codex implementation work. " +
+        `Use: codex-gh-issue-start --title ${JSON.stringify(title)} --body-file - --repo OWNER/REPO --base <default-branch>`);
 });
 server.tool("refine_issue", "Add a refinement comment to an Issue. Body is NEVER modified — all changes via append-only comments.", {
     issue: zod_1.z.number().describe("Issue number"),

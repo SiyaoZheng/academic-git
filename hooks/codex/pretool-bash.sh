@@ -68,6 +68,9 @@ BLOCKED_PATTERNS=(
 
 for pattern in "${BLOCKED_PATTERNS[@]}"; do
   if [[ "$COMMAND_STR" == *"$pattern"* ]]; then
+    if [ "$pattern" = "gh issue create" ]; then
+      deny "Direct 'gh issue create' detected in an academic-git repository. Use codex-gh-issue-start so the Issue, linked branch, and dedicated worktree are created together."
+    fi
     deny "Direct '${pattern}' detected in an academic-git repository. Use academic-git MCP tools instead."
   fi
 done

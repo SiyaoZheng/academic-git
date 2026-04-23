@@ -48,7 +48,7 @@ Helpers: `run()`, `runSafe()` (local git), `runWithRetry()` (gh API with quadrat
 
 Tools organized by category:
 - Read: `status`, `diff`, `log`, `current_branch`
-- Issues: `list_issues`, `view_issue`, `create_issue`, `refine_issue`, `check_item`
+- Issues: `list_issues`, `view_issue`, `create_issue` (template validation only for Codex; create implementation Issues with `codex-gh-issue-start`), `refine_issue`, `check_item`
 - Commits: `commit` (DAG-validated)
 - PRs: `generate_pr_body`, `create_pr`, `merge_pr`, `view_pr`
 - Branches: `create_branch`, `switch_branch`, `list_branches`
@@ -64,11 +64,11 @@ Tools organized by category:
 
 ## Key Conventions
 
-- **1 Issue = 1 Branch = 1 PR** — issue body is immutable; changes via append-only comments
+- **1 Issue = 1 Branch = 1 Worktree = 1 PR** — issue body is immutable; changes via append-only comments
 - **Commit format**: `type(#N/X): description` (N=issue, X=checklist letter)
-- **Branch naming**: `feat/<slug>` (lowercase, hyphens, max 40 chars)
+- **Branch naming**: `codex/issue-<number>-<slug>` for Codex implementation work
 - **Tag format**: `(email|meeting|chat|conference)-YYYY-MM-DD`
-- **No direct git/gh CLI** — git-firewall hook blocks all direct calls; use MCP tools
+- **No bare issue creation** — new Codex implementation Issues use `codex-gh-issue-start`, not GitHub connector/MCP `create_issue` or bare `gh issue create`
 - **Optional workspace config/state**: `.academic-git.json` can store `pipeline.run`, `pipeline.clean_run`, `lint.python`, `lint.r`, `renv.working_directory`, `locked_branch`, `locked_issue` when needed (created on first use, should be gitignored)
 
 ## Remote CI and Local Lint
