@@ -11,15 +11,38 @@ fi
 cd "$REPO_DIR" 2>/dev/null || exit 0
 git rev-parse --git-dir >/dev/null 2>&1 || exit 0
 
+detect_main_branch() {
+  local branch=""
+  branch="$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|refs/remotes/origin/||' || echo "")"
+  if [ -n "$branch" ]; then
+    printf '%s\n' "$branch"
+    return 0
+  fi
+
+  branch="$(git remote show origin 2>/dev/null | awk '/HEAD branch/{print $NF}' || echo "")"
+  if [ -n "$branch" ]; then
+    printf '%s\n' "$branch"
+    return 0
+  fi
+
+  if git show-ref --verify --quiet refs/remotes/origin/master; then
+    printf '%s\n' "master"
+    return 0
+  fi
+
+  if git show-ref --verify --quiet refs/remotes/origin/main; then
+    printf '%s\n' "main"
+    return 0
+  fi
+
+  printf '%s\n' "main"
+}
+
 BRANCH="$(git branch --show-current 2>/dev/null || echo "")"
-DIRTY="$(git status --porcelain 2>/dev/null | sed '/^$/d' | wc -l | tr -d ' ')"
-MAIN_BRANCH="$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|refs/remotes/origin/||' || echo "")"
+DIRTY="$(git status --porcelain --ignore-submodules=dirty 2>/dev/null | sed '/^$/d' | wc -l | tr -d ' ')"
+MAIN_BRANCH="$(detect_main_branch)"
 HEAD_SHA="$(git rev-parse HEAD 2>/dev/null || echo "")"
 STATE_FILE="$(git rev-parse --git-path academic-git-posttool-last-head 2>/dev/null || echo "")"
-
-if [ -z "$MAIN_BRANCH" ]; then
-  MAIN_BRANCH="main"
-fi
 
 AHEAD="$(git rev-list --count "origin/${MAIN_BRANCH}..HEAD" 2>/dev/null || echo "0")"
 LOCKED_ISSUE=""
