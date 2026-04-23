@@ -1,11 +1,12 @@
 #!/bin/bash
 # check.sh for begin skill
 # Non-blocking: output project state summary + enforcement warnings
-# Uses plain stdout for SessionStart/Stop hooks (per Claude Code docs)
+# Uses plain stdout for SessionStart/Stop hook messages
 set -euo pipefail
 
-[ -z "${CLAUDE_PROJECT_DIR:-}" ] && exit 0
-cd "$CLAUDE_PROJECT_DIR" 2>/dev/null || exit 0
+PROJECT_DIR="${ACADEMIC_GIT_PROJECT_DIR:-${CODEX_WORKSPACE_ROOT:-${CODEX_PROJECT_DIR:-}}}"
+[ -z "$PROJECT_DIR" ] && exit 0
+cd "$PROJECT_DIR" 2>/dev/null || exit 0
 git rev-parse --git-dir &>/dev/null || exit 0
 
 BRANCH=$(git branch --show-current 2>/dev/null || echo "")

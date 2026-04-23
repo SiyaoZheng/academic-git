@@ -3,7 +3,8 @@
 # Run: when Write/Edit/Bash modifies project files AND no locked_issue exists
 set -euo pipefail
 
-cd "${CLAUDE_PROJECT_DIR:-.}" 2>/dev/null || exit 1
+PROJECT_DIR="${ACADEMIC_GIT_PROJECT_DIR:-${CODEX_WORKSPACE_ROOT:-${CODEX_PROJECT_DIR:-.}}}"
+cd "$PROJECT_DIR" 2>/dev/null || exit 1
 
 # Not in a git repo → skip (degraded mode, no enforcement)
 git rev-parse --git-dir &>/dev/null || exit 1
@@ -56,11 +57,11 @@ if [ -z "$FILE_PATH" ]; then
 fi
 
 # Allow config files without requiring /begin
-REL_PATH="${FILE_PATH#"${CLAUDE_PROJECT_DIR:-}/"}"
+REL_PATH="${FILE_PATH#"$PROJECT_DIR/"}"
 REL_PATH="${REL_PATH#"$PWD/"}"
 
 case "$REL_PATH" in
-  .claude/*|.academic-git.json|CLAUDE.md|.gitignore|README.md|.DS_Store)
+  .codex/*|.academic-git.json|AGENTS.md|.gitignore|README.md|.DS_Store)
     exit 1  # Config file → skip guard
     ;;
 esac

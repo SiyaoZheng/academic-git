@@ -10,7 +10,7 @@ import { join } from "path";
 
 function run(cmd: string, cwd?: string): string {
   return execSync(cmd, {
-    cwd: cwd ?? process.env.CLAUDE_PROJECT_DIR ?? process.cwd(),
+    cwd: cwd ?? projectDirFromEnv() ?? process.cwd(),
     encoding: "utf-8",
     timeout: 30_000,
     env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
@@ -113,9 +113,15 @@ function err(s: string) {
 }
 
 function repoDir(): string {
-  const d = process.env.CLAUDE_PROJECT_DIR;
-  if (!d) throw new Error("CLAUDE_PROJECT_DIR not set");
-  return d;
+  return projectDirFromEnv() ?? process.cwd();
+}
+
+function projectDirFromEnv(): string | undefined {
+  return (
+    process.env.ACADEMIC_GIT_PROJECT_DIR ??
+    process.env.CODEX_WORKSPACE_ROOT ??
+    process.env.CODEX_PROJECT_DIR
+  );
 }
 
 // ── Config ──

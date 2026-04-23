@@ -386,7 +386,7 @@
 <div class="hero">
   <div class="container">
     <h1>Academic <span>Git</span></h1>
-    <p>A zero-touch, ADHD-friendly Git workflow for solo academic research. Issue-driven. Fully automated. Claude Code powered.</p>
+    <p>A zero-touch, ADHD-friendly Git workflow for solo academic research. Issue-driven. Fully automated. Codex powered.</p>
     <div class="stats">
       <div class="stat">
         <div class="stat-num">1</div>
@@ -410,7 +410,7 @@
       <div class="principle">
         <div class="principle-label">Architecture</div>
         <div class="principle-value">Thick Skill, Thin Harness</div>
-        <div class="principle-desc">CLAUDE.md stays minimal. All logic lives in skills + 1 hook.</div>
+        <div class="principle-desc">Plugin metadata stays minimal. All logic lives in skills + hooks.</div>
       </div>
       <div class="principle">
         <div class="principle-label">Source of Truth</div>
@@ -430,17 +430,17 @@
 <section>
   <div class="container">
     <h2 class="section-title">Architecture</h2>
-    <p class="section-subtitle">1 hook + 4 skills. No intermediate layers. GitHub is the database.</p>
+    <p class="section-subtitle">Codex hooks + skills. No intermediate layers. GitHub is the database.</p>
 
     <div class="arch-diagram">
       <div class="layer">
-        <span class="layer-label">Hook (Stop + SessionStart)</span>
-        <span class="node node-hook">auto-commit.sh</span>
+        <span class="layer-label">Hooks (Stop + SessionStart)</span>
+        <span class="node node-hook">hooks/codex/*.sh</span>
         <span class="arrow">&rarr;</span>
         <span style="color: var(--text-secondary)">wip snapshots + crash recovery + fire-and-forget push</span>
       </div>
       <div class="layer">
-        <span class="layer-label">Skills (Claude invokes directly)</span>
+        <span class="layer-label">Skills (Codex invokes directly)</span>
         <span class="node node-skill">/begin</span>
         <span class="arrow">&rarr;</span>
         <span class="node node-skill">/create-issue</span>
@@ -476,12 +476,12 @@
         <div class="phase-number">1</div>
         <div class="phase-meta">
           <div class="phase-name">Crash Recovery</div>
-          <div class="phase-trigger">auto-commit.sh &mdash; SessionStart event</div>
+          <div class="phase-trigger">hooks/codex/session-start.sh &mdash; SessionStart event</div>
         </div>
       </div>
       <div class="phase-desc">
-        Laptop closed? Claude Code crashed? The same <code>auto-commit.sh</code> that runs on Stop also runs on SessionStart.
-        It commits any leftover dirty files as <code>wip:</code> snapshots and pushes in the background. Adrian never notices.
+        Session interrupted? The Codex SessionStart hook summarizes branch state and restores audit context.
+        Adrian can resume from the current issue and branch without hunting through local state.
       </div>
     </div>
 
@@ -497,7 +497,7 @@
         </div>
       </div>
       <div class="phase-desc">
-        Adrian describes what he wants. Claude lists open Issues and asks Adrian to choose via <code>AskUserQuestion</code>:
+        Adrian describes what he wants. Codex lists open Issues and asks Adrian to choose a scoped path:
       </div>
 
       <table class="tier-table">
@@ -505,7 +505,7 @@
         <tbody>
           <tr>
             <td><strong>A</strong> &mdash; Continue existing Issue</td>
-            <td><code>git switch feat/&lt;slug&gt;</code>, read Issue, resume next unblocked item</td>
+            <td>Open the linked issue branch, read Issue, resume next unblocked item</td>
             <td>Work Loop</td>
           </tr>
           <tr>
@@ -593,12 +593,12 @@
         <div class="phase-number">4</div>
         <div class="phase-meta">
           <div class="phase-name">Work Loop</div>
-          <div class="phase-trigger">auto-commit.sh &mdash; Stop event (after every Claude response)</div>
+          <div class="phase-trigger">hooks/codex/stop.sh &mdash; Stop event (after every Codex response)</div>
         </div>
       </div>
       <div class="phase-desc">
-        While Claude works on checklist items, the single hook silently snapshots every change as <code>wip:</code> commits.
-        These are safety nets, not real commits. Background push with 10s kill timer prevents zombie processes.
+        While Codex works on checklist items, the Stop hook preserves dirty feature-branch work as traceable <code>wip(#0)</code> safety commits.
+        These are safety nets, not formal checklist commits.
       </div>
 
       <table class="tier-table">
@@ -606,7 +606,7 @@
         <tbody>
           <tr>
             <td><span class="tag tag-auto">Auto</span> wip snapshot</td>
-            <td>After every Claude response</td>
+            <td>After every Codex response</td>
             <td><code>wip: file1, file2</code></td>
             <td>No &mdash; safety net only</td>
           </tr>
@@ -621,7 +621,7 @@
 
       <div class="source-block">
         <div class="source-header" onclick="toggle(this)">
-          <div><span class="source-name">hooks/auto-commit.sh</span> <span class="source-desc">The ONLY hook &mdash; Stop + SessionStart</span></div>
+          <div><span class="source-name">hooks/codex/stop.sh</span> <span class="source-desc">Codex Stop hook &mdash; autosave + PR nudge</span></div>
           <span class="source-toggle">&#9654;</span>
         </div>
         <div class="source-body"><pre id="autocommit-source"></pre></div>
@@ -698,7 +698,7 @@
       <div class="phase-desc">
         Scope changed? Need new items? Item no longer needed?
         <strong>Issue body is never modified.</strong> All changes are logged as timestamped, append-only comments.
-        Claude reconstructs current truth by reading body + all comments sequentially.
+        Codex reconstructs current truth by reading body + all comments sequentially.
       </div>
 
       <table class="tier-table">
@@ -738,7 +738,7 @@
         </div>
       </div>
       <div class="phase-desc">
-        Claude detects all items checked off &rarr; <span class="tag tag-review">Codex</span> reviews full diff &rarr; <code>gh pr create</code> with <code>Closes #N</code> &rarr; <code>gh pr merge --squash --delete-branch</code> &rarr; <code>git switch main &amp;&amp; git pull</code>.<br>
+        Codex detects all items checked off &rarr; <span class="tag tag-review">Codex</span> reviews full diff &rarr; create PR with <code>Closes #N</code> &rarr; squash merge &rarr; return to the default branch.<br>
         No "done" signal from Adrian needed. Milestone deliveries get tags: <code>email-YYYY-MM-DD</code>, <code>meeting-YYYY-MM-DD</code>, <code>conference-YYYY-MM-DD</code>.
       </div>
     </div>
@@ -767,15 +767,15 @@
       </div>
       <div class="guard-card">
         <div class="guard-scenario">Forgot to Save</div>
-        <div class="guard-action"><code>auto-commit.sh</code> silently snapshots after every Claude response</div>
+        <div class="guard-action"><code>hooks/codex/stop.sh</code> snapshots after every Codex response</div>
       </div>
       <div class="guard-card">
         <div class="guard-scenario">Crashed / Closed Laptop</div>
-        <div class="guard-action"><code>auto-commit.sh</code> commits leftovers on next SessionStart</div>
+        <div class="guard-action"><code>hooks/codex/session-start.sh</code> restores branch and issue context on resume</div>
       </div>
       <div class="guard-card">
         <div class="guard-scenario">Never Says "Done"</div>
-        <div class="guard-action">Claude auto-judges: all checklist <code>[x]</code> = auto PR + merge</div>
+        <div class="guard-action">Codex checks: all checklist <code>[x]</code> = ready for PR + merge</div>
       </div>
     </div>
   </div>
@@ -784,7 +784,7 @@
 <!-- ══════════════════ FOOTER ══════════════════ -->
 <footer>
   <div class="container">
-    Academic Git &mdash; Built by Adrian Zheng &times; Claude Code, 2026-04-21
+    Academic Git &mdash; Built by Adrian Zheng &times; Codex, 2026-04-21
   </div>
 </footer>
 
@@ -802,7 +802,7 @@ const sources = [
   { id: 'create-issue-source', path: 'skills/create-issue/SKILL.md' },
   { id: 'commit-source', path: 'skills/commit/SKILL.md' },
   { id: 'refine-issue-source', path: 'skills/refine-issue/SKILL.md' },
-  { id: 'autocommit-source', path: 'hooks/auto-commit.sh' },
+  { id: 'autocommit-source', path: 'hooks/codex/stop.sh' },
 ];
 
 sources.forEach(({ id, path }) => {
