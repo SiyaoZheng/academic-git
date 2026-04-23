@@ -10,7 +10,7 @@ const path_1 = require("path");
 // ── Helpers ──
 function run(cmd, cwd) {
     return (0, child_process_1.execSync)(cmd, {
-        cwd: cwd ?? process.env.CLAUDE_PROJECT_DIR ?? process.cwd(),
+        cwd: cwd ?? projectDirFromEnv() ?? process.cwd(),
         encoding: "utf-8",
         timeout: 30_000,
         env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
@@ -97,10 +97,12 @@ function err(s) {
     return { content: [{ type: "text", text: `ERROR: ${s}` }], isError: true };
 }
 function repoDir() {
-    const d = process.env.CLAUDE_PROJECT_DIR;
-    if (!d)
-        throw new Error("CLAUDE_PROJECT_DIR not set");
-    return d;
+    return projectDirFromEnv() ?? process.cwd();
+}
+function projectDirFromEnv() {
+    return (process.env.ACADEMIC_GIT_PROJECT_DIR ??
+        process.env.CODEX_WORKSPACE_ROOT ??
+        process.env.CODEX_PROJECT_DIR);
 }
 const DEFAULT_CONFIG = {
     pipeline: { run: "" },

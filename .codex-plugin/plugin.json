@@ -15,7 +15,7 @@
     "codex"
   ],
   "skills": "./skills/",
-  "hooks": "./hooks.json",
+  "hooks": "./hooks/codex/hooks.json",
   "mcpServers": "./.mcp.codex.json",
   "interface": {
     "displayName": "Academic Git",

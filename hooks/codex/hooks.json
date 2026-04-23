@@ -1,4 +1,5 @@
 {
+  "description": "Academic Git Codex hooks for issue-driven research workflows.",
   "hooks": {
     "SessionStart": [
       {
@@ -6,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash '/Users/siyaozheng/plugins/academic-git/hooks/codex/session-start.sh'",
+            "command": "bash \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/session-start.sh\"",
             "timeout": 10
           }
         ]
@@ -18,7 +19,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash '/Users/siyaozheng/plugins/academic-git/hooks/codex/pretool-bash.sh'",
+            "command": "bash \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/pretool-bash.sh\"",
             "timeout": 10
           }
         ]
@@ -30,7 +31,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash '/Users/siyaozheng/plugins/academic-git/hooks/codex/posttool-commit.sh'",
+            "command": "bash \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/posttool-commit.sh\"",
             "timeout": 10,
             "statusMessage": "Checking academic-git commit context"
           }
@@ -43,7 +44,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash '/Users/siyaozheng/plugins/academic-git/hooks/codex/stop.sh'",
+            "command": "bash \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/stop.sh\"",
             "timeout": 30
           }
         ]

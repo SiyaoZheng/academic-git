@@ -10,20 +10,20 @@ if [ ! -f "$SOURCE_SERVER" ]; then
   exit 1
 fi
 
-if [ -z "${CLAUDE_PROJECT_DIR:-}" ]; then
+if [ -z "${ACADEMIC_GIT_PROJECT_DIR:-}" ]; then
   for candidate in "${CODEX_WORKSPACE_ROOT:-}" "${CODEX_PROJECT_DIR:-}" "$PWD"; do
     if [ -n "$candidate" ] && [ -d "$candidate" ]; then
       if git -C "$candidate" rev-parse --show-toplevel >/dev/null 2>&1; then
-        export CLAUDE_PROJECT_DIR="$(git -C "$candidate" rev-parse --show-toplevel)"
+        export ACADEMIC_GIT_PROJECT_DIR="$(git -C "$candidate" rev-parse --show-toplevel)"
         break
       fi
     fi
   done
 fi
 
-if [ -z "${CLAUDE_PROJECT_DIR:-}" ]; then
-  export CLAUDE_PROJECT_DIR="$PWD"
+if [ -z "${ACADEMIC_GIT_PROJECT_DIR:-}" ]; then
+  export ACADEMIC_GIT_PROJECT_DIR="$PWD"
 fi
 
-cd "$CLAUDE_PROJECT_DIR"
+cd "$ACADEMIC_GIT_PROJECT_DIR"
 exec node "$SOURCE_SERVER"

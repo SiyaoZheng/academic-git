@@ -16,9 +16,9 @@ This PreToolUse hook blocks all Write/Edit calls until `/begin` has been run and
 ## Config Files Allowed Without /begin
 
 These files can be edited without a locked issue:
-- `.claude/*` — Claude Code configuration
+- `.codex/*` — Codex configuration
 - `.academic-git.json` — plugin state
-- `CLAUDE.md` — project instructions
+- `AGENTS.md` — project instructions
 - `.gitignore` — git configuration
 - `README.md` — documentation
 

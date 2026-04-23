@@ -1,9 +1,0 @@
-{
-  "mcpServers": {
-    "academic-git": {
-      "command": "npx",
-      "args": ["tsx", "${CLAUDE_PLUGIN_ROOT}/mcp/src/server.ts"],
-      "env": {}
-    }
-  }
-}
