@@ -58,16 +58,16 @@
     {
       "decision": "route",
       "match": "(^|[^[:alnum:]_])git[[:space:]]+switch[[:space:]]+-c([[:space:]]|$)",
-      "tool": "create_branch",
-      "reason": "Direct git switch -c is blocked. Use create_branch(branch) when you need a new branch.",
-      "policy": "branch-navigation"
+      "tool": "start_issue",
+      "reason": "Direct git switch -c is blocked. For new implementation work, use /codex-gh-issue-start plus start_issue(...) so the Issue, branch, and worktree are created as one SSOT unit. Use create_branch only for explicit non-issue repair work.",
+      "policy": "issue-start-ssot"
     },
     {
       "decision": "route",
       "match": "(^|[^[:alnum:]_])git[[:space:]]+checkout[[:space:]]+-b([[:space:]]|$)",
-      "tool": "create_branch",
-      "reason": "Direct git checkout -b is blocked. Use create_branch(branch) when you need a new branch.",
-      "policy": "branch-navigation"
+      "tool": "start_issue",
+      "reason": "Direct git checkout -b is blocked. For new implementation work, use /codex-gh-issue-start plus start_issue(...) so the Issue, branch, and worktree are created as one SSOT unit. Use create_branch only for explicit non-issue repair work.",
+      "policy": "issue-start-ssot"
     },
     {
       "decision": "route",
@@ -114,9 +114,9 @@
     {
       "decision": "route",
       "match": "(^|[^[:alnum:]_])gh[[:space:]]+issue[[:space:]]+create([[:space:]]|$)",
-      "tool": "create_issue",
-      "reason": "Direct gh issue create is blocked. Use create_issue(title, body, labels?, assignees?, milestone?) for a standalone issue, or /codex-gh-issue-start when you also need a linked branch and worktree.",
-      "policy": "issue-creation"
+      "tool": "start_issue",
+      "reason": "Direct gh issue create is blocked. For implementation work, use /codex-gh-issue-start plus start_issue(...) so the Issue, branch, and worktree are created as one SSOT unit. Use create_issue only for explicit standalone bookkeeping issues.",
+      "policy": "issue-start-ssot"
     },
     {
       "decision": "route",

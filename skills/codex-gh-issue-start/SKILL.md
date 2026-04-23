@@ -79,7 +79,7 @@ The check validates the required sections, stable letter IDs, explicit `after:` 
 
 For issue-only bookkeeping, use the MCP `create_issue` tool.
 
-For issue-bound code work that needs issue + linked branch + dedicated worktree, use an MCP-owned issue-start primitive when it exists. If that primitive is unavailable, stop and report the missing mutation surface instead of falling back to a shell adapter.
+For issue-bound code work that needs issue + linked branch + dedicated worktree, use the MCP `start_issue` tool after the body passes this skill check. `start_issue` creates the GitHub Issue, linked `codex/issue-*` branch, and dedicated sibling worktree without switching the current worktree.
 
 ## Repair Path
 

@@ -9,7 +9,7 @@ allowed-tools: ["academic-git"]
 
 `/begin` is the single front door for task routing. Adrian does not choose among multiple paths; the AI resolves the route internally from the task text and repo state.
 
-Git/GitHub mutations usually go through the `academic-git` MCP tools. For code work that needs a tracked branch/worktree, route through `/codex-gh-issue-start`. For issue-only bookkeeping, use `create_issue`. Do not present those as user choices.
+Git/GitHub mutations usually go through the `academic-git` MCP tools. For code work that needs a tracked branch/worktree, route through `/codex-gh-issue-start`, validate the issue body, then call `start_issue`. For issue-only bookkeeping, use `create_issue`. Do not present those as user choices.
 
 ## Shortcut
 
@@ -36,7 +36,7 @@ Never ask Adrian to choose between these routes.
 ## Step 3: Execute
 
 - For active issue work, use `switch_branch(branch: "<linked issue branch>")` and `view_issue(issue: N)`.
-- For new code work, invoke `/codex-gh-issue-start` directly.
+- For new code work, invoke `/codex-gh-issue-start`, then call `start_issue(...)` with the validated body.
 - For issue-only bookkeeping, invoke `create_issue(...)` directly.
 
 ## Task Switching
