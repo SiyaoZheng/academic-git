@@ -35,6 +35,17 @@
             "statusMessage": "Checking Office Markdown source guard"
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/hook-runner.sh\" \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/skills/merge-pr\" --block",
+            "timeout": 10,
+            "statusMessage": "Checking academic-git merge-pr preflight"
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -46,6 +57,17 @@
             "command": "bash \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/posttool-commit.sh\"",
             "timeout": 10,
             "statusMessage": "Checking academic-git commit context"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/hook-runner.sh\" \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/skills/post-merge\"",
+            "timeout": 10,
+            "statusMessage": "Checking academic-git post-merge follow-up"
           }
         ]
       }

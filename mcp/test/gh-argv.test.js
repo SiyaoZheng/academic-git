@@ -11,7 +11,6 @@ const {
   ghIssueCreateArgs,
   ghPrCloseArgs,
   ghPrCreateArgs,
-  ghPrMergeArgs,
 } = require("../src/gh.js");
 const { gitCreateBranchArgs, gitSwitchBranchArgs } = require("../src/git.js");
 
@@ -65,10 +64,6 @@ test("gh pr create arguments preserve shell metacharacters literally", () => {
   assert.equal(out, "created");
   assert.deepEqual(JSON.parse(fs.readFileSync(capture, "utf-8")), args);
   assert.equal(fs.existsSync(sentinel), false);
-});
-
-test("gh pr merge arguments preserve the merge flags literally", () => {
-  assert.deepEqual(ghPrMergeArgs(17), ["pr", "merge", "17", "--squash"]);
 });
 
 test("gh issue create arguments preserve optional routing metadata literally", () => {
@@ -153,4 +148,13 @@ test("routing helper routes branch creation", () => {
   const result = renderRouting("git switch -c feature");
   assert.equal(result.decision, "route");
   assert.equal(result.tool, "create_branch");
+});
+
+test("routing helper routes merge commands through the merge-pr workflow", () => {
+  for (const command of ["gh pr merge 32 --squash --delete-branch", "git merge feature"]) {
+    const result = renderRouting(command);
+    assert.equal(result.decision, "route");
+    assert.equal(result.tool, "merge_pr");
+    assert.match(result.reason, /merge-pr skill/);
+  }
 });

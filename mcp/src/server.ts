@@ -13,9 +13,9 @@ import {
   ghIssueEditBodyArgs,
   ghPrCreateArgs,
   ghPrCloseArgs,
-  ghPrMergeArgs,
 } from "./gh.js";
 import { gitCreateBranchArgs, gitSwitchBranchArgs } from "./git.js";
+import { formatMergePrResult, hasCleanupFailures, mergePrWorktreeSafe } from "./merge-cleanup.js";
 
 // ── Helpers ──
 
@@ -84,23 +84,6 @@ function defaultBaseRef(): string {
 
 function defaultBranchRange(): string {
   return `${shellArgs([defaultBaseRef()])}...HEAD`;
-}
-
-function currentWorktreePath(): string {
-  return run("git rev-parse --show-toplevel");
-}
-
-function primaryWorktreePath(): string {
-  const worktreeList = splitNonEmptyLines(runSafe("git worktree list --porcelain"));
-  const paths = worktreeList
-    .filter((line) => line.startsWith("worktree "))
-    .map((line) => line.slice("worktree ".length).trim());
-  return paths[0] ?? repoDir();
-}
-
-function currentBranchName(): string {
-  const branch = runSafe("git branch --show-current").trim();
-  return branch.toLowerCase().startsWith("fatal:") ? "" : branch;
 }
 
 // ── Retry & Error Classification ──
@@ -897,35 +880,18 @@ server.tool(
 
 server.tool(
   "merge_pr",
-  "Squash-merge a PR, delete the branch, and return to the default branch. If run from a dedicated worktree, remove that worktree safely.",
+  "Squash-merge a PR, then run auditable worktree-safe cleanup for the PR worktree and matching branch refs.",
   { pr: z.number().describe("PR number") },
   async ({ pr }) => {
     const defaultBranchName = defaultBranch();
-    const currentBranch = currentBranchName();
-    const currentWorktree = currentWorktreePath();
-    const primaryWorktree = primaryWorktreePath();
-    const isPrimaryWorktree = currentWorktree === primaryWorktree;
-
-    runGhWithRetry(ghPrMergeArgs(pr));
-    run("git switch " + JSON.stringify(defaultBranchName), primaryWorktree);
-    run("git pull --ff-only", primaryWorktree);
-
-    if (currentBranch && currentBranch !== defaultBranchName) {
-      if (!isPrimaryWorktree) {
-        run("git worktree remove --force " + JSON.stringify(currentWorktree), primaryWorktree);
-      }
-      run("git branch -D " + JSON.stringify(currentBranch), primaryWorktree);
-      runSafe("git push origin --delete " + JSON.stringify(currentBranch), primaryWorktree);
-    }
-
-    const cleanupNote =
-      !isPrimaryWorktree && currentBranch && currentBranch !== defaultBranchName
-        ? ` Cleaned up worktree ${currentWorktree} and deleted ${currentBranch}.`
-        : currentBranch && currentBranch !== defaultBranchName
-          ? ` Deleted ${currentBranch}.`
-          : "";
-
-    return text(`PR #${pr} merged. Now on ${defaultBranchName}.${cleanupNote}`);
+    const result = mergePrWorktreeSafe(pr, {
+      cwd: repoDir(),
+      defaultBranchName,
+      runGit: (args, cwd) => runFile("git", args, cwd ?? repoDir()),
+      runGh: (args, cwd) => runGhWithRetry(args, undefined, cwd ?? repoDir()),
+    });
+    const output = formatMergePrResult(result);
+    return hasCleanupFailures(result) ? err(output) : text(output);
   }
 );
 

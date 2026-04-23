@@ -5,7 +5,6 @@ exports.ghIssueCloseArgs = ghIssueCloseArgs;
 exports.ghIssueCommentArgs = ghIssueCommentArgs;
 exports.ghIssueEditBodyArgs = ghIssueEditBodyArgs;
 exports.ghPrCreateArgs = ghPrCreateArgs;
-exports.ghPrMergeArgs = ghPrMergeArgs;
 exports.ghPrCloseArgs = ghPrCloseArgs;
 function ghIssueCreateArgs(title, body, opts) {
     const args = ["issue", "create", "--title", title, "--body", body];
@@ -41,9 +40,6 @@ function ghIssueEditBodyArgs(issue, body) {
 }
 function ghPrCreateArgs(title, body) {
     return ["pr", "create", "--title", title, "--body", body];
-}
-function ghPrMergeArgs(pr) {
-    return ["pr", "merge", String(pr), "--squash"];
 }
 function ghPrCloseArgs(pr, opts) {
     const args = ["pr", "close", String(pr)];
