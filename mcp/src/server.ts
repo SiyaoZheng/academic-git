@@ -3,6 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { execSync } from "child_process";
+import { createHash } from "crypto";
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 import { commandPreview, runFile } from "./command.js";
@@ -11,6 +12,11 @@ import {
   ghIssueEditBodyArgs,
   ghPrCreateArgs,
 } from "./gh.js";
+import {
+  formatCommitMessage,
+  normalizeChecklistItems,
+  parseChecklistItemsFromCommitMessage,
+} from "./workflow.js";
 
 // ── Helpers ──
 
@@ -235,6 +241,27 @@ interface AcademicGitConfig {
   locked_branch: string;
   locked_issue: number | null;
   checkpoint_count: number;
+  auto_workflow?: AutomationJournal | null;
+}
+
+interface AutomationJournalResult {
+  message?: string;
+  commit_sha?: string;
+  branch?: string;
+  pr_number?: number;
+  pr_url?: string;
+}
+
+interface AutomationJournal {
+  status: "pending" | "running" | "completed";
+  action: "create_commit" | "open_pr";
+  issue: number;
+  branch: string;
+  worktree_path: string;
+  head_sha: string;
+  tree_fingerprint: string;
+  idempotency_key: string;
+  last_result?: AutomationJournalResult;
 }
 
 const DEFAULT_CONFIG: AcademicGitConfig = {
@@ -243,6 +270,7 @@ const DEFAULT_CONFIG: AcademicGitConfig = {
   locked_branch: "",
   locked_issue: null,
   checkpoint_count: 0,
+  auto_workflow: null,
 };
 
 function configPath(): string {
@@ -274,7 +302,46 @@ function normalizeConfig(raw: Partial<AcademicGitConfig>): AcademicGitConfig {
     lint: { ...DEFAULT_CONFIG.lint, ...(raw.lint ?? {}) },
     renv: raw.renv ? { ...raw.renv } : undefined,
     project: raw.project ? { ...raw.project } : undefined,
+    auto_workflow: raw.auto_workflow ? { ...raw.auto_workflow } : null,
   };
+}
+
+function currentHeadSha(): string {
+  return runSafe("git rev-parse HEAD");
+}
+
+function currentTreeFingerprint(): string {
+  const dirty = runSafe("git status --porcelain --untracked-files=all --ignore-submodules=dirty");
+  const basis = dirty || `clean:${currentHeadSha()}`;
+  return createHash("sha256").update(basis).digest("hex").slice(0, 16);
+}
+
+function currentBranch(): string {
+  return run("git branch --show-current");
+}
+
+function buildIdempotencyKey(parts: Record<string, unknown>): string {
+  return createHash("sha256")
+    .update(JSON.stringify(parts, Object.keys(parts).sort()))
+    .digest("hex")
+    .slice(0, 20);
+}
+
+function setAutomationJournal(journal: AutomationJournal | null): AcademicGitConfig {
+  const config = readConfig();
+  config.auto_workflow = journal;
+  writeConfig(config);
+  return config;
+}
+
+function listOpenPrForBranch(branch: string): { number?: number; url?: string } | null {
+  const prRaw = runSafe(`gh pr list --head "${branch}" --state open --json number,url`);
+  try {
+    const parsed = JSON.parse(prRaw) as Array<{ number?: number; url?: string }>;
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : null;
+  } catch {
+    return null;
+  }
 }
 
 function runLintCommand(cmd: string, cwd: string): { ok: boolean; output: string } {
@@ -418,6 +485,100 @@ server.tool(
 );
 
 server.tool(
+  "start_issue",
+  "Create a GitHub issue, its linked codex/issue-* branch, and a dedicated git worktree via codex-gh-issue-start.",
+  {
+    title: z.string().describe("Issue title"),
+    body: z.string().optional().describe("Issue body text"),
+    body_file: z.string().optional().describe("Optional path to an issue body file"),
+    base: z.string().optional().describe("Optional base branch override"),
+    branch: z.string().optional().describe("Optional explicit linked branch name"),
+    branch_prefix: z.string().optional().describe("Optional branch prefix override"),
+    worktree_dir: z.string().optional().describe("Optional explicit worktree path"),
+    worktree_parent: z.string().optional().describe("Optional parent directory for the worktree"),
+    label: z.string().optional().describe("Optional issue label"),
+    assignee: z.string().optional().describe("Optional issue assignee"),
+    no_assignee: z.boolean().optional().describe("Do not assign the issue to anyone"),
+    milestone: z.string().optional().describe("Optional issue milestone"),
+    skip_template_check: z.boolean().optional().describe("Skip issue template validation"),
+  },
+  async ({
+    title,
+    body,
+    body_file,
+    base,
+    branch,
+    branch_prefix,
+    worktree_dir,
+    worktree_parent,
+    label,
+    assignee,
+    no_assignee,
+    milestone,
+    skip_template_check,
+  }) => {
+    const args = ["--title", title];
+    if (body !== undefined) args.push("--body", body);
+    if (body_file !== undefined) args.push("--body-file", body_file);
+    if (base !== undefined) args.push("--base", base);
+    if (branch !== undefined) args.push("--branch", branch);
+    if (branch_prefix !== undefined) args.push("--branch-prefix", branch_prefix);
+    if (worktree_dir !== undefined) args.push("--worktree-dir", worktree_dir);
+    if (worktree_parent !== undefined) args.push("--worktree-parent", worktree_parent);
+    if (label !== undefined) args.push("--label", label);
+    if (assignee !== undefined) args.push("--assignee", assignee);
+    if (no_assignee) args.push("--no-assignee");
+    if (milestone !== undefined) args.push("--milestone", milestone);
+    if (skip_template_check) args.push("--skip-template-check");
+
+    const script = join(repoDir(), "scripts", "codex-gh-issue-start");
+    const out = runFile(script, args, repoDir());
+    return text(out);
+  }
+);
+
+server.tool(
+  "resume_issue",
+  "Lock the current worktree to an existing issue branch so route-issue can resume work safely.",
+  {
+    issue: z.number().optional().describe("Issue number to lock to. Defaults to the current codex/issue-* branch."),
+    branch: z.string().optional().describe("Branch to resume. Defaults to the current branch."),
+  },
+  async ({ issue, branch }) => {
+    const targetBranch = branch?.trim() || currentBranch();
+    if (!targetBranch) {
+      return err("Cannot resume issue: current branch is unavailable");
+    }
+
+    if (targetBranch !== currentBranch()) {
+      run(`git switch "${targetBranch}"`);
+    }
+
+    const branchMatch = targetBranch.match(/^codex\/issue-(\d+)/);
+    const branchIssue = branchMatch?.[1] ? Number(branchMatch[1]) : null;
+    const targetIssue = issue ?? branchIssue;
+    if (!targetIssue) {
+      return err(`Cannot resume issue from branch '${targetBranch}': no issue number could be inferred`);
+    }
+    if (branchIssue && branchIssue !== targetIssue) {
+      return err(`Branch '${targetBranch}' belongs to issue #${branchIssue}, not #${targetIssue}`);
+    }
+
+    const config = readConfig();
+    config.locked_issue = targetIssue;
+    config.locked_branch = targetBranch;
+    writeConfig(config);
+
+    return text(
+      `Issue context resumed:\n` +
+      `  issue: #${targetIssue}\n` +
+      `  branch: ${targetBranch}\n` +
+      `  worktree: ${repoDir()}`
+    );
+  }
+);
+
+server.tool(
   "view_issue",
   "View a GitHub Issue (body + comments = current truth)",
   { issue: z.number().describe("Issue number") },
@@ -456,7 +617,7 @@ ${detail}
 );
 
 server.tool(
-  "check_item",
+  "check_issue",
   "Check off a completed checklist item on an Issue. Only toggles the specific item — no other body changes allowed.",
   {
     issue: z.number().describe("Issue number"),
@@ -487,40 +648,44 @@ server.tool(
 // ════════════════════════════════════════
 
 server.tool(
-  "commit",
-  "Create a formal commit tied to a specific Issue checklist item. Format: type(#N/X): description. Stages selected paths (or all dirty files), commits, and pushes.",
+  "create_commit",
+  "Create a formal commit tied to one or more Issue checklist items. Format: type(#N/A+C): description. Stages selected paths, commits, pushes, and records automation journal state.",
   {
     issue: z.number().describe("Issue number"),
-    item: z.string().regex(/^[A-Z]$/).describe("Checklist item letter (A-Z)"),
+    items: z.array(z.string().regex(/^[A-Z]$/)).nonempty().describe("Checklist item letters (A-Z)"),
     type: z.enum(["feat", "fix", "refactor", "docs", "test", "chore", "perf"]).describe("Commit type"),
     description: z.string().describe("Commit description (imperative mood)"),
     paths: z.array(z.string()).optional().describe("Optional explicit file or directory paths to stage for this commit. Use this for grouped Auto-Commit cleanup; omit only when all dirty files belong in one commit."),
+    idempotency_key: z.string().optional().describe("Optional stable key from route-commit recovery context"),
   },
-  async ({ issue, item, type, description, paths }) => {
+  async ({ issue, items, type, description, paths, idempotency_key }) => {
     // Ensure config exists
     ensureConfig();
+    const normalizedItems = normalizeChecklistItems(items);
 
-    // Verify issue exists and item is valid
+    // Verify issue exists and items are valid
     const body = readIssueBody(issue);
-    const itemPattern = new RegExp(`^- \\[ \\] ${item}\\.`, "m");
-    if (!itemPattern.test(body)) {
-      const donePattern = new RegExp(`^- \\[x\\] ${item}\\.`, "m");
-      if (donePattern.test(body)) {
-        return err(`Item ${item} is already completed`);
-      }
-      return err(`Item ${item} not found in Issue #${issue}`);
-    }
-
-    // Check DAG: all predecessors must be [x]
     const lines = body.split("\n");
-    const itemLine = lines.find((l) => new RegExp(`^- \\[ \\] ${item}\\.`).test(l));
-    const afterMatch = itemLine?.match(/→ after: ([A-Z,\s]+)/);
-    if (afterMatch) {
-      const predecessors = afterMatch[1].split(",").map((s) => s.trim());
-      for (const pred of predecessors) {
-        const predDone = new RegExp(`^- \\[x\\] ${pred}\\.`, "m");
-        if (!predDone.test(body)) {
-          return err(`DAG blocked: predecessor ${pred} is not completed yet`);
+    for (const item of normalizedItems) {
+      const itemPattern = new RegExp(`^- \\[ \\] ${item}\\.`, "m");
+      if (!itemPattern.test(body)) {
+        const donePattern = new RegExp(`^- \\[x\\] ${item}\\.`, "m");
+        if (donePattern.test(body)) {
+          return err(`Item ${item} is already completed`);
+        }
+        return err(`Item ${item} not found in Issue #${issue}`);
+      }
+
+      // Check DAG: all predecessors must be [x]
+      const itemLine = lines.find((l) => new RegExp(`^- \\[ \\] ${item}\\.`).test(l));
+      const afterMatch = itemLine?.match(/→ after: ([A-Z,\s]+)/);
+      if (afterMatch) {
+        const predecessors = afterMatch[1].split(",").map((s) => s.trim());
+        for (const pred of predecessors) {
+          const predDone = new RegExp(`^- \\[x\\] ${pred}\\.`, "m");
+          if (!predDone.test(body)) {
+            return err(`DAG blocked: predecessor ${pred} is not completed yet`);
+          }
         }
       }
     }
@@ -529,6 +694,68 @@ server.tool(
     if (requestedPaths.some((p) => p.includes("\n") || p.includes("\0"))) {
       return err("Invalid path: paths must not contain newlines or NUL bytes");
     }
+    const branch = currentBranch();
+    const pendingHead = currentHeadSha();
+    const pendingTree = currentTreeFingerprint();
+    const msg = formatCommitMessage(type, issue, normalizedItems, description);
+    const stableKey = idempotency_key?.trim() || buildIdempotencyKey({
+      action: "create_commit",
+      issue,
+      branch,
+      message: msg,
+      paths: requestedPaths.join("\n"),
+      head_sha: pendingHead,
+      tree_fingerprint: pendingTree,
+    });
+    const existingJournal = readConfig().auto_workflow;
+    if (
+      existingJournal?.action === "create_commit" &&
+      existingJournal.idempotency_key === stableKey &&
+      existingJournal.status === "completed"
+    ) {
+      return text(existingJournal.last_result?.message ?? `Already committed: ${msg}`);
+    }
+
+    const currentSubject = runSafe("git log -1 --pretty=format:%s HEAD");
+    const statusNow = runSafe("git status --porcelain --untracked-files=all --ignore-submodules=dirty").trim();
+    if (!statusNow && currentSubject === msg) {
+      run(`git push -u origin "${branch}"`);
+      const commitSha = currentHeadSha();
+      const alreadyMessage = `Already committed: ${msg}\nPushed to ${branch}`;
+      setAutomationJournal({
+        status: "completed",
+        action: "create_commit",
+        issue,
+        branch,
+        worktree_path: repoDir(),
+        head_sha: commitSha,
+        tree_fingerprint: currentTreeFingerprint(),
+        idempotency_key: stableKey,
+        last_result: { message: alreadyMessage, commit_sha: commitSha, branch },
+      });
+      return text(alreadyMessage);
+    }
+
+    setAutomationJournal({
+      status: "pending",
+      action: "create_commit",
+      issue,
+      branch,
+      worktree_path: repoDir(),
+      head_sha: pendingHead,
+      tree_fingerprint: pendingTree,
+      idempotency_key: stableKey,
+    });
+    setAutomationJournal({
+      status: "running",
+      action: "create_commit",
+      issue,
+      branch,
+      worktree_path: repoDir(),
+      head_sha: pendingHead,
+      tree_fingerprint: pendingTree,
+      idempotency_key: stableKey,
+    });
 
     // --- Pipeline check (if configured) ---
     const config = ensureConfig();
@@ -567,7 +794,6 @@ server.tool(
 
     // --- Gate check (block on CRITICAL) ---
     let gateWarning = "";
-    const msg = `${type}(#${issue}/${item}): ${description}`;
     try {
       const gateCtx = buildGateContext(issue, {
         includeStaged: true,
@@ -597,14 +823,26 @@ server.tool(
     run(`git commit -m ${shellQuote(msg)}`);
 
     // Push
-    const branch = run("git branch --show-current");
-    runSafe(`git push -u origin "${branch}"`);
+    run(`git push -u origin "${branch}"`);
+    const commitSha = currentHeadSha();
 
     const scope = requestedPaths.length > 0
       ? `\nPaths:\n${requestedPaths.map((p) => `  ${p}`).join("\n")}`
       : "\nPaths: all dirty files";
 
-    return text(`Committed: ${msg}\nPushed to ${branch}${scope}${gateWarning}`);
+    const resultMessage = `Committed: ${msg}\nPushed to ${branch}${scope}${gateWarning}`;
+    setAutomationJournal({
+      status: "completed",
+      action: "create_commit",
+      issue,
+      branch,
+      worktree_path: repoDir(),
+      head_sha: commitSha,
+      tree_fingerprint: currentTreeFingerprint(),
+      idempotency_key: stableKey,
+      last_result: { message: resultMessage, commit_sha: commitSha, branch },
+    });
+    return text(resultMessage);
   }
 );
 
@@ -613,8 +851,8 @@ server.tool(
 // ════════════════════════════════════════
 
 server.tool(
-  "generate_pr_body",
-  "Generate a PR body draft by mapping git diff changes to Issue checklist items. Returns a filled template for review before create_pr.",
+  "prepare_pr",
+  "Generate a PR body draft by mapping git diff changes to Issue checklist items. Returns a filled template for review before open_pr.",
   {
     issue: z.number().describe("Issue number this PR will close"),
   },
@@ -643,14 +881,15 @@ server.tool(
     // Get commit log with messages (to infer which item each commit belongs to)
     const commitLog = runSafe(`git log ${range} --oneline`);
 
-    // Map commits to items using commit message pattern type(#N/X):
+    // Map commits to items using commit message pattern type(#N/A+C):
     const commitsByItem: Record<string, string[]> = {};
     for (const line of commitLog.split("\n").filter(Boolean)) {
-      const m = line.match(/\(#\d+\/([A-Z])\)/);
-      if (m) {
-        const letter = m[1];
-        if (!commitsByItem[letter]) commitsByItem[letter] = [];
-        commitsByItem[letter].push(line);
+      const parsed = parseChecklistItemsFromCommitMessage(line);
+      if (parsed.issue === issue) {
+        for (const letter of parsed.items) {
+          if (!commitsByItem[letter]) commitsByItem[letter] = [];
+          commitsByItem[letter].push(line);
+        }
       }
     }
 
@@ -690,23 +929,66 @@ ${diffStat || "(empty diff)"}
     return text(
       `**Issue #${number}: ${issueTitle}**\n\n` +
       `---\n\n` +
-      `Suggested PR body (review before calling create_pr):\n\n` +
+      `Suggested PR body (review before calling open_pr):\n\n` +
       prBodyDraft
     );
   }
 );
 
 server.tool(
-  "create_pr",
-  "Create a Pull Request. Validates all checklist items are [x] and PR gates run before allowing PR creation.",
+  "open_pr",
+  "Create a Pull Request. Validates all checklist items are [x], requires a pushed and coherent branch, and records automation journal state.",
   {
     issue: z.number().describe("Issue number this PR closes"),
     title: z.string().describe("PR title"),
     body: z.string().describe("PR body (must include Closes #N)"),
+    idempotency_key: z.string().optional().describe("Optional stable key from route-pr recovery context"),
   },
-  async ({ issue, title, body: prBody }) => {
+  async ({ issue, title, body: prBody, idempotency_key }) => {
     // Ensure config exists
     ensureConfig();
+    const branch = currentBranch();
+    const pendingHead = currentHeadSha();
+    const pendingTree = currentTreeFingerprint();
+    const stableKey = idempotency_key?.trim() || buildIdempotencyKey({
+      action: "open_pr",
+      issue,
+      branch,
+      title,
+      body: prBody,
+      head_sha: pendingHead,
+      tree_fingerprint: pendingTree,
+    });
+    const existingJournal = readConfig().auto_workflow;
+    if (
+      existingJournal?.action === "open_pr" &&
+      existingJournal.idempotency_key === stableKey &&
+      existingJournal.status === "completed"
+    ) {
+      return text(existingJournal.last_result?.message ?? `Pull request already open for ${branch}`);
+    }
+
+    const existingPr = listOpenPrForBranch(branch);
+    if (existingPr?.number) {
+      const existingMessage = `Pull request already open: #${existingPr.number}${existingPr.url ? ` ${existingPr.url}` : ""}`;
+      setAutomationJournal({
+        status: "completed",
+        action: "open_pr",
+        issue,
+        branch,
+        worktree_path: repoDir(),
+        head_sha: pendingHead,
+        tree_fingerprint: pendingTree,
+        idempotency_key: stableKey,
+        last_result: {
+          message: existingMessage,
+          pr_number: existingPr.number,
+          pr_url: existingPr.url,
+          branch,
+        },
+      });
+      return text(existingMessage);
+    }
 
     // Validate all checklist items are done
     const issueBody = readIssueBody(issue);
@@ -722,6 +1004,14 @@ server.tool(
     // Validate Closes #N
     if (!prBody.includes(`Closes #${issue}`)) {
       return err(`PR body must include "Closes #${issue}"`);
+    }
+
+    const remoteHead = runSafe(`git rev-parse "refs/remotes/origin/${branch}^{commit}"`);
+    if (!remoteHead || remoteHead.toLowerCase().includes("fatal")) {
+      return err(`Cannot create PR: origin/${branch} is missing. Push the issue branch first.`);
+    }
+    if (remoteHead !== pendingHead) {
+      return err(`Cannot create PR: origin/${branch} is stale. Push the current HEAD before opening a PR.`);
     }
 
     // --- Gate check (block on CRITICAL + HIGH) ---
@@ -755,8 +1045,47 @@ server.tool(
       );
     }
 
+    setAutomationJournal({
+      status: "pending",
+      action: "open_pr",
+      issue,
+      branch,
+      worktree_path: repoDir(),
+      head_sha: pendingHead,
+      tree_fingerprint: pendingTree,
+      idempotency_key: stableKey,
+    });
+    setAutomationJournal({
+      status: "running",
+      action: "open_pr",
+      issue,
+      branch,
+      worktree_path: repoDir(),
+      head_sha: pendingHead,
+      tree_fingerprint: pendingTree,
+      idempotency_key: stableKey,
+    });
+
     const out = runGhWithRetry(ghPrCreateArgs(title, prBody));
-    return text(`${out}${advisoryNote}`);
+    const createdPr = listOpenPrForBranch(branch);
+    const resultMessage = `${out}${advisoryNote}`;
+    setAutomationJournal({
+      status: "completed",
+      action: "open_pr",
+      issue,
+      branch,
+      worktree_path: repoDir(),
+      head_sha: pendingHead,
+      tree_fingerprint: currentTreeFingerprint(),
+      idempotency_key: stableKey,
+      last_result: {
+        message: resultMessage,
+        pr_number: createdPr?.number,
+        pr_url: createdPr?.url,
+        branch,
+      },
+    });
+    return text(resultMessage);
   }
 );
 
@@ -769,6 +1098,11 @@ server.tool(
     const defaultBranch = runSafe("git symbolic-ref refs/remotes/origin/HEAD").replace("refs/remotes/origin/", "") || "main";
     run(`git switch "${defaultBranch}"`);
     run("git pull");
+    const config = readConfig();
+    config.locked_branch = "";
+    config.locked_issue = null;
+    config.auto_workflow = null;
+    writeConfig(config);
     return text(`PR #${pr} merged. Now on ${defaultBranch}.`);
   }
 );

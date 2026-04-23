@@ -13,7 +13,7 @@ Use this skill as the single issue-start entrypoint for academic-git. It creates
 
 - Adrian asks to create an issue.
 - Adrian asks to track or start a new implementation task.
-- `/begin` routes to "new issue".
+- `handle-issue` routes to "new issue".
 - A hook reports that an issue was created through the GitHub connector or bare `gh issue create`.
 
 ## Do Not Use

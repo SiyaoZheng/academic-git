@@ -1,6 +1,6 @@
 ---
 name: refine-issue
-description: Refine an existing GitHub Issue by adding an append-only comment (body is immutable). Adds context, splits scope, or updates acceptance criteria. Use this skill when Adrian wants to add items to an issue, change scope, update requirements, or when /begin routes to option B (supplement existing issue).
+description: Refine an existing GitHub Issue by adding an append-only comment (body is immutable). Adds context, splits scope, or updates acceptance criteria. Use this skill when Adrian wants to add items to an issue, change scope, update requirements, or when handle-issue routes to supplement existing issue work.
 allowed-tools: ["academic-git"]
 ---
 
@@ -36,7 +36,7 @@ This produces a timestamped comment:
 
 ## Rules
 
-1. **Never edit the issue body directly** — `codex-gh-issue-start` validates body format on creation; editing it risks breaking the DAG structure that `commit` and `check_item` depend on
+1. **Never edit the issue body directly** — `codex-gh-issue-start` validates body format on creation; editing it risks breaking the DAG structure that `create_commit` and `check_issue` depend on
 2. **Read before refining** — use `view_issue(issue: N)` to see the current state including comments
 3. **All refinements are append-only** — this preserves audit trail (Art. VI traceability)
 4. **If scope grows too large** — propose splitting into a new issue and linking via `parent: #N`

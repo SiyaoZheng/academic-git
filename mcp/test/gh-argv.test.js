@@ -35,7 +35,7 @@ test("gh pr create arguments preserve shell metacharacters literally", () => {
     "echo `uname -a`",
     "```",
   ].join("\n");
-  const title = "Fix `create_pr` body $(echo polluted)";
+  const title = "Fix `open_pr` body $(echo polluted)";
   const args = ghPrCreateArgs(title, body);
 
   const out = runFile(process.execPath, [fakeGh, capture, ...args], tmp);

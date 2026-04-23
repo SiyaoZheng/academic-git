@@ -443,11 +443,11 @@
       </div>
       <div class="layer">
         <span class="layer-label">Skills (Codex invokes directly)</span>
-        <span class="node node-skill">/begin</span>
+        <span class="node node-skill">handle-issue</span>
         <span class="arrow">&rarr;</span>
         <span class="node node-skill">/codex-gh-issue-start</span>
         <span class="arrow">&rarr;</span>
-        <span class="node node-skill">/commit</span>
+        <span class="node node-skill">handle-commit</span>
         <span class="arrow">&larr;</span>
         <span class="node node-skill">/refine-issue</span>
       </div>
@@ -495,7 +495,7 @@
         <div class="phase-number">2</div>
         <div class="phase-meta">
           <div class="phase-name">Task Triage</div>
-          <div class="phase-trigger">/begin skill</div>
+          <div class="phase-trigger">handle-issue skill</div>
         </div>
       </div>
       <div class="phase-desc">
@@ -525,7 +525,7 @@
 
       <div class="source-block">
         <div class="source-header" onclick="toggle(this)">
-          <div><span class="source-name">skills/begin/SKILL.md</span> <span class="source-desc">Task triage &mdash; continue, supplement, or new</span></div>
+          <div><span class="source-name">skills/handle-issue/SKILL.md</span> <span class="source-desc">Issue routing &mdash; resume or start issue work</span></div>
           <span class="source-toggle">&#9654;</span>
         </div>
         <div class="source-body"><pre id="begin-source"></pre></div>
@@ -617,11 +617,11 @@
           <tr>
             <td><span class="tag tag-auto">Auto</span> PR guard</td>
             <td>Clean branch, completed Issue, no open PR</td>
-            <td>Block session end; route to <code>generate_pr_body</code> + <code>create_pr</code></td>
+            <td>Block session end; route to <code>prepare_pr</code> + <code>open_pr</code></td>
             <td>Yes &mdash; inferred from locked Issue or branch name</td>
           </tr>
           <tr>
-            <td><span class="tag tag-skill">Formal</span> /commit</td>
+            <td><span class="tag tag-skill">Formal</span> handle-commit</td>
             <td>When checklist item is done</td>
             <td><code>type(#N/X): description</code></td>
             <td>Yes &mdash; mandatory #N + letter X</td>
@@ -654,11 +654,11 @@
         <div class="phase-number">5</div>
         <div class="phase-meta">
           <div class="phase-name">Formal Commit</div>
-          <div class="phase-trigger">/commit skill &mdash; 1 commit = 1 checklist item</div>
+          <div class="phase-trigger">handle-commit skill &mdash; 1 commit = 1 checklist item group</div>
         </div>
       </div>
       <div class="phase-desc">
-        Read Issue (SSOT) &rarr; analyze changes &rarr; <span class="tag tag-review">Codex</span> reviews diff &rarr; commit selected paths as <code>type(#N/X): desc</code> &rarr; push &rarr; check off item <code>[x]</code> only when complete.<br>
+        Read Issue (SSOT) &rarr; analyze changes &rarr; <span class="tag tag-review">Codex</span> reviews diff &rarr; commit selected paths as <code>type(#N/A+C): desc</code> &rarr; push &rarr; check off item <code>[x]</code> only when complete.<br>
         When all items are <code>[x]</code>, the Stop hook refuses to leave a clean, pushed branch without a PR: generate PR body with <code>Closes #N</code> &rarr; create gated PR &rarr; squash merge &rarr; return to the default branch.
       </div>
 
@@ -695,7 +695,7 @@
 
       <div class="source-block">
         <div class="source-header" onclick="toggle(this)">
-          <div><span class="source-name">skills/commit/SKILL.md</span> <span class="source-desc">Issue-linked commits, Codex review, PR flow</span></div>
+          <div><span class="source-name">skills/handle-commit/SKILL.md</span> <span class="source-desc">Issue-linked commits, Codex review, PR flow</span></div>
           <span class="source-toggle">&#9654;</span>
         </div>
         <div class="source-body"><pre id="commit-source"></pre></div>
@@ -773,11 +773,11 @@
     <div class="guard-grid">
       <div class="guard-card">
         <div class="guard-scenario">Session Start Drift</div>
-        <div class="guard-action"><code>/begin</code> forces Issue + item selection via AskUserQuestion before any work</div>
+        <div class="guard-action"><code>handle-issue</code> forces Issue + branch resolution before any work</div>
       </div>
       <div class="guard-card">
         <div class="guard-scenario">Mid-Task Tangent</div>
-        <div class="guard-action">Mandatory Issue + item parameter on every <code>/commit</code> &mdash; can't commit untracked work</div>
+        <div class="guard-action">Mandatory Issue + item set on every <code>create_commit</code> &mdash; can't commit untracked work</div>
       </div>
       <div class="guard-card">
         <div class="guard-scenario">Scope Creep</div>
@@ -793,7 +793,7 @@
       </div>
       <div class="guard-card">
         <div class="guard-scenario">Never Says "Done"</div>
-        <div class="guard-action">Clean completed branches without open PRs are blocked by the Stop hook until <code>generate_pr_body</code> + <code>create_pr</code></div>
+        <div class="guard-action">Clean completed branches without open PRs are blocked by the Stop hook until <code>prepare_pr</code> + <code>open_pr</code></div>
       </div>
     </div>
   </div>
@@ -816,9 +816,9 @@ function toggle(header) {
 
 // Embed source files
 const sources = [
-  { id: 'begin-source', path: 'skills/begin/SKILL.md' },
+  { id: 'begin-source', path: 'skills/handle-issue/SKILL.md' },
   { id: 'codex-issue-start-source', path: 'skills/codex-gh-issue-start/SKILL.md' },
-  { id: 'commit-source', path: 'skills/commit/SKILL.md' },
+  { id: 'commit-source', path: 'skills/handle-commit/SKILL.md' },
   { id: 'refine-issue-source', path: 'skills/refine-issue/SKILL.md' },
   { id: 'codex-hooks-source', path: '.codex/hooks.json' },
   { id: 'autocommit-source', path: 'hooks/codex/stop.sh' },

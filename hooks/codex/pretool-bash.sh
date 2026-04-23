@@ -73,7 +73,7 @@ BLOCKED_PATTERNS=(
 for pattern in "${BLOCKED_PATTERNS[@]}"; do
   if [[ "$COMMAND_STR" == *"$pattern"* ]]; then
     if [ "$pattern" = "gh issue create" ]; then
-      deny "Direct '${pattern}' detected in an academic-git repository. Use /codex-gh-issue-start instead."
+      deny "Direct '${pattern}' detected in an academic-git repository. Use guard-issue-start-route with start_issue or /codex-gh-issue-start instead."
     fi
     deny "Direct '${pattern}' detected in an academic-git repository. Use academic-git MCP tools instead."
   fi
@@ -89,11 +89,11 @@ if echo "$COMMAND_STR" | grep -qE '\s*>\s|>\s|>>\s|sed\s+-i|tee\s|cp\s|mv\s|inst
   CURRENT_BRANCH="$(git branch --show-current 2>/dev/null || echo "unknown")"
 
   if [ -z "$LOCKED_ISSUE" ]; then
-    deny "No issue locked. Use academic-git to pick or create an issue before shell-based file edits."
+    deny "No issue locked. Route through handle-issue and use resume_issue or start_issue before shell-based file edits."
   fi
 
   if [ -n "$LOCKED_BRANCH" ] && [ "$CURRENT_BRANCH" != "$LOCKED_BRANCH" ]; then
-    deny "Wrong branch: you are on '${CURRENT_BRANCH}' but locked to '${LOCKED_BRANCH}'. Use academic-git MCP tools to switch tasks."
+    deny "Wrong branch: you are on '${CURRENT_BRANCH}' but locked to '${LOCKED_BRANCH}'. Route through handle-issue or switch_branch before editing."
   fi
 fi
 
