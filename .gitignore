@@ -42,3 +42,8 @@ Desktop.ini
 /hooks.local.json
 /.mcp.json
 /.mcp *.json
+
+# Generated or local documentation artifacts
+/TODO.md
+/index.html
+/mcp/README.md
