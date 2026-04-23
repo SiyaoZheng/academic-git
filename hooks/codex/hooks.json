@@ -27,6 +27,12 @@
             "type": "command",
             "command": "bash \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/pretool-bash.sh\"",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/hook-runner.sh\" \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/skills/office-markdown-guard\" --block",
+            "timeout": 10,
+            "statusMessage": "Checking Office Markdown source guard"
           }
         ]
       }
