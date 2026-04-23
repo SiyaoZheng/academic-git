@@ -5,6 +5,13 @@ import { z } from "zod";
 import { execSync } from "child_process";
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
+import { commandPreview, runFile, shellArgs } from "./command.js";
+import {
+  ghIssueCommentArgs,
+  ghIssueCreateArgs,
+  ghIssueEditBodyArgs,
+  ghPrCreateArgs,
+} from "./gh.js";
 
 // ── Helpers ──
 
@@ -23,10 +30,6 @@ function runSafe(cmd: string, cwd?: string): string {
   } catch (e: any) {
     return e.stderr?.trim() ?? e.message;
   }
-}
-
-function shellArgs(values: string[]): string {
-  return values.map((value) => JSON.stringify(value)).join(" ");
 }
 
 function splitNonEmptyLines(value: string): string[] {
@@ -148,6 +151,39 @@ function runWithRetry(cmd: string, opts?: RetryOptions, cwd?: string): string {
 
   // Unreachable, but TypeScript needs it
   throw new Error(cmd + " failed after retries");
+}
+
+function runGhWithRetry(args: string[], opts?: RetryOptions, cwd?: string): string {
+  const maxRetries = opts?.maxRetries ?? 3;
+  const baseDelayMs = opts?.baseDelayMs ?? 1000;
+  const preview = commandPreview("gh", args);
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return runFile("gh", args, cwd ?? repoDir());
+    } catch (e: any) {
+      const stderr: string = e.stderr?.toString().trim() ?? e.message ?? "";
+
+      // Last attempt or non-retriable -> throw with parsed error
+      if (attempt === maxRetries) {
+        throw new Error(parseGhError(stderr) || preview + " failed");
+      }
+
+      const classification = classifyGhError(stderr);
+      if (classification === "fail") {
+        throw new Error(parseGhError(stderr) || preview + " failed");
+      }
+
+      // Only retry on "retry" or "unknown" with quadratic backoff
+      const delayMs = baseDelayMs * (attempt + 1) ** 2;
+      if (classification === "retry" || classification === "unknown") {
+        execSync(`sleep ${delayMs / 1000}`, { timeout: delayMs + 1000 });
+      }
+    }
+  }
+
+  // Unreachable, but TypeScript needs it
+  throw new Error(preview + " failed after retries");
 }
 
 function text(s: string) {
@@ -394,7 +430,7 @@ server.tool(
       return err("Issue body must contain at least one checklist item (format: - [ ] A. description)");
     }
 
-    const out = runWithRetry(`gh issue create --title ${JSON.stringify(title)} --body ${JSON.stringify(body)}`);
+    const out = runGhWithRetry(ghIssueCreateArgs(title, body));
     return text(out);
   }
 );
@@ -422,7 +458,7 @@ ${detail}
 **Reason:** ${reason}
 **Requested by:** ${requested_by}`;
 
-    const out = runWithRetry(`gh issue comment ${issue} --body ${JSON.stringify(comment)}`);
+    const out = runGhWithRetry(ghIssueCommentArgs(issue, comment));
     return text(out);
   }
 );
@@ -449,7 +485,7 @@ server.tool(
     }
 
     const updated = body.replace(pattern, `- [x] ${letter}.`);
-    runWithRetry(`gh issue edit ${issue} --body ${JSON.stringify(updated)}`);
+    runGhWithRetry(ghIssueEditBodyArgs(issue, updated));
     return text(`Checked off item ${letter} on Issue #${issue}`);
   }
 );
@@ -721,7 +757,7 @@ server.tool(
       // Gate check fails open (network/auth issues shouldn't block PRs)
     }
 
-    const out = runWithRetry(`gh pr create --title ${JSON.stringify(title)} --body ${JSON.stringify(prBody)}`);
+    const out = runGhWithRetry(ghPrCreateArgs(title, prBody));
     return text(`${out}${advisoryNote}`);
   }
 );
