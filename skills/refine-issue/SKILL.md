@@ -36,7 +36,7 @@ This produces a timestamped comment:
 
 ## Rules
 
-1. **Never edit the issue body directly** — the `create_issue` tool validates body format on creation; editing it risks breaking the DAG structure that `commit` and `check_item` depend on
+1. **Never edit the issue body directly** — `codex-gh-issue-start` validates body format on creation; editing it risks breaking the DAG structure that `commit` and `check_item` depend on
 2. **Read before refining** — use `view_issue(issue: N)` to see the current state including comments
 3. **All refinements are append-only** — this preserves audit trail (Art. VI traceability)
 4. **If scope grows too large** — propose splitting into a new issue and linking via `parent: #N`

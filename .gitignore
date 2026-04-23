@@ -1,4 +1,44 @@
+# Dependencies
 node_modules/
-references/
-.academic-git.json
+
+# Build and tool caches
+dist/
+build/
+coverage/
+*.tsbuildinfo
+.cache/
+.tmp/
+tmp/
+
+# OS and editor noise
 .DS_Store
+**/.DS_Store
+._*
+Thumbs.db
+Desktop.ini
+
+# Local environment, secrets, and workspace state
+.env
+.env.*
+!.env.example
+.academic-git.json
+
+# Local assistant instructions and memory
+/AGENTS.md
+/AGENTS *.md
+/agents.md
+/CLAUDE.md
+/CLAUDE *.md
+/claude.md
+/claude *.md
+/.claude/
+/.claude-*/
+/.codex/
+/.claude-plugin/
+
+# Project-specific generated wiring
+/hooks.json
+/hooks *.json
+/hooks.local.json
+/.mcp.json
+/.mcp *.json

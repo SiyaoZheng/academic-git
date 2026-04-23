@@ -3,7 +3,8 @@
 # Run: only if non-gitignored files were committed (i.e., HEAD differs from HEAD~1)
 set -euo pipefail
 
-cd "${CLAUDE_PROJECT_DIR:-.}" 2>/dev/null || exit 1
+PROJECT_DIR="${ACADEMIC_GIT_PROJECT_DIR:-${CODEX_WORKSPACE_ROOT:-${CODEX_PROJECT_DIR:-.}}}"
+cd "$PROJECT_DIR" 2>/dev/null || exit 1
 
 # Check that this is a git repo with commits
 git rev-parse --git-dir >/dev/null 2>&1 || exit 1

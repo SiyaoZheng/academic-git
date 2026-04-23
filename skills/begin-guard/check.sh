@@ -1,10 +1,11 @@
 #!/bin/bash
 # check.sh for begin-guard skill
 # Block: no locked_issue, or on wrong branch
-# Uses current Claude Code hook API: hookSpecificOutput.permissionDecision
+# Uses hookSpecificOutput.permissionDecision for blocking hook responses
 set -euo pipefail
 
-cd "${CLAUDE_PROJECT_DIR:-.}" 2>/dev/null || exit 0
+PROJECT_DIR="${ACADEMIC_GIT_PROJECT_DIR:-${CODEX_WORKSPACE_ROOT:-${CODEX_PROJECT_DIR:-.}}}"
+cd "$PROJECT_DIR" 2>/dev/null || exit 0
 
 CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
 LOCKED_BRANCH=$(jq -r '.locked_branch // empty' .academic-git.json 2>/dev/null || echo "")

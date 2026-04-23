@@ -452,7 +452,7 @@
         <span class="layer-label">Skills (judgment)</span>
         <span class="node node-skill">/begin</span>
         <span class="arrow">&rarr;</span>
-        <span class="node node-skill">/create-issue</span>
+        <span class="node node-skill">/codex-gh-issue-start</span>
         <span class="arrow">&rarr;</span>
         <span class="node node-skill">/commit</span>
         <span class="arrow">&larr;</span>
@@ -547,7 +547,7 @@
         <div class="phase-number">3</div>
         <div class="phase-meta">
           <div class="phase-name">Issue Creation</div>
-          <div class="phase-trigger">/create-issue template + codex-gh-issue-start</div>
+          <div class="phase-trigger">/codex-gh-issue-start skill</div>
         </div>
       </div>
       <div class="phase-desc">
@@ -587,10 +587,10 @@
 
       <div class="source-block">
         <div class="source-header" onclick="toggle(this)">
-          <div><span class="source-name">skills/create-issue/SKILL.md</span> <span class="source-desc">Issue template, Codex review, worktree handoff</span></div>
+          <div><span class="source-name">skills/codex-gh-issue-start/SKILL.md</span> <span class="source-desc">Issue template, linked branch, dedicated worktree</span></div>
           <span class="source-toggle">&#9654;</span>
         </div>
-        <div class="source-body"><pre id="create-issue-source"></pre></div>
+        <div class="source-body"><pre id="codex-issue-start-source"></pre></div>
       </div>
     </div>
 
@@ -602,22 +602,22 @@
         <div class="phase-number">4</div>
         <div class="phase-meta">
           <div class="phase-name">Work Loop</div>
-          <div class="phase-trigger">Stop hook + checklist commits</div>
+          <div class="phase-trigger">hooks/codex/stop.sh &mdash; Stop event (after every Codex response)</div>
         </div>
       </div>
       <div class="phase-desc">
-        While Codex works on checklist items, the Stop hook can snapshot dirty work as <code>wip(#0):</code> commits.
-        These are safety nets, not real commits. Background push with 10s kill timer prevents zombie processes.
+        While Codex works on checklist items, the Stop hook acts as an Auto-Commit guard: dirty work blocks session end and sends Codex back through the commit skill.
+        The hook never commits directly; meaningful issue-linked commits are still created by the MCP commit tool.
       </div>
 
       <table class="tier-table">
-        <thead><tr><th>Commit Type</th><th>When</th><th>Message Format</th><th>Tied to Issue?</th></tr></thead>
+        <thead><tr><th>Layer</th><th>When</th><th>Action</th><th>Tied to Issue?</th></tr></thead>
         <tbody>
           <tr>
-            <td><span class="tag tag-auto">Auto</span> wip snapshot</td>
-            <td>On Stop when dirty work exists</td>
-            <td><code>wip(#0): session-sweep N files</code></td>
-            <td>No &mdash; safety net only</td>
+            <td><span class="tag tag-auto">Auto</span> Stop guard</td>
+            <td>After every Codex response</td>
+            <td>Block if dirty; instruct Codex to analyze and commit</td>
+            <td>No &mdash; guard only</td>
           </tr>
           <tr>
             <td><span class="tag tag-skill">Formal</span> /commit</td>
@@ -630,7 +630,7 @@
 
       <div class="source-block">
         <div class="source-header" onclick="toggle(this)">
-          <div><span class="source-name">hooks/auto-commit.sh</span> <span class="source-desc">Stop auto-save and PR-readiness hint</span></div>
+          <div><span class="source-name">hooks/codex/stop.sh</span> <span class="source-desc">Codex Stop hook &mdash; dirty-work guard + PR nudge</span></div>
           <span class="source-toggle">&#9654;</span>
         </div>
         <div class="source-body"><pre id="autocommit-source"></pre></div>
@@ -776,7 +776,7 @@
       </div>
       <div class="guard-card">
         <div class="guard-scenario">Forgot to Save</div>
-        <div class="guard-action"><code>auto-commit.sh</code> snapshots dirty work on Stop when needed</div>
+        <div class="guard-action"><code>hooks/codex/stop.sh</code> snapshots dirty work on Stop when needed</div>
       </div>
       <div class="guard-card">
         <div class="guard-scenario">Crashed / Closed Laptop</div>
@@ -808,10 +808,10 @@ function toggle(header) {
 // Embed source files
 const sources = [
   { id: 'begin-source', path: 'skills/begin/SKILL.md' },
-  { id: 'create-issue-source', path: 'skills/create-issue/SKILL.md' },
+  { id: 'codex-issue-start-source', path: 'skills/codex-gh-issue-start/SKILL.md' },
   { id: 'commit-source', path: 'skills/commit/SKILL.md' },
   { id: 'refine-issue-source', path: 'skills/refine-issue/SKILL.md' },
-  { id: 'autocommit-source', path: 'hooks/auto-commit.sh' },
+  { id: 'autocommit-source', path: 'hooks/codex/stop.sh' },
 ];
 
 sources.forEach(({ id, path }) => {

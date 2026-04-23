@@ -7,10 +7,12 @@ const zod_1 = require("zod");
 const child_process_1 = require("child_process");
 const fs_1 = require("fs");
 const path_1 = require("path");
+const command_js_1 = require("./command.js");
+const gh_js_1 = require("./gh.js");
 // ── Helpers ──
 function run(cmd, cwd) {
     return (0, child_process_1.execSync)(cmd, {
-        cwd: cwd ?? process.env.CLAUDE_PROJECT_DIR ?? process.cwd(),
+        cwd: cwd ?? projectDirFromEnv() ?? process.cwd(),
         encoding: "utf-8",
         timeout: 30_000,
         env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
@@ -23,6 +25,51 @@ function runSafe(cmd, cwd) {
     catch (e) {
         return e.stderr?.trim() ?? e.message;
     }
+}
+function shellQuote(value) {
+    return `'${value.replace(/'/g, `'\\''`)}'`;
+}
+function shellArgs(values) {
+    return values.map(shellQuote).join(" ");
+}
+function splitNonEmptyLines(value) {
+    return value.split("\n").map((line) => line.trim()).filter(Boolean);
+}
+function gitRefExists(ref) {
+    try {
+        run(`git show-ref --verify --quiet ${shellQuote(ref)}`);
+        return true;
+    }
+    catch {
+        return false;
+    }
+}
+function defaultBranch() {
+    const symbolic = runSafe("git symbolic-ref refs/remotes/origin/HEAD")
+        .replace("refs/remotes/origin/", "")
+        .trim();
+    if (symbolic && !symbolic.toLowerCase().includes("fatal")) {
+        return symbolic;
+    }
+    const remoteShow = runSafe("git remote show origin");
+    const remoteMatch = remoteShow.match(/HEAD branch:\s*(\S+)/);
+    if (remoteMatch?.[1]) {
+        return remoteMatch[1];
+    }
+    if (gitRefExists("refs/remotes/origin/master"))
+        return "master";
+    if (gitRefExists("refs/remotes/origin/main"))
+        return "main";
+    if (gitRefExists("refs/heads/master"))
+        return "master";
+    return "main";
+}
+function defaultBaseRef() {
+    const branch = defaultBranch();
+    return gitRefExists(`refs/remotes/origin/${branch}`) ? `origin/${branch}` : branch;
+}
+function defaultBranchRange() {
+    return `${shellArgs([defaultBaseRef()])}...HEAD`;
 }
 // ── Retry & Error Classification ──
 // Borrowed from octokit/plugin-retry.js + plugin-throttling.js
@@ -90,6 +137,34 @@ function runWithRetry(cmd, opts, cwd) {
     // Unreachable, but TypeScript needs it
     throw new Error(cmd + " failed after retries");
 }
+function runGhWithRetry(args, opts, cwd) {
+    const maxRetries = opts?.maxRetries ?? 3;
+    const baseDelayMs = opts?.baseDelayMs ?? 1000;
+    const preview = (0, command_js_1.commandPreview)("gh", args);
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            return (0, command_js_1.runFile)("gh", args, cwd ?? repoDir());
+        }
+        catch (e) {
+            const stderr = e.stderr?.toString().trim() ?? e.message ?? "";
+            // Last attempt or non-retriable -> throw with parsed error
+            if (attempt === maxRetries) {
+                throw new Error(parseGhError(stderr) || preview + " failed");
+            }
+            const classification = classifyGhError(stderr);
+            if (classification === "fail") {
+                throw new Error(parseGhError(stderr) || preview + " failed");
+            }
+            // Only retry on "retry" or "unknown" with quadratic backoff
+            const delayMs = baseDelayMs * (attempt + 1) ** 2;
+            if (classification === "retry" || classification === "unknown") {
+                (0, child_process_1.execSync)(`sleep ${delayMs / 1000}`, { timeout: delayMs + 1000 });
+            }
+        }
+    }
+    // Unreachable, but TypeScript needs it
+    throw new Error(preview + " failed after retries");
+}
 function text(s) {
     return { content: [{ type: "text", text: s }] };
 }
@@ -97,10 +172,12 @@ function err(s) {
     return { content: [{ type: "text", text: `ERROR: ${s}` }], isError: true };
 }
 function repoDir() {
-    const d = process.env.CLAUDE_PROJECT_DIR;
-    if (!d)
-        throw new Error("CLAUDE_PROJECT_DIR not set");
-    return d;
+    return projectDirFromEnv() ?? process.cwd();
+}
+function projectDirFromEnv() {
+    return (process.env.ACADEMIC_GIT_PROJECT_DIR ??
+        process.env.CODEX_WORKSPACE_ROOT ??
+        process.env.CODEX_PROJECT_DIR);
 }
 function shellArg(value) {
     return JSON.stringify(value);
@@ -208,7 +285,7 @@ function runLintCommand(cmd, cwd) {
     }
 }
 // ── Gate Context Builder ──
-function buildGateContext(issue) {
+function buildGateContext(issue, opts) {
     const issueJson = runWithRetry(`gh issue view ${issue} --json body`);
     const issueBody = JSON.parse(issueJson).body;
     const checklist = issueBody
@@ -221,11 +298,28 @@ function buildGateContext(issue) {
         return { letter, desc, done };
     });
     const branch = run("git branch --show-current");
-    const range = shellArg(defaultComparisonRange());
-    const diffStat = runSafe(`git diff ${range} --stat`);
-    const changedFiles = runSafe(`git diff ${range} --name-only`).split("\n").filter(Boolean);
-    const patch = runSafe(`git diff ${range}`);
-    const commits = runSafe(`git log ${range} --oneline`).split("\n").filter(Boolean);
+    const range = defaultBranchRange();
+    const branchDiffStat = runSafe(`git diff ${range} --stat`);
+    const stagedDiffStat = opts?.includeStaged ? runSafe("git diff --cached --stat") : "";
+    const diffStat = [
+        branchDiffStat,
+        stagedDiffStat ? `Staged changes pending commit:\n${stagedDiffStat}` : "",
+    ].filter(Boolean).join("\n\n");
+    const branchFiles = splitNonEmptyLines(runSafe(`git diff ${range} --name-only`));
+    const stagedFiles = opts?.includeStaged
+        ? splitNonEmptyLines(runSafe("git diff --cached --name-only"))
+        : [];
+    const changedFiles = Array.from(new Set([...branchFiles, ...stagedFiles]));
+    const branchPatch = runSafe(`git diff ${range}`);
+    const stagedPatch = opts?.includeStaged ? runSafe("git diff --cached") : "";
+    const patch = [
+        branchPatch,
+        stagedPatch ? `\n\n# Staged changes pending commit\n${stagedPatch}` : "",
+    ].filter(Boolean).join("\n");
+    const commits = splitNonEmptyLines(runSafe(`git log ${range} --oneline`));
+    if (opts?.pendingCommitMessage) {
+        commits.push(`[pending] ${opts.pendingCommitMessage}`);
+    }
     const ctx = {
         issueBody,
         issueNumber: issue,
@@ -272,24 +366,6 @@ server.tool("view_issue", "View a GitHub Issue (body + comments = current truth)
     const body = runWithRetry(`gh issue view ${issue} --json title,body,state,comments --jq '{title, body, state, comments: [.comments[] | {body, createdAt, author: .author.login}]}'`);
     return text(body);
 });
-server.tool("create_issue", "Validate a DAG checklist Issue body. Codex implementation Issues must be created with codex-gh-issue-start so the Issue, linked branch, and dedicated worktree are created together.", {
-    title: zod_1.z.string().describe("Issue title — concise, action-oriented"),
-    body: zod_1.z.string().describe("Issue body — must include ## Context, ## Task (DAG checklist), ## Scope, ## Affected Files, ## Verification"),
-}, async ({ title, body }) => {
-    // Validate template sections
-    const required = ["## Context", "## Task", "## Scope"];
-    const missing = required.filter((s) => !body.includes(s));
-    if (missing.length > 0) {
-        return err(`Issue body missing required sections: ${missing.join(", ")}`);
-    }
-    // Validate checklist items have letter IDs
-    const checklistLines = body.split("\n").filter((l) => /^- \[ \] [A-Z]\./.test(l));
-    if (checklistLines.length === 0) {
-        return err("Issue body must contain at least one checklist item (format: - [ ] A. description)");
-    }
-    return err("Issue body template is valid, but MCP create_issue is disabled for Codex implementation work. " +
-        `Use: codex-gh-issue-start --title ${JSON.stringify(title)} --body-file - --repo OWNER/REPO --base <default-branch>`);
-});
 server.tool("refine_issue", "Add a refinement comment to an Issue. Body is NEVER modified — all changes via append-only comments.", {
     issue: zod_1.z.number().describe("Issue number"),
     action: zod_1.z.enum(["added", "removed", "scope-change", "context-update"]).describe("Type of change"),
@@ -308,7 +384,7 @@ ${detail}
 
 **Reason:** ${reason}
 **Requested by:** ${requested_by}`;
-    const out = runWithRetry(`gh issue comment ${issue} --body ${JSON.stringify(comment)}`);
+    const out = runGhWithRetry((0, gh_js_1.ghIssueCommentArgs)(issue, comment));
     return text(out);
 });
 server.tool("check_item", "Check off a completed checklist item on an Issue. Only toggles the specific item — no other body changes allowed.", {
@@ -327,18 +403,19 @@ server.tool("check_item", "Check off a completed checklist item on an Issue. Onl
         return err(`Item ${letter} not found in Issue #${issue}`);
     }
     const updated = body.replace(pattern, `- [x] ${letter}.`);
-    runWithRetry(`gh issue edit ${issue} --body ${JSON.stringify(updated)}`);
+    runGhWithRetry((0, gh_js_1.ghIssueEditBodyArgs)(issue, updated));
     return text(`Checked off item ${letter} on Issue #${issue}`);
 });
 // ════════════════════════════════════════
 //  COMMIT TOOLS
 // ════════════════════════════════════════
-server.tool("commit", "Create a formal commit tied to a specific Issue checklist item. Format: type(#N/X): description. Auto adds all changes, commits, and pushes.", {
+server.tool("commit", "Create a formal commit tied to a specific Issue checklist item. Format: type(#N/X): description. Stages selected paths (or all dirty files), commits, and pushes.", {
     issue: zod_1.z.number().describe("Issue number"),
     item: zod_1.z.string().regex(/^[A-Z]$/).describe("Checklist item letter (A-Z)"),
     type: zod_1.z.enum(["feat", "fix", "refactor", "docs", "test", "chore", "perf"]).describe("Commit type"),
     description: zod_1.z.string().describe("Commit description (imperative mood)"),
-}, async ({ issue, item, type, description }) => {
+    paths: zod_1.z.array(zod_1.z.string()).optional().describe("Optional explicit file or directory paths to stage for this commit. Use this for grouped Auto-Commit cleanup; omit only when all dirty files belong in one commit."),
+}, async ({ issue, item, type, description, paths }) => {
     // Ensure config exists
     ensureConfig();
     // Verify issue exists and item is valid
@@ -364,6 +441,10 @@ server.tool("commit", "Create a formal commit tied to a specific Issue checklist
             }
         }
     }
+    const requestedPaths = (paths ?? []).map((p) => p.trim()).filter(Boolean);
+    if (requestedPaths.some((p) => p.includes("\n") || p.includes("\0"))) {
+        return err("Invalid path: paths must not contain newlines or NUL bytes");
+    }
     // --- Pipeline check (if configured) ---
     const config = ensureConfig();
     if (config.pipeline.run) {
@@ -374,16 +455,41 @@ server.tool("commit", "Create a formal commit tied to a specific Issue checklist
             return err(`Pipeline FAILED: ${e.message}. Fix before committing.`);
         }
     }
+    // Stage only the selected group, unless the caller explicitly omits paths.
+    const preStaged = splitNonEmptyLines(runSafe("git diff --cached --name-only"));
+    if (preStaged.length > 0) {
+        return err("Index already has staged changes. The commit tool expects a clean index so grouped commits stay auditable:\n" +
+            preStaged.map((p) => `  ${p}`).join("\n"));
+    }
+    if (requestedPaths.length > 0) {
+        run(`git add -- ${shellArgs(requestedPaths)}`);
+    }
+    else {
+        run("git add -A");
+    }
+    const unstageRequested = () => {
+        const pathspec = requestedPaths.length > 0 ? shellArgs(requestedPaths) : ".";
+        runSafe(`git restore --staged -- ${pathspec}`);
+    };
+    const staged = runSafe("git diff --cached --stat");
+    if (!staged) {
+        return err("Nothing to commit for the requested paths");
+    }
     // --- Gate check (block on CRITICAL) ---
     let gateWarning = "";
+    const msg = `${type}(#${issue}/${item}): ${description}`;
     try {
-        const gateCtx = buildGateContext(issue);
+        const gateCtx = buildGateContext(issue, {
+            includeStaged: true,
+            pendingCommitMessage: msg,
+        });
         const gateResult = (0, gates_js_1.runAllGates)(gateCtx, "commit");
         const critical = gateResult.violations.filter(v => v.severity === "CRITICAL");
         if (critical.length > 0) {
+            unstageRequested();
             return err(`Gate BLOCKED — ${critical.length} CRITICAL violation(s):\n` +
                 critical.map(v => `  ${v.ruleId}: ${v.message}`).join("\n") +
-                `\nRun run_gates(issue=${issue}) for full report.`);
+                `\nRequested paths were unstaged; working tree changes are preserved. Run run_gates(issue=${issue}) for full report.`);
         }
         // HIGH violations are advisory for commits
         const highViolations = gateResult.violations.filter(v => v.severity === "HIGH");
@@ -395,20 +501,15 @@ server.tool("commit", "Create a formal commit tied to a specific Issue checklist
     catch {
         // Gate check fails open (network/auth issues shouldn't block commits)
     }
-    // Stage all changes
-    run("git add -A");
-    // Check something is staged
-    const staged = runSafe("git diff --cached --stat");
-    if (!staged) {
-        return err("Nothing to commit (working tree clean)");
-    }
     // Commit
-    const msg = `${type}(#${issue}/${item}): ${description}`;
-    run(`git commit -m ${JSON.stringify(msg)}`);
+    run(`git commit -m ${shellQuote(msg)}`);
     // Push
     const branch = run("git branch --show-current");
     runSafe(`git push -u origin "${branch}"`);
-    return text(`Committed: ${msg}\nPushed to ${branch}${gateWarning}`);
+    const scope = requestedPaths.length > 0
+        ? `\nPaths:\n${requestedPaths.map((p) => `  ${p}`).join("\n")}`
+        : "\nPaths: all dirty files";
+    return text(`Committed: ${msg}\nPushed to ${branch}${scope}${gateWarning}`);
 });
 // ════════════════════════════════════════
 //  PR TOOLS
@@ -429,12 +530,10 @@ server.tool("generate_pr_body", "Generate a PR body draft by mapping git diff ch
         const desc = l.replace(/^- \[[x ]\] [A-Z]\. /, "").replace(/→ after:.*$/, "").trim();
         return { letter, desc, done };
     });
-    // Get diff stats: files changed per commit, grouped
-    const range = shellArg(defaultComparisonRange());
+    // Get diff stats against the configured default branch.
+    const range = defaultBranchRange();
     const diffStat = runSafe(`git diff ${range} --stat`);
-    const changedFiles = runSafe(`git diff ${range} --name-only`)
-        .split("\n")
-        .filter(Boolean);
+    const changedFiles = splitNonEmptyLines(runSafe(`git diff ${range} --name-only`));
     // Get commit log with messages (to infer which item each commit belongs to)
     const commitLog = runSafe(`git log ${range} --oneline`);
     // Map commits to items using commit message pattern type(#N/X):
@@ -522,7 +621,7 @@ server.tool("create_pr", "Create a Pull Request. Validates all checklist items a
     catch {
         // Gate check fails open (network/auth issues shouldn't block PRs)
     }
-    const out = runWithRetry(`gh pr create --title ${JSON.stringify(title)} --body ${JSON.stringify(prBody)}`);
+    const out = runGhWithRetry((0, gh_js_1.ghPrCreateArgs)(title, prBody));
     return text(`${out}${advisoryNote}`);
 });
 server.tool("merge_pr", "Squash-merge a PR and delete the branch. Returns to the default branch.", { pr: zod_1.z.number().describe("PR number") }, async ({ pr }) => {
@@ -539,40 +638,18 @@ server.tool("view_pr", "View a Pull Request", { pr: zod_1.z.number().describe("P
 // ════════════════════════════════════════
 //  BRANCH TOOLS
 // ════════════════════════════════════════
-server.tool("create_branch", "Create a new feature branch from the default branch. Naming: feat/<slug>", { slug: zod_1.z.string().describe("Branch slug (lowercase, hyphens, max 40 chars)") }, async ({ slug }) => {
-    // Ensure config exists
-    ensureConfig();
-    // Enforce naming
-    const clean = slug
-        .toLowerCase()
-        .replace(/[^a-z0-9-]/g, "-")
-        .replace(/-+/g, "-")
-        .slice(0, 40);
-    const branch = `feat/${clean}`;
-    // Check if exists
-    const existing = runSafe(`git branch --list "${branch}"`);
-    if (existing.trim()) {
-        run(`git switch "${branch}"`);
-        return text(`Switched to existing branch ${branch}`);
-    }
-    const defaultBranch = defaultBranchName();
-    run(`git switch "${defaultBranch}"`);
-    run("git pull");
-    run(`git switch -c "${branch}"`);
-    return text(`Created and switched to ${branch}`);
-});
-server.tool("switch_branch", "Switch to an existing branch", { branch: zod_1.z.string().describe("Branch name (e.g., feat/revise-table-3)") }, async ({ branch }) => {
+server.tool("switch_branch", "Switch to an existing branch", { branch: zod_1.z.string().describe("Branch name (e.g., codex/issue-12-revise-table-3)") }, async ({ branch }) => {
     run(`git switch "${branch}"`);
     return text(`Switched to ${branch}`);
 });
-server.tool("list_branches", "List feature branches", {}, async () => {
-    const out = runSafe("git branch --list 'feat/*'");
-    return text(out || "(no feature branches)");
+server.tool("list_branches", "List issue branches", {}, async () => {
+    const out = runSafe("git branch --list 'codex/issue-*'");
+    return text(out || "(no issue branches)");
 });
 // ════════════════════════════════════════
 //  TAG TOOLS
 // ════════════════════════════════════════
-server.tool("create_tag", "Create a milestone tag on main. Types: email-YYYY-MM-DD, meeting-YYYY-MM-DD, chat-YYYY-MM-DD, conference-YYYY-MM-DD", {
+server.tool("create_tag", "Create a milestone tag on the current branch. Types: email-YYYY-MM-DD, meeting-YYYY-MM-DD, chat-YYYY-MM-DD, conference-YYYY-MM-DD", {
     name: zod_1.z.string().describe("Tag name (e.g., email-2026-04-21)"),
     message: zod_1.z.string().describe("Tag message describing the milestone"),
 }, async ({ name, message }) => {
@@ -581,7 +658,7 @@ server.tool("create_tag", "Create a milestone tag on main. Types: email-YYYY-MM-
     if (!valid) {
         return err("Tag must match format: (email|meeting|chat|conference)-YYYY-MM-DD");
     }
-    run(`git tag -a "${name}" -m ${JSON.stringify(message)}`);
+    run(`git tag -a ${shellQuote(name)} -m ${shellQuote(message)}`);
     runSafe(`git push origin "${name}"`);
     return text(`Tag ${name} created and pushed`);
 });

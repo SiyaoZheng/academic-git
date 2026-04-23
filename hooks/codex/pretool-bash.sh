@@ -9,6 +9,10 @@ if [ -z "$COMMAND_STR" ]; then
   exit 0
 fi
 
+if [[ "$COMMAND_STR" == *"codex-gh-issue-start"* ]]; then
+  exit 0
+fi
+
 if [ -z "$REPO_DIR" ]; then
   REPO_DIR="$PWD"
 fi

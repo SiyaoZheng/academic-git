@@ -10,6 +10,10 @@ if [ -z "$command_str" ]; then
   exit 0
 fi
 
+if [[ "$command_str" == *"codex-gh-issue-start"* ]]; then
+  exit 0
+fi
+
 # Allowlisted read-only commands (used by hooks themselves)
 ALLOWED_PATTERNS=(
   'git branch --show-current'
