@@ -102,6 +102,60 @@ function repoDir() {
         throw new Error("CLAUDE_PROJECT_DIR not set");
     return d;
 }
+function shellArg(value) {
+    return JSON.stringify(value);
+}
+function cleanGitOutput(output) {
+    const trimmed = output.trim();
+    if (!trimmed || /^(fatal|error):/i.test(trimmed))
+        return "";
+    return trimmed;
+}
+function gitOutput(cmd) {
+    return cleanGitOutput(runSafe(cmd));
+}
+function defaultBranchName() {
+    const symbolic = gitOutput("git symbolic-ref --quiet --short refs/remotes/origin/HEAD");
+    if (symbolic)
+        return symbolic.replace(/^origin\//, "");
+    const remoteBranches = gitOutput("git branch -r --list 'origin/main' 'origin/master'")
+        .split("\n")
+        .map((b) => b.trim().replace(/^\*?\s*/, ""));
+    const hasOriginMain = remoteBranches.includes("origin/main");
+    const hasOriginMaster = remoteBranches.includes("origin/master");
+    if (hasOriginMain && !hasOriginMaster)
+        return "main";
+    if (hasOriginMaster && !hasOriginMain)
+        return "master";
+    const remoteInfo = gitOutput("git remote show origin");
+    const remoteMatch = remoteInfo.match(/HEAD branch:\s*(\S+)/);
+    if (remoteMatch?.[1] && remoteMatch[1] !== "(unknown)") {
+        return remoteMatch[1];
+    }
+    if (hasOriginMain)
+        return "main";
+    if (hasOriginMaster)
+        return "master";
+    const localBranches = gitOutput("git branch --list main master")
+        .split("\n")
+        .map((b) => b.trim().replace(/^\*?\s*/, ""));
+    if (localBranches.includes("main"))
+        return "main";
+    if (localBranches.includes("master"))
+        return "master";
+    return "main";
+}
+function defaultBranchRef() {
+    const branch = defaultBranchName();
+    const remoteRef = `origin/${branch}`;
+    if (gitOutput(`git rev-parse --verify --quiet ${shellArg(remoteRef)}`)) {
+        return remoteRef;
+    }
+    return branch;
+}
+function defaultComparisonRange() {
+    return `${defaultBranchRef()}...HEAD`;
+}
 const DEFAULT_CONFIG = {
     pipeline: { run: "" },
     lint: {},
@@ -167,10 +221,11 @@ function buildGateContext(issue) {
         return { letter, desc, done };
     });
     const branch = run("git branch --show-current");
-    const diffStat = runSafe("git diff main...HEAD --stat");
-    const changedFiles = runSafe("git diff main...HEAD --name-only").split("\n").filter(Boolean);
-    const patch = runSafe("git diff main...HEAD");
-    const commits = runSafe("git log main...HEAD --oneline").split("\n").filter(Boolean);
+    const range = shellArg(defaultComparisonRange());
+    const diffStat = runSafe(`git diff ${range} --stat`);
+    const changedFiles = runSafe(`git diff ${range} --name-only`).split("\n").filter(Boolean);
+    const patch = runSafe(`git diff ${range}`);
+    const commits = runSafe(`git log ${range} --oneline`).split("\n").filter(Boolean);
     const ctx = {
         issueBody,
         issueNumber: issue,
@@ -375,12 +430,13 @@ server.tool("generate_pr_body", "Generate a PR body draft by mapping git diff ch
         return { letter, desc, done };
     });
     // Get diff stats: files changed per commit, grouped
-    const diffStat = runSafe("git diff main...HEAD --stat");
-    const changedFiles = runSafe("git diff main...HEAD --name-only")
+    const range = shellArg(defaultComparisonRange());
+    const diffStat = runSafe(`git diff ${range} --stat`);
+    const changedFiles = runSafe(`git diff ${range} --name-only`)
         .split("\n")
         .filter(Boolean);
     // Get commit log with messages (to infer which item each commit belongs to)
-    const commitLog = runSafe("git log main...HEAD --oneline");
+    const commitLog = runSafe(`git log ${range} --oneline`);
     // Map commits to items using commit message pattern type(#N/X):
     const commitsByItem = {};
     for (const line of commitLog.split("\n").filter(Boolean)) {
@@ -469,9 +525,9 @@ server.tool("create_pr", "Create a Pull Request. Validates all checklist items a
     const out = runWithRetry(`gh pr create --title ${JSON.stringify(title)} --body ${JSON.stringify(prBody)}`);
     return text(`${out}${advisoryNote}`);
 });
-server.tool("merge_pr", "Squash-merge a PR and delete the branch. Returns to main.", { pr: zod_1.z.number().describe("PR number") }, async ({ pr }) => {
+server.tool("merge_pr", "Squash-merge a PR and delete the branch. Returns to the default branch.", { pr: zod_1.z.number().describe("PR number") }, async ({ pr }) => {
     runWithRetry(`gh pr merge ${pr} --squash --delete-branch`);
-    const defaultBranch = runSafe("git symbolic-ref refs/remotes/origin/HEAD").replace("refs/remotes/origin/", "") || "main";
+    const defaultBranch = defaultBranchName();
     run(`git switch "${defaultBranch}"`);
     run("git pull");
     return text(`PR #${pr} merged. Now on ${defaultBranch}.`);
@@ -483,7 +539,7 @@ server.tool("view_pr", "View a Pull Request", { pr: zod_1.z.number().describe("P
 // ════════════════════════════════════════
 //  BRANCH TOOLS
 // ════════════════════════════════════════
-server.tool("create_branch", "Create a new feature branch from main. Naming: feat/<slug>", { slug: zod_1.z.string().describe("Branch slug (lowercase, hyphens, max 40 chars)") }, async ({ slug }) => {
+server.tool("create_branch", "Create a new feature branch from the default branch. Naming: feat/<slug>", { slug: zod_1.z.string().describe("Branch slug (lowercase, hyphens, max 40 chars)") }, async ({ slug }) => {
     // Ensure config exists
     ensureConfig();
     // Enforce naming
@@ -499,7 +555,7 @@ server.tool("create_branch", "Create a new feature branch from main. Naming: fea
         run(`git switch "${branch}"`);
         return text(`Switched to existing branch ${branch}`);
     }
-    const defaultBranch = runSafe("git symbolic-ref refs/remotes/origin/HEAD").replace("refs/remotes/origin/", "") || "main";
+    const defaultBranch = defaultBranchName();
     run(`git switch "${defaultBranch}"`);
     run("git pull");
     run(`git switch -c "${branch}"`);
