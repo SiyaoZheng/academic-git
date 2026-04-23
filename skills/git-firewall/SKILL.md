@@ -45,6 +45,6 @@ These introspection commands are allowlisted because hooks use them internally:
 | `gh pr merge` | `merge_pr(pr)` |
 | `gh issue create` | `/codex-gh-issue-start` |
 | `gh issue edit` | `refine_issue(issue, action, ...)` |
-| `git switch -c` | `create_branch(slug)` |
+| `git switch -c` | `/codex-gh-issue-start` for new issue-bound work |
 | `git switch` | `switch_branch(branch)` |
 | `git tag -a` | `create_tag(name, message)` |
