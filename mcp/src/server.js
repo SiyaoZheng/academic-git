@@ -26,12 +26,18 @@ function runSafe(cmd, cwd) {
         return e.stderr?.trim() ?? e.message;
     }
 }
+function shellQuote(value) {
+    return `'${value.replace(/'/g, `'\\''`)}'`;
+}
+function shellArgs(values) {
+    return values.map(shellQuote).join(" ");
+}
 function splitNonEmptyLines(value) {
     return value.split("\n").map((line) => line.trim()).filter(Boolean);
 }
 function gitRefExists(ref) {
     try {
-        run(`git show-ref --verify --quiet ${JSON.stringify(ref)}`);
+        run(`git show-ref --verify --quiet ${shellQuote(ref)}`);
         return true;
     }
     catch {
@@ -63,7 +69,7 @@ function defaultBaseRef() {
     return gitRefExists(`refs/remotes/origin/${branch}`) ? `origin/${branch}` : branch;
 }
 function defaultBranchRange() {
-    return `${(0, command_js_1.shellArgs)([defaultBaseRef()])}...HEAD`;
+    return `${shellArgs([defaultBaseRef()])}...HEAD`;
 }
 // ── Retry & Error Classification ──
 // Borrowed from octokit/plugin-retry.js + plugin-throttling.js
@@ -306,24 +312,6 @@ server.tool("view_issue", "View a GitHub Issue (body + comments = current truth)
     const body = runWithRetry(`gh issue view ${issue} --json title,body,state,comments --jq '{title, body, state, comments: [.comments[] | {body, createdAt, author: .author.login}]}'`);
     return text(body);
 });
-server.tool("create_issue", "Create a new GitHub Issue. Body MUST follow the DAG checklist template (Context, Task with letter IDs + dependencies, Scope, Affected Files, Verification).", {
-    title: zod_1.z.string().describe("Issue title — concise, action-oriented"),
-    body: zod_1.z.string().describe("Issue body — must include ## Context, ## Task (DAG checklist), ## Scope, ## Affected Files, ## Verification"),
-}, async ({ title, body }) => {
-    // Validate template sections
-    const required = ["## Context", "## Task", "## Scope"];
-    const missing = required.filter((s) => !body.includes(s));
-    if (missing.length > 0) {
-        return err(`Issue body missing required sections: ${missing.join(", ")}`);
-    }
-    // Validate checklist items have letter IDs
-    const checklistLines = body.split("\n").filter((l) => /^- \[ \] [A-Z]\./.test(l));
-    if (checklistLines.length === 0) {
-        return err("Issue body must contain at least one checklist item (format: - [ ] A. description)");
-    }
-    const out = runGhWithRetry((0, gh_js_1.ghIssueCreateArgs)(title, body));
-    return text(out);
-});
 server.tool("refine_issue", "Add a refinement comment to an Issue. Body is NEVER modified — all changes via append-only comments.", {
     issue: zod_1.z.number().describe("Issue number"),
     action: zod_1.z.enum(["added", "removed", "scope-change", "context-update"]).describe("Type of change"),
@@ -420,13 +408,13 @@ server.tool("commit", "Create a formal commit tied to a specific Issue checklist
             preStaged.map((p) => `  ${p}`).join("\n"));
     }
     if (requestedPaths.length > 0) {
-        run(`git add -- ${(0, command_js_1.shellArgs)(requestedPaths)}`);
+        run(`git add -- ${shellArgs(requestedPaths)}`);
     }
     else {
         run("git add -A");
     }
     const unstageRequested = () => {
-        const pathspec = requestedPaths.length > 0 ? (0, command_js_1.shellArgs)(requestedPaths) : ".";
+        const pathspec = requestedPaths.length > 0 ? shellArgs(requestedPaths) : ".";
         runSafe(`git restore --staged -- ${pathspec}`);
     };
     const staged = runSafe("git diff --cached --stat");
@@ -460,7 +448,7 @@ server.tool("commit", "Create a formal commit tied to a specific Issue checklist
         // Gate check fails open (network/auth issues shouldn't block commits)
     }
     // Commit
-    run(`git commit -m ${JSON.stringify(msg)}`);
+    run(`git commit -m ${shellQuote(msg)}`);
     // Push
     const branch = run("git branch --show-current");
     runSafe(`git push -u origin "${branch}"`);
@@ -596,35 +584,13 @@ server.tool("view_pr", "View a Pull Request", { pr: zod_1.z.number().describe("P
 // ════════════════════════════════════════
 //  BRANCH TOOLS
 // ════════════════════════════════════════
-server.tool("create_branch", "Create a new feature branch from the default branch. Naming: feat/<slug>", { slug: zod_1.z.string().describe("Branch slug (lowercase, hyphens, max 40 chars)") }, async ({ slug }) => {
-    // Ensure config exists
-    ensureConfig();
-    // Enforce naming
-    const clean = slug
-        .toLowerCase()
-        .replace(/[^a-z0-9-]/g, "-")
-        .replace(/-+/g, "-")
-        .slice(0, 40);
-    const branch = `feat/${clean}`;
-    // Check if exists
-    const existing = runSafe(`git branch --list "${branch}"`);
-    if (existing.trim()) {
-        run(`git switch "${branch}"`);
-        return text(`Switched to existing branch ${branch}`);
-    }
-    const defaultBranch = runSafe("git symbolic-ref refs/remotes/origin/HEAD").replace("refs/remotes/origin/", "") || "main";
-    run(`git switch "${defaultBranch}"`);
-    run("git pull");
-    run(`git switch -c "${branch}"`);
-    return text(`Created and switched to ${branch}`);
-});
-server.tool("switch_branch", "Switch to an existing branch", { branch: zod_1.z.string().describe("Branch name (e.g., feat/revise-table-3)") }, async ({ branch }) => {
+server.tool("switch_branch", "Switch to an existing branch", { branch: zod_1.z.string().describe("Branch name (e.g., codex/issue-12-revise-table-3)") }, async ({ branch }) => {
     run(`git switch "${branch}"`);
     return text(`Switched to ${branch}`);
 });
-server.tool("list_branches", "List feature branches", {}, async () => {
-    const out = runSafe("git branch --list 'feat/*'");
-    return text(out || "(no feature branches)");
+server.tool("list_branches", "List issue branches", {}, async () => {
+    const out = runSafe("git branch --list 'codex/issue-*'");
+    return text(out || "(no issue branches)");
 });
 // ════════════════════════════════════════
 //  TAG TOOLS
@@ -638,7 +604,7 @@ server.tool("create_tag", "Create a milestone tag on the current branch. Types: 
     if (!valid) {
         return err("Tag must match format: (email|meeting|chat|conference)-YYYY-MM-DD");
     }
-    run(`git tag -a "${name}" -m ${JSON.stringify(message)}`);
+    run(`git tag -a ${shellQuote(name)} -m ${shellQuote(message)}`);
     runSafe(`git push origin "${name}"`);
     return text(`Tag ${name} created and pushed`);
 });

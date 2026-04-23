@@ -29,7 +29,7 @@
 ### 4. 合并后流程
 - **Tag 判断**: 是否是 milestone delivery（email/meeting/conference trigger）
 - **下一个 Issue 路由**: 检查是否有 open Issues，提示 Adrian
-- **分支清理**: 确认 feat/* 已删除
+- **分支清理**: 确认 `codex/issue-*` issue branch 已删除
 - **Linear 同步**: 如果接了 Linear，触发状态更新
 
 ## 其他待做

@@ -146,7 +146,7 @@ def validate_body(body: str, *, skip_template_check: bool = False) -> None:
         raise SystemExit("Every checklist item must declare DAG dependencies with 'after:'.")
 
 
-def create_issue(args: argparse.Namespace, body: str) -> tuple[str, int]:
+def create_github_issue(args: argparse.Namespace, body: str) -> tuple[str, int]:
     cmd = ["gh", "issue", "create", "--title", args.title, *repo_args(args.repo)]
 
     for label in args.label:
@@ -302,7 +302,7 @@ def main(argv: list[str]) -> int:
     args = parse_args(argv)
     body = read_body(args)
     validate_body(body, skip_template_check=args.skip_template_check)
-    issue_url, issue_number = create_issue(args, body)
+    issue_url, issue_number = create_github_issue(args, body)
     branch = develop_issue(args, issue_number)
     worktree = add_worktree(args, issue_number, branch)
 
