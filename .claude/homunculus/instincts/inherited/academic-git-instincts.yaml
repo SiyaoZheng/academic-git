@@ -1,0 +1,319 @@
+# Instincts generated from https://github.com/SiyaoZheng/academic-git
+# Generated: 2026-04-23T03:38:30.698Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: academic-git-commit-conventional
+trigger: "when writing a commit message"
+confidence: 0.85
+domain: git
+source: repo-analysis
+source_repo: https://github.com/SiyaoZheng/academic-git
+---
+
+# Academic Git Commit Conventional
+
+## Action
+
+Use conventional commit format with prefixes: chore
+
+## Evidence
+
+- 2 commits analyzed
+- Detected conventional commit pattern
+- Examples: chore(#2/A): ignore local assistant artifacts, chore(#2/B): remove Claude Code plugin surface
+
+---
+id: academic-git-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/SiyaoZheng/academic-git
+---
+
+# Academic Git Commit Length
+
+## Action
+
+Keep commit messages concise (~46 characters)
+
+## Evidence
+
+- Average commit message length: 46 chars
+- Based on 2 commits
+
+---
+id: academic-git-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/SiyaoZheng/academic-git
+---
+
+# Academic Git Naming Files
+
+## Action
+
+Use camelCase naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: camelCase
+
+---
+id: academic-git-import-relative
+trigger: "when importing modules"
+confidence: 0.75
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/SiyaoZheng/academic-git
+---
+
+# Academic Git Import Relative
+
+## Action
+
+Use relative imports for project files
+
+## Evidence
+
+- Import analysis shows relative import pattern
+- Example: import { x } from '../lib/x'
+
+---
+id: academic-git-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/SiyaoZheng/academic-git
+---
+
+# Academic Git Export Style
+
+## Action
+
+Prefer named exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: named
+
+---
+id: academic-git-test-separate
+trigger: "when writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/SiyaoZheng/academic-git
+---
+
+# Academic Git Test Separate
+
+## Action
+
+Place tests in the tests/ or __tests__/ directory, mirroring src structure
+
+## Evidence
+
+- Separate test directory pattern detected
+- Tests live in dedicated test folders
+
+---
+id: academic-git-instinct-naming-files
+trigger: "When creating or renaming a file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: SiyaoZheng/academic-git
+---
+
+# Academic Git Instinct Naming Files
+
+## Action
+
+Use camelCase for file names
+
+## Evidence
+
+- Pattern in namingConventions.files
+
+---
+id: academic-git-instinct-naming-functions
+trigger: "When defining a function"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: SiyaoZheng/academic-git
+---
+
+# Academic Git Instinct Naming Functions
+
+## Action
+
+Use camelCase for function names
+
+## Evidence
+
+- Pattern in namingConventions.functions
+
+---
+id: academic-git-instinct-naming-classes
+trigger: "When defining a class"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: SiyaoZheng/academic-git
+---
+
+# Academic Git Instinct Naming Classes
+
+## Action
+
+Use PascalCase for class names
+
+## Evidence
+
+- Pattern in namingConventions.classes
+
+---
+id: academic-git-instinct-naming-constants
+trigger: "When defining a constant"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: SiyaoZheng/academic-git
+---
+
+# Academic Git Instinct Naming Constants
+
+## Action
+
+Use SCREAMING_SNAKE_CASE for constant names
+
+## Evidence
+
+- Pattern in namingConventions.constants
+
+---
+id: academic-git-instinct-import-style
+trigger: "When importing modules"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: SiyaoZheng/academic-git
+---
+
+# Academic Git Instinct Import Style
+
+## Action
+
+Use relative import paths
+
+## Evidence
+
+- Pattern in importStyle
+
+---
+id: academic-git-instinct-export-style
+trigger: "When exporting modules or functions"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: SiyaoZheng/academic-git
+---
+
+# Academic Git Instinct Export Style
+
+## Action
+
+Use named exports
+
+## Evidence
+
+- Pattern in exportStyle
+
+---
+id: academic-git-instinct-error-handling
+trigger: "When handling errors in code"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: SiyaoZheng/academic-git
+---
+
+# Academic Git Instinct Error Handling
+
+## Action
+
+Use try-catch blocks for error handling
+
+## Evidence
+
+- Pattern in errorHandling.style
+
+---
+id: academic-git-instinct-commit-format
+trigger: "When writing a git commit message"
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: SiyaoZheng/academic-git
+---
+
+# Academic Git Instinct Commit Format
+
+## Action
+
+Use the 'chore' prefix followed by issue reference and concise description (conventional commits)
+
+## Evidence
+
+- Seen in commit: chore(#2/A): ignore local assistant artifacts
+- Seen in commit: chore(#2/B): remove Claude Code plugin surface
+- Pattern in commits.prefixes
+
+---
+id: academic-git-instinct-commit-length
+trigger: "When composing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: SiyaoZheng/academic-git
+---
+
+# Academic Git Instinct Commit Length
+
+## Action
+
+Keep the commit message concise, around 46 characters on average
+
+## Evidence
+
+- Pattern in commits.averageLength
+
+---
+id: academic-git-instinct-test-location
+trigger: "When adding or organizing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: SiyaoZheng/academic-git
+---
+
+# Academic Git Instinct Test Location
+
+## Action
+
+Place tests in a separate folder from source code
+
+## Evidence
+
+- Pattern in architecture.folderStructure.testLocation
+
