@@ -101,7 +101,7 @@
       "decision": "route",
       "match": "(^|[^[:alnum:]_])git[[:space:]]+merge([[:space:]]|$)",
       "tool": "merge_pr",
-      "reason": "Direct git merge is blocked. Use merge_pr(pr) for the PR completion path.",
+      "reason": "Direct git merge is blocked. Use the merge-pr skill and merge_pr(pr) for the PR completion path.",
       "policy": "pr-merge"
     },
     {
@@ -143,7 +143,7 @@
       "decision": "route",
       "match": "(^|[^[:alnum:]_])gh[[:space:]]+pr[[:space:]]+merge([[:space:]]|$)",
       "tool": "merge_pr",
-      "reason": "Direct gh pr merge is blocked. Use merge_pr(pr) so merge, cleanup, and branch/worktree handling stay coordinated.",
+      "reason": "Direct gh pr merge is blocked. Use the merge-pr skill and merge_pr(pr) so merge, cleanup, and branch/worktree handling stay coordinated.",
       "policy": "pr-merge"
     },
     {

@@ -45,10 +45,6 @@ export function ghPrCreateArgs(title: string, body: string): string[] {
   return ["pr", "create", "--title", title, "--body", body];
 }
 
-export function ghPrMergeArgs(pr: number): string[] {
-  return ["pr", "merge", String(pr), "--squash"];
-}
-
 export function ghPrCloseArgs(
   pr: number,
   opts?: { comment?: string; deleteBranch?: boolean }
