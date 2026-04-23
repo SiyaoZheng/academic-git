@@ -122,3 +122,10 @@ test("issue-start helper parses issue number from gh output", () => {
   assert.equal(parseIssueNumber("Created issue #42"), 42);
   assert.throws(() => parseIssueNumber("created but no issue number"), /Could not parse issue number/);
 });
+
+test("create_issue and start_issue both delegate issue creation through the shared ghIssueCreateArgs helper", () => {
+  const source = fs.readFileSync(path.join(repoRoot, "mcp", "src", "server.ts"), "utf-8");
+  const matches = source.match(/ghIssueCreateArgs\(title, body, \{ labels, assignees, milestone \}\)/g) ?? [];
+
+  assert.equal(matches.length, 2);
+});

@@ -7,7 +7,8 @@ export function ghIssueCreateArgs(
   for (const label of opts?.labels ?? []) {
     args.push("--label", label);
   }
-  for (const assignee of opts?.assignees ?? []) {
+  const assignees = opts?.assignees === undefined ? ["me"] : opts.assignees;
+  for (const assignee of assignees) {
     args.push("--assignee", assignee);
   }
   if (opts?.milestone) {

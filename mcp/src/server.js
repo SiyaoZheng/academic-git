@@ -441,7 +441,7 @@ server.tool("create_issue", "Create a standalone bookkeeping GitHub Issue only. 
     title: zod_1.z.string().describe("Issue title"),
     body: zod_1.z.string().describe("Issue body"),
     labels: zod_1.z.array(zod_1.z.string()).optional().describe("Optional labels to apply"),
-    assignees: zod_1.z.array(zod_1.z.string()).optional().describe("Optional assignees to add"),
+    assignees: zod_1.z.array(zod_1.z.string()).optional().describe("Optional explicit assignees to add. Defaults to Adrian via `me` when omitted."),
     milestone: zod_1.z.string().optional().describe("Optional milestone"),
 }, async ({ title, body, labels, assignees, milestone }) => {
     const args = (0, gh_js_1.ghIssueCreateArgs)(title, body, { labels, assignees, milestone });
@@ -452,7 +452,7 @@ server.tool("start_issue", "SSOT issue-start primitive: validate the issue body,
     title: zod_1.z.string().describe("Issue title"),
     body: zod_1.z.string().describe("Issue body in codex-gh-issue-start DAG format"),
     labels: zod_1.z.array(zod_1.z.string()).optional().describe("Optional labels to apply"),
-    assignees: zod_1.z.array(zod_1.z.string()).optional().describe("Optional assignees to add"),
+    assignees: zod_1.z.array(zod_1.z.string()).optional().describe("Optional explicit assignees to add. Defaults to Adrian via `me` when omitted."),
     milestone: zod_1.z.string().optional().describe("Optional milestone"),
     branch_slug: zod_1.z.string().optional().describe("Optional short slug source; defaults to the title"),
     base_ref: zod_1.z.string().optional().describe("Optional branch start point; defaults to the repository default base ref"),

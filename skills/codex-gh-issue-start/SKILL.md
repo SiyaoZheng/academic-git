@@ -76,9 +76,9 @@ The check validates the required sections, stable letter IDs, explicit `after:` 
 
 ## Mutation Boundary
 
-For issue-only bookkeeping, use the MCP `create_issue` tool.
+For issue-only bookkeeping, use the MCP `create_issue` tool. When assignees are omitted, academic-git defaults the new issue to Adrian via GitHub's `me` assignee.
 
-For issue-bound code work that needs issue + linked branch + dedicated worktree, use the MCP `start_issue` tool after the body passes this skill check. `start_issue` creates the GitHub Issue, linked `codex/issue-*` branch, and dedicated sibling worktree without switching the current worktree.
+For issue-bound code work that needs issue + linked branch + dedicated worktree, use the MCP `start_issue` tool after the body passes this skill check. `start_issue` creates the GitHub Issue, linked `codex/issue-*` branch, and dedicated sibling worktree without switching the current worktree. When assignees are omitted, the created issue defaults to Adrian via GitHub's `me` assignee; explicit assignee lists override that default.
 
 ## Repair Path
 

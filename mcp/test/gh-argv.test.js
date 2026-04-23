@@ -92,6 +92,30 @@ test("gh issue create arguments preserve optional routing metadata literally", (
   );
 });
 
+test("gh issue create arguments default to assigning Adrian when assignees are omitted", () => {
+  assert.deepEqual(ghIssueCreateArgs("title", "body"), [
+    "issue",
+    "create",
+    "--title",
+    "title",
+    "--body",
+    "body",
+    "--assignee",
+    "me",
+  ]);
+});
+
+test("gh issue create arguments respect explicit empty assignee overrides", () => {
+  assert.deepEqual(ghIssueCreateArgs("title", "body", { assignees: [] }), [
+    "issue",
+    "create",
+    "--title",
+    "title",
+    "--body",
+    "body",
+  ]);
+});
+
 test("gh issue close arguments preserve option order literally", () => {
   assert.deepEqual(
     ghIssueCloseArgs(12, {
