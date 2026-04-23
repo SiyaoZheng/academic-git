@@ -7,7 +7,7 @@ const test = require("node:test");
 
 const repoRoot = path.join(__dirname, "..", "..");
 const skillCheck = path.join(repoRoot, "skills", "codex-gh-issue-start", "check.sh");
-const issueShellGuard = path.join(repoRoot, "hooks", "codex", "github-issue-shell-guard.py");
+const issueShellGuard = path.join(repoRoot, "hooks", "codex", "guard-issue-start-route.py");
 const {
   defaultIssueWorktreePath,
   gitCreateBranchNoSwitchArgs,
@@ -90,7 +90,7 @@ test("issue-start hook does not allow raw gh issue create through an env bypass"
   assert.equal(result.status, 0, result.stderr);
   const decision = JSON.parse(result.stdout);
   assert.equal(decision.hookSpecificOutput.permissionDecision, "deny");
-  assert.match(decision.hookSpecificOutput.permissionDecisionReason, /Direct gh issue create is blocked/);
+  assert.match(decision.hookSpecificOutput.permissionDecisionReason, /gh issue create/i);
 });
 
 test("issue-start helpers derive auditable branch and worktree names", () => {

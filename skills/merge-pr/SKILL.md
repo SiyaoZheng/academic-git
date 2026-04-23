@@ -6,11 +6,11 @@ allowed-tools: ["academic-git"]
 
 # Merge PR — Worktree-Safe Completion
 
-Use this skill whenever a PR is ready to merge. It is the main workflow skill for the MCP `merge_pr` tool; `post-merge` is only the after-action follow-up.
+Use this skill whenever a PR is ready to merge. It is the main workflow skill for the MCP `merge_pr` tool; `finalize-pr-merge` is only the after-action follow-up.
 
 ## Hook Wiring
 
-`hooks/codex/hooks.json` runs this skill through `hooks/hook-runner.sh` on `PreToolUse`; `condition.sh` activates only for MCP tool names ending in `merge_pr`. Direct `gh pr merge` and `git merge` are blocked by the git firewall and routed back here before MCP execution.
+`hooks/codex/hooks.json` runs this skill through `hooks/hook-runner.sh` on `PreToolUse`; `condition.sh` activates only for MCP tool names ending in `merge_pr`. Direct `gh pr merge` and `git merge` are blocked by `guard-write-route` and routed back here before MCP execution.
 
 ## Required Tool
 

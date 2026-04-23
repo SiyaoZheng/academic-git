@@ -19,15 +19,28 @@
         ]
       }
     ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/user-prompt-submit.sh\"",
+            "timeout": 20,
+            "statusMessage": "Routing academic-git issue workflow"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/github-issue-shell-guard.py\"",
+            "command": "python3 \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/guard-issue-start-route.py\"",
             "timeout": 10,
-            "statusMessage": "Checking academic-git issue start workflow"
+            "statusMessage": "Checking guard-issue-start-route"
           },
           {
             "type": "command",
@@ -36,9 +49,9 @@
           },
           {
             "type": "command",
-            "command": "bash \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/hook-runner.sh\" \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/skills/office-markdown-guard\" --block",
+            "command": "bash \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/hook-runner.sh\" \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/skills/guard-write-office-source\" --block",
             "timeout": 10,
-            "statusMessage": "Checking Office Markdown source guard"
+            "statusMessage": "Checking guard-write-office-source"
           }
         ]
       },
@@ -60,9 +73,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/posttool-commit.sh\"",
+            "command": "bash \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/finalize-commit.sh\"",
             "timeout": 10,
-            "statusMessage": "Checking academic-git commit context"
+            "statusMessage": "Running finalize-commit"
           }
         ]
       },
@@ -71,9 +84,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/hook-runner.sh\" \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/skills/post-merge\"",
+            "command": "bash \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/hook-runner.sh\" \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/skills/finalize-pr-merge\"",
             "timeout": 10,
-            "statusMessage": "Checking academic-git post-merge follow-up"
+            "statusMessage": "Running finalize-pr-merge"
           }
         ]
       }
@@ -84,9 +97,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/github-issue-stop-audit.py\"",
+            "command": "python3 \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/audit-issue-start-route.py\"",
             "timeout": 30,
-            "statusMessage": "Auditing academic-git issue start workflow"
+            "statusMessage": "Auditing issue-start repair path"
           },
           {
             "type": "command",

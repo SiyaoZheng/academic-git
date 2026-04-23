@@ -41,11 +41,11 @@ The repository is organized around a thin execution layer and a thicker workflow
 
 ## Recommended Workflow
 
-1. Triage the task with the `begin` skill.
+1. Triage the task with the `handle-issue` skill.
 2. If this is new work, use the `codex-gh-issue-start` skill route so issue-start policy and DAG validation happen before the MCP `start_issue` mutation creates the GitHub Issue, branch, and worktree.
 3. If the task already exists, switch to the linked branch and continue there.
 4. Keep the work scoped to the issue or task boundary.
-5. Use the `commit` skill for formal commits tied to checklist items.
+5. Use the `handle-commit` skill for formal commits tied to checklist items.
 6. Close out the session only when the worktree is clean or the remaining dirty state is intentional.
 
 ## Important Commands

@@ -6,8 +6,8 @@ const path = require("node:path");
 const test = require("node:test");
 
 const repoRoot = path.join(__dirname, "..", "..");
-const conditionScript = path.join(repoRoot, "skills", "post-merge", "condition.sh");
-const checkScript = path.join(repoRoot, "skills", "post-merge", "check.sh");
+const conditionScript = path.join(repoRoot, "skills", "finalize-pr-merge", "condition.sh");
+const checkScript = path.join(repoRoot, "skills", "finalize-pr-merge", "check.sh");
 
 function runScript(script, input, cwd = repoRoot) {
   return childProcess.execFileSync("bash", [script], {
@@ -18,7 +18,7 @@ function runScript(script, input, cwd = repoRoot) {
   });
 }
 
-test("post-merge condition runs only for merge_pr tool calls", () => {
+test("finalize-pr-merge condition runs only for merge_pr tool calls", () => {
   assert.doesNotThrow(() => {
     runScript(conditionScript, { tool_name: "mcp__academic_git__merge_pr" });
   });
@@ -32,7 +32,7 @@ test("post-merge condition runs only for merge_pr tool calls", () => {
   );
 });
 
-test("post-merge check emits valid JSON and retains lock after failed cleanup", () => {
+test("finalize-pr-merge check emits valid JSON and retains lock after failed cleanup", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "academic-git-post-merge-hook-"));
   fs.writeFileSync(
     path.join(tmp, ".academic-git.json"),
@@ -68,7 +68,7 @@ test("post-merge check emits valid JSON and retains lock after failed cleanup", 
   assert.equal(state.locked_branch, "codex/issue-26");
 });
 
-test("post-merge check clears lock only after completed cleanup", () => {
+test("finalize-pr-merge check clears lock only after completed cleanup", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "academic-git-post-merge-hook-"));
   fs.writeFileSync(
     path.join(tmp, ".academic-git.json"),
@@ -102,7 +102,7 @@ test("post-merge check clears lock only after completed cleanup", () => {
   assert.equal(Object.hasOwn(state, "locked_branch"), false);
 });
 
-test("post-merge check reports an unresolved project directory", () => {
+test("finalize-pr-merge check reports an unresolved project directory", () => {
   const missing = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "academic-git-post-merge-hook-")), "missing");
   const output = runScript(checkScript, {
     cwd: missing,

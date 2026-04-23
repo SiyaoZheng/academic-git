@@ -1,0 +1,18 @@
+---
+name: guard-write-route
+description: Internal hook policy that blocks direct git/gh mutations and keeps all academic-git state changes routed through canonical MCP tools.
+---
+
+# Guard Write Route
+
+Blocked direct mutations must be rerouted to canonical academic-git tools:
+
+| Blocked CLI | Canonical MCP Path |
+|-------------|--------------------|
+| `git commit` | `create_commit(...)` |
+| `gh pr create` | `open_pr(...)` |
+| `gh issue create` | `start_issue(...)` or `/codex-gh-issue-start` |
+| `gh issue edit` | `refine_issue(...)` |
+| `git switch` for issue work | `resume_issue(...)` or `switch_branch(...)` |
+
+The goal is one audited source of truth for issue, commit, and PR mutation.

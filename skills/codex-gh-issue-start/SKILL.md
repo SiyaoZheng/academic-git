@@ -23,6 +23,7 @@ Mutation must move through MCP-owned tools or an explicitly implemented MCP issu
 
 - Adrian asks to create an issue.
 - Adrian asks to track or start a new implementation task.
+- `handle-issue` routes to "new issue".
 - A hook reports that an issue was created through the GitHub connector or bare `gh issue create`.
 - The task needs issue-start policy, DAG validation, and routing into MCP-owned mutation.
 

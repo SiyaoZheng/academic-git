@@ -109,7 +109,7 @@ test("merge_pr MCP tool cleans up a dedicated issue worktree end-to-end", async 
   const transport = new StdioClientTransport({
     command: process.execPath,
     args: [path.join(repoRoot, "mcp", "src", "server.js")],
-    cwd: fixture.issueWorktree,
+    cwd: fixture.repo,
     stderr: "pipe",
     env: {
       ...process.env,
@@ -160,7 +160,7 @@ test("merge_pr MCP tool preserves branch refs when the issue worktree is dirty",
   const transport = new StdioClientTransport({
     command: process.execPath,
     args: [path.join(repoRoot, "mcp", "src", "server.js")],
-    cwd: fixture.issueWorktree,
+    cwd: fixture.repo,
     stderr: "pipe",
     env: {
       ...process.env,

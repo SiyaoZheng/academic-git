@@ -80,15 +80,15 @@
     {
       "decision": "route",
       "match": "(^|[^[:alnum:]_])git[[:space:]]+commit([[:space:]]|$)",
-      "tool": "commit",
-      "reason": "Direct git commit is blocked. Use commit(issue, item, type, description); it stages, validates, commits, and pushes.",
+      "tool": "create_commit",
+      "reason": "Direct git commit is blocked. Use create_commit(issue, items, type, description, paths?); it stages, validates, commits, and pushes.",
       "policy": "formal-commit"
     },
     {
       "decision": "route",
       "match": "(^|[^[:alnum:]_])git[[:space:]]+push([[:space:]]|$)",
-      "tool": "commit",
-      "reason": "Direct git push is blocked. Push is automatic after commit(issue, item, type, description).",
+      "tool": "create_commit",
+      "reason": "Direct git push is blocked. Push is automatic after create_commit(issue, items, type, description, paths?).",
       "policy": "automatic-after-commit"
     },
     {
@@ -129,8 +129,8 @@
     {
       "decision": "route",
       "match": "(^|[^[:alnum:]_])gh[[:space:]]+pr[[:space:]]+create([[:space:]]|$)",
-      "tool": "create_pr",
-      "reason": "Direct gh pr create is blocked. Use create_pr(issue, title, body) after the checklist is complete.",
+      "tool": "open_pr",
+      "reason": "Direct gh pr create is blocked. Use prepare_pr(issue) and open_pr(issue, title, body) after the checklist is complete.",
       "policy": "pr-creation"
     },
     {

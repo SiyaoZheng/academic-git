@@ -56,7 +56,7 @@ test("gh pr create arguments preserve shell metacharacters literally", () => {
     "echo `uname -a`",
     "```",
   ].join("\n");
-  const title = "Fix `create_pr` body $(echo polluted)";
+  const title = "Fix `open_pr` body $(echo polluted)";
   const args = ghPrCreateArgs(title, body);
 
   const out = runFile(process.execPath, [fakeGh, capture, ...args], tmp);
@@ -141,7 +141,7 @@ test("routing helper prefers deny over allow fragments", () => {
 test("routing helper prefers route over allow fragments", () => {
   const result = renderRouting("git status --porcelain && git push");
   assert.equal(result.decision, "route");
-  assert.equal(result.tool, "commit");
+  assert.equal(result.tool, "create_commit");
 });
 
 test("routing helper routes branch creation", () => {

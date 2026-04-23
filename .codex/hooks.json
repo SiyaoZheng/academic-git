@@ -1,0 +1,85 @@
+{
+  "description": "Repo-local activation point for academic-git Codex hooks.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && exec bash \"$ROOT/hooks/codex/session-start.sh\"'",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && exec bash \"$ROOT/hooks/codex/user-prompt-submit.sh\"'",
+            "timeout": 20,
+            "statusMessage": "Routing academic-git issue workflow"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && exec python3 \"$ROOT/hooks/codex/guard-issue-start-route.py\"'",
+            "timeout": 10,
+            "statusMessage": "Checking guard-issue-start-route"
+          },
+          {
+            "type": "command",
+            "command": "sh -c 'ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && exec bash \"$ROOT/hooks/codex/pretool-bash.sh\"'",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "sh -c 'ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && exec bash \"$ROOT/hooks/hook-runner.sh\" \"$ROOT/skills/guard-write-office-source\" --block'",
+            "timeout": 10,
+            "statusMessage": "Checking guard-write-office-source"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && exec bash \"$ROOT/hooks/codex/finalize-commit.sh\"'",
+            "timeout": 10,
+            "statusMessage": "Running finalize-commit"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && exec python3 \"$ROOT/hooks/codex/audit-issue-start-route.py\"'",
+            "timeout": 30,
+            "statusMessage": "Auditing issue-start repair path"
+          },
+          {
+            "type": "command",
+            "command": "sh -c 'ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && exec bash \"$ROOT/hooks/codex/stop.sh\"'",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
