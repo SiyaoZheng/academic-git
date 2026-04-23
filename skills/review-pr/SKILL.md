@@ -41,7 +41,7 @@ When approved:
 merge_pr(pr: N)
 ```
 
-This squash-merges, deletes the remote branch, switches to main, and pulls.
+This runs the `merge-pr` skill preflight first, then the MCP tool performs the GitHub squash merge and auditable worktree-safe cleanup. Cleanup status is reported step-by-step; any `[failed]` step is a manual follow-up even if the GitHub merge succeeded.
 
 If the PR should be abandoned instead of merged:
 ```

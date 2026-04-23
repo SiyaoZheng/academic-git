@@ -44,7 +44,8 @@ These introspection commands are allowlisted because hooks use them internally:
 | `git commit` | `commit(issue, item, type, description)` |
 | `git push` | Automatic after `commit(issue, item, type, description)` |
 | `gh pr create` | `create_pr(issue, title, body)` |
-| `gh pr merge` | `merge_pr(pr)` |
+| `git merge` | `merge-pr` skill, then `merge_pr(pr)` |
+| `gh pr merge` | `merge-pr` skill, then `merge_pr(pr)` |
 | `gh pr close` | `close_pr(pr, comment?, delete_branch?)` |
 | `gh issue create` | `create_issue(title, body, labels?, assignees?, milestone?)` |
 | `gh issue edit` | `refine_issue(issue, action, ...)` |
