@@ -25,4 +25,4 @@ If blocked, you'll see:
 
 ## Resolution
 
-Use `create_branch(slug: "descriptive-name")` to create a feature branch, then retry.
+Use `/begin` to select an existing issue branch, or `/codex-gh-issue-start` to create a new issue with its linked branch and dedicated worktree.

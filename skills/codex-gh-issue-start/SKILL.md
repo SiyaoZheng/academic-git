@@ -1,6 +1,6 @@
 ---
 name: codex-gh-issue-start
-description: Create a new GitHub issue through the local CLI workflow, then create its linked codex/issue branch and open it in a dedicated git worktree. Use this skill whenever Adrian asks to create a new issue, track a new implementation task, or start new issue-bound work. Do not use the GitHub connector, MCP create_issue, or bare gh issue create for these requests.
+description: Create a new GitHub issue through the local CLI workflow, then create its linked codex/issue branch and open it in a dedicated git worktree. Use this skill whenever Adrian asks to create a new issue, track a new implementation task, or start new issue-bound work. Do not use the GitHub connector, MCP issue-creation tools, or bare gh issue create for these requests.
 argument-hint: "[issue title or task description]"
 allowed-tools: ["Bash"]
 ---
@@ -19,7 +19,7 @@ Use this skill as the single issue-start entrypoint for academic-git. It creates
 ## Do Not Use
 
 - Do not call the GitHub connector issue tool.
-- Do not call MCP `create_issue` for normal Codex issue-start work.
+- Do not recreate or call an MCP issue-creation tool for normal Codex issue-start work.
 - Do not run bare `gh issue create` or `gh issue new`.
 - Do not run any form of `git checkout`.
 

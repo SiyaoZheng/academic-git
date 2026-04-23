@@ -45,7 +45,7 @@ If no open Issues exist → skip to (C).
 ### A. Continue existing Issue
 
 Use MCP tools:
-- `switch_branch(branch: "feat/<slug>")` — switch to the branch
+- `switch_branch(branch: "<linked issue branch>")` — switch to the branch
 - `view_issue(issue: N)` — read the Issue (body + comments = current truth)
 
 Read the checklist, find the next unblocked item (all `→ after:` predecessors are `[x]`), resume working.
@@ -53,7 +53,7 @@ Read the checklist, find the next unblocked item (all `→ after:` predecessors 
 ### B. Supplement existing Issue
 
 Invoke `/refine-issue #N` to add new items via append-only comment, then:
-- `switch_branch(branch: "feat/<slug>")`
+- `switch_branch(branch: "<linked issue branch>")`
 
 ### C. New Issue
 
@@ -61,7 +61,7 @@ Invoke `/codex-gh-issue-start` with Adrian's task description. This is the syste
 
 ## Task Switching
 
-Adrian describes a new task while on `feat/X`:
+Adrian describes a new task while on an issue branch:
 1. Auto-commit hook blocks task switching until dirty work is committed or Adrian explicitly decides how to handle it
 2. `switch_branch(branch: "main")`
 3. New `/begin` cycle starts

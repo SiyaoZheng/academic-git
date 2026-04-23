@@ -419,8 +419,8 @@
       </div>
       <div class="principle">
         <div class="principle-label">Mapping</div>
-        <div class="principle-value">1 Issue = 1 Branch = 1 PR</div>
-        <div class="principle-desc">Each task: one Issue, one <code>feat/&lt;slug&gt;</code>, one squash-merged PR.</div>
+        <div class="principle-value">1 Issue = 1 Branch = 1 Worktree = 1 PR</div>
+        <div class="principle-desc">Each task: one Issue, one linked <code>codex/issue-&lt;number&gt;-&lt;slug&gt;</code> branch/worktree, one squash-merged PR.</div>
       </div>
     </div>
   </div>
@@ -443,7 +443,7 @@
         <span class="layer-label">Skills (Codex invokes directly)</span>
         <span class="node node-skill">/begin</span>
         <span class="arrow">&rarr;</span>
-        <span class="node node-skill">/create-issue</span>
+        <span class="node node-skill">/codex-gh-issue-start</span>
         <span class="arrow">&rarr;</span>
         <span class="node node-skill">/commit</span>
         <span class="arrow">&larr;</span>
@@ -515,8 +515,8 @@
           </tr>
           <tr>
             <td><strong>C</strong> &mdash; New Issue</td>
-            <td>Draft Issue with DAG checklist, Codex reviews, Adrian confirms</td>
-            <td><code>/create-issue</code></td>
+            <td>Draft Issue with DAG checklist, then create the issue-linked branch and worktree together</td>
+            <td><code>/codex-gh-issue-start</code></td>
           </tr>
         </tbody>
       </table>
@@ -538,11 +538,11 @@
         <div class="phase-number">3</div>
         <div class="phase-meta">
           <div class="phase-name">Issue Creation</div>
-          <div class="phase-trigger">/create-issue skill</div>
+          <div class="phase-trigger">/codex-gh-issue-start skill</div>
         </div>
       </div>
       <div class="phase-desc">
-        Draft Issue with DAG checklist &rarr; <span class="tag tag-review">Codex</span> reviews for duplicates, verifiability, scope &rarr; <span class="tag tag-block">Adrian confirms</span> (the ONLY manual checkpoint) &rarr; Submit to GitHub &rarr; Create <code>feat/&lt;slug&gt;</code> branch &rarr; Start working.
+        Draft Issue with DAG checklist &rarr; <span class="tag tag-review">Codex</span> validates template, verifiability, and scope &rarr; Submit through the plugin-owned CLI &rarr; Create the linked <code>codex/issue-&lt;number&gt;-&lt;slug&gt;</code> branch and dedicated worktree &rarr; Start working there.
       </div>
 
       <div class="review-grid">
@@ -578,10 +578,10 @@
 
       <div class="source-block">
         <div class="source-header" onclick="toggle(this)">
-          <div><span class="source-name">skills/create-issue/SKILL.md</span> <span class="source-desc">Issue template, Codex review, branch creation</span></div>
+          <div><span class="source-name">skills/codex-gh-issue-start/SKILL.md</span> <span class="source-desc">Issue template, linked branch, dedicated worktree</span></div>
           <span class="source-toggle">&#9654;</span>
         </div>
-        <div class="source-body"><pre id="create-issue-source"></pre></div>
+        <div class="source-body"><pre id="codex-issue-start-source"></pre></div>
       </div>
     </div>
 
@@ -799,7 +799,7 @@ function toggle(header) {
 // Embed source files
 const sources = [
   { id: 'begin-source', path: 'skills/begin/SKILL.md' },
-  { id: 'create-issue-source', path: 'skills/create-issue/SKILL.md' },
+  { id: 'codex-issue-start-source', path: 'skills/codex-gh-issue-start/SKILL.md' },
   { id: 'commit-source', path: 'skills/commit/SKILL.md' },
   { id: 'refine-issue-source', path: 'skills/refine-issue/SKILL.md' },
   { id: 'autocommit-source', path: 'hooks/codex/stop.sh' },
