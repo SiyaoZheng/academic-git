@@ -1,0 +1,41 @@
+name: PR Agent
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - ready_for_review
+      - synchronize
+  issue_comment:
+    types:
+      - created
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  pr_agent_job:
+    if: ${{ github.event.sender.type != 'Bot' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: PR Agent action step
+        uses: the-pr-agent/pr-agent@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+          # Kimi K2.6 via the Anthropic-compatible coding endpoint.
+          config.model: anthropic/K2.6
+          config.fallback_models: '["anthropic/K2.6"]'
+          config.custom_model_max_tokens: "128000"
+          ANTHROPIC.KEY: ${{ secrets.KIMI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.KIMI_API_KEY }}
+          ANTHROPIC_BASE_URL: https://api.kimi.com/coding
+          LITELLM.EXTRA_HEADERS: '{"Authorization": "Bearer ${{ secrets.KIMI_API_KEY }}"}'
+
+          github_action_config.auto_review: "true"
+          github_action_config.auto_describe: "true"
+          github_action_config.auto_improve: "true"
