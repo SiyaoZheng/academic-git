@@ -9,6 +9,12 @@
             "type": "command",
             "command": "bash \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/session-start.sh\"",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/hook-runner.sh\" \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/skills/os-noise-guard\"",
+            "timeout": 20,
+            "statusMessage": "Cleaning OS metadata noise"
           }
         ]
       }
@@ -48,6 +54,17 @@
             "statusMessage": "Checking guard-write-office-source"
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/hook-runner.sh\" \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/skills/merge-pr\" --block",
+            "timeout": 10,
+            "statusMessage": "Checking academic-git merge-pr preflight"
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -61,6 +78,17 @@
             "statusMessage": "Running finalize-commit"
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/hook-runner.sh\" \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/skills/finalize-pr-merge\"",
+            "timeout": 10,
+            "statusMessage": "Running finalize-pr-merge"
+          }
+        ]
       }
     ],
     "Stop": [
@@ -72,6 +100,12 @@
             "command": "python3 \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/audit-issue-start-route.py\"",
             "timeout": 30,
             "statusMessage": "Auditing issue-start repair path"
+          },
+          {
+            "type": "command",
+            "command": "ACADEMIC_GIT_OS_NOISE_STRICT=true bash \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/hook-runner.sh\" \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/skills/os-noise-guard\" --block",
+            "timeout": 20,
+            "statusMessage": "Cleaning OS metadata noise"
           },
           {
             "type": "command",

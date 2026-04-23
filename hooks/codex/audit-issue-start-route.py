@@ -173,10 +173,7 @@ def connector_issue_created(event: dict[str, Any]) -> bool:
 
 
 def hook_maintenance_command(command: str) -> bool:
-    return (
-        "hooks/codex/github-issue-" in command
-        or "scripts/codex-gh-issue-start" in command and "--dry-run" in command
-    )
+    return "hooks/codex/github-issue-" in command
 
 
 def current_branch(cwd: str | None) -> str:

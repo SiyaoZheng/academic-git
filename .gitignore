@@ -44,3 +44,10 @@ Desktop.ini
 /hooks.local.json
 /.mcp.json
 /.mcp *.json
+
+# Generated or local documentation artifacts
+/TODO.md
+/mcp/README.md
+
+# Local reference repositories are for inspection only; do not track them in PRs.
+/references/

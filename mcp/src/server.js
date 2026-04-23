@@ -11,6 +11,9 @@ const path_1 = require("path");
 const command_js_1 = require("./command.js");
 const gh_js_1 = require("./gh.js");
 const workflow_js_1 = require("./workflow.js");
+const git_js_1 = require("./git.js");
+const issue_start_js_1 = require("./issue-start.js");
+const merge_cleanup_js_1 = require("./merge-cleanup.js");
 // ── Helpers ──
 function run(cmd, cwd) {
     return (0, child_process_1.execSync)(cmd, {
@@ -191,6 +194,53 @@ function projectDirFromEnv() {
         process.env.CODEX_WORKSPACE_ROOT ??
         process.env.CODEX_PROJECT_DIR);
 }
+const MCP_TOOL_NAMES = new Set([
+    "status",
+    "diff",
+    "log",
+    "current_branch",
+    "list_issues",
+    "view_issue",
+    "create_issue",
+    "start_issue",
+    "refine_issue",
+    "check_issue",
+    "close_issue",
+    "create_commit",
+    "prepare_pr",
+    "open_pr",
+    "merge_pr",
+    "close_pr",
+    "view_pr",
+    "create_branch",
+    "switch_branch",
+    "list_branches",
+    "create_tag",
+    "run_gates",
+    "lint",
+    "configure",
+]);
+function routingTablePath() {
+    return (0, path_1.join)(repoDir(), ".academic-git-routing.json");
+}
+function readRoutingTable() {
+    const p = routingTablePath();
+    if (!(0, fs_1.existsSync)(p)) {
+        throw new Error(`Missing routing table: ${p}`);
+    }
+    return JSON.parse((0, fs_1.readFileSync)(p, "utf-8"));
+}
+function validateRoutingTable() {
+    const table = readRoutingTable();
+    if (!Array.isArray(table.entries) || table.entries.length === 0) {
+        throw new Error("Routing table has no entries");
+    }
+    const unknownTools = table.entries.filter((entry) => entry.decision === "route" && (!entry.tool || !MCP_TOOL_NAMES.has(entry.tool)));
+    if (unknownTools.length > 0) {
+        const labels = unknownTools.map((entry) => `${entry.match} -> ${entry.tool ?? "(missing tool)"}`);
+        throw new Error(`Routing table references unknown MCP tools:\n${labels.map((label) => `  ${label}`).join("\n")}`);
+    }
+}
 const DEFAULT_CONFIG = {
     pipeline: { run: "" },
     lint: {},
@@ -354,50 +404,6 @@ server.tool("list_issues", "List open GitHub Issues for the current repo", { lim
     const out = runWithRetry(`gh issue list --state open --limit ${limit} --json number,title,labels`);
     return text(out);
 });
-server.tool("start_issue", "Create a GitHub issue, its linked codex/issue-* branch, and a dedicated git worktree via codex-gh-issue-start.", {
-    title: zod_1.z.string().describe("Issue title"),
-    body: zod_1.z.string().optional().describe("Issue body text"),
-    body_file: zod_1.z.string().optional().describe("Optional path to an issue body file"),
-    base: zod_1.z.string().optional().describe("Optional base branch override"),
-    branch: zod_1.z.string().optional().describe("Optional explicit linked branch name"),
-    branch_prefix: zod_1.z.string().optional().describe("Optional branch prefix override"),
-    worktree_dir: zod_1.z.string().optional().describe("Optional explicit worktree path"),
-    worktree_parent: zod_1.z.string().optional().describe("Optional parent directory for the worktree"),
-    label: zod_1.z.string().optional().describe("Optional issue label"),
-    assignee: zod_1.z.string().optional().describe("Optional issue assignee"),
-    no_assignee: zod_1.z.boolean().optional().describe("Do not assign the issue to anyone"),
-    milestone: zod_1.z.string().optional().describe("Optional issue milestone"),
-    skip_template_check: zod_1.z.boolean().optional().describe("Skip issue template validation"),
-}, async ({ title, body, body_file, base, branch, branch_prefix, worktree_dir, worktree_parent, label, assignee, no_assignee, milestone, skip_template_check, }) => {
-    const args = ["--title", title];
-    if (body !== undefined)
-        args.push("--body", body);
-    if (body_file !== undefined)
-        args.push("--body-file", body_file);
-    if (base !== undefined)
-        args.push("--base", base);
-    if (branch !== undefined)
-        args.push("--branch", branch);
-    if (branch_prefix !== undefined)
-        args.push("--branch-prefix", branch_prefix);
-    if (worktree_dir !== undefined)
-        args.push("--worktree-dir", worktree_dir);
-    if (worktree_parent !== undefined)
-        args.push("--worktree-parent", worktree_parent);
-    if (label !== undefined)
-        args.push("--label", label);
-    if (assignee !== undefined)
-        args.push("--assignee", assignee);
-    if (no_assignee)
-        args.push("--no-assignee");
-    if (milestone !== undefined)
-        args.push("--milestone", milestone);
-    if (skip_template_check)
-        args.push("--skip-template-check");
-    const script = (0, path_1.join)(repoDir(), "scripts", "codex-gh-issue-start");
-    const out = (0, command_js_1.runFile)(script, args, repoDir());
-    return text(out);
-});
 server.tool("resume_issue", "Lock the current worktree to an existing issue branch so route-issue can resume work safely.", {
     issue: zod_1.z.number().optional().describe("Issue number to lock to. Defaults to the current codex/issue-* branch."),
     branch: zod_1.z.string().optional().describe("Branch to resume. Defaults to the current branch."),
@@ -431,6 +437,81 @@ server.tool("view_issue", "View a GitHub Issue (body + comments = current truth)
     const body = runWithRetry(`gh issue view ${issue} --json title,body,state,comments --jq '{title, body, state, comments: [.comments[] | {body, createdAt, author: .author.login}]}'`);
     return text(body);
 });
+server.tool("create_issue", "Create a standalone bookkeeping GitHub Issue only. For implementation work, use /codex-gh-issue-start and start_issue so the Issue, branch, and worktree are created together.", {
+    title: zod_1.z.string().describe("Issue title"),
+    body: zod_1.z.string().describe("Issue body"),
+    labels: zod_1.z.array(zod_1.z.string()).optional().describe("Optional labels to apply"),
+    assignees: zod_1.z.array(zod_1.z.string()).optional().describe("Optional assignees to add"),
+    milestone: zod_1.z.string().optional().describe("Optional milestone"),
+}, async ({ title, body, labels, assignees, milestone }) => {
+    const args = (0, gh_js_1.ghIssueCreateArgs)(title, body, { labels, assignees, milestone });
+    const out = runGhWithRetry(args);
+    return text(out);
+});
+server.tool("start_issue", "SSOT issue-start primitive: validate the issue body, then create the GitHub Issue plus linked codex/issue-* branch and dedicated sibling worktree without switching the current worktree.", {
+    title: zod_1.z.string().describe("Issue title"),
+    body: zod_1.z.string().describe("Issue body in codex-gh-issue-start DAG format"),
+    labels: zod_1.z.array(zod_1.z.string()).optional().describe("Optional labels to apply"),
+    assignees: zod_1.z.array(zod_1.z.string()).optional().describe("Optional assignees to add"),
+    milestone: zod_1.z.string().optional().describe("Optional milestone"),
+    branch_slug: zod_1.z.string().optional().describe("Optional short slug source; defaults to the title"),
+    base_ref: zod_1.z.string().optional().describe("Optional branch start point; defaults to the repository default base ref"),
+    worktree_path: zod_1.z.string().optional().describe("Optional dedicated worktree path; defaults to a sibling academic-git.issue-N-slug path"),
+}, async ({ title, body, labels, assignees, milestone, branch_slug, base_ref, worktree_path }) => {
+    for (const value of [title, branch_slug ?? "", base_ref ?? "", worktree_path ?? ""]) {
+        if (value.includes("\n") || value.includes("\0")) {
+            return err("Invalid issue-start input: title, slug, base_ref, and worktree_path must not contain newlines or NUL bytes");
+        }
+    }
+    if (worktree_path && (0, fs_1.existsSync)(worktree_path)) {
+        return err(`Dedicated worktree path already exists before issue creation: ${worktree_path}`);
+    }
+    try {
+        (0, command_js_1.runFileWithInput)("python3", [(0, path_1.join)(repoDir(), "skills", "codex-gh-issue-start", "validate_body.py"), "-"], body, repoDir());
+    }
+    catch (e) {
+        const detail = e.stderr?.toString().trim() ?? e.message;
+        return err(`Issue body failed codex-gh-issue-start validation: ${detail}`);
+    }
+    const issueOutput = runGhWithRetry((0, gh_js_1.ghIssueCreateArgs)(title, body, { labels, assignees, milestone }));
+    const issue = (0, issue_start_js_1.parseIssueNumber)(issueOutput);
+    const slugSource = branch_slug ?? title;
+    const branch = (0, issue_start_js_1.issueBranchName)(issue, slugSource);
+    const worktreePath = worktree_path ?? (0, issue_start_js_1.defaultIssueWorktreePath)(repoDir(), issue, slugSource);
+    const startPoint = base_ref ?? defaultBaseRef();
+    if (gitRefExists(`refs/heads/${branch}`)) {
+        return err(`Issue #${issue} was created, but branch already exists: ${branch}`);
+    }
+    if ((0, fs_1.existsSync)(worktreePath)) {
+        return err(`Issue #${issue} was created, but dedicated worktree path already exists: ${worktreePath}`);
+    }
+    try {
+        (0, command_js_1.runFile)("git", (0, issue_start_js_1.gitCreateBranchNoSwitchArgs)(branch, startPoint), repoDir());
+    }
+    catch (e) {
+        const detail = e.stderr?.toString().trim() ?? e.message;
+        return err(`Issue #${issue} was created, but branch creation failed for ${branch}: ${detail}`);
+    }
+    try {
+        (0, command_js_1.runFile)("git", (0, issue_start_js_1.gitWorktreeAddArgs)(worktreePath, branch), repoDir());
+    }
+    catch (e) {
+        const detail = e.stderr?.toString().trim() ?? e.message;
+        return err(`Issue #${issue} and branch ${branch} were created, but worktree creation failed: ${detail}`);
+    }
+    const worktreeConfig = normalizeConfig({
+        locked_branch: branch,
+        locked_issue: issue,
+    });
+    (0, fs_1.writeFileSync)((0, path_1.join)(worktreePath, ".academic-git.json"), JSON.stringify(worktreeConfig, null, 2) + "\n");
+    return text([
+        `Issue #${issue}: ${title}`,
+        `Branch: ${branch}`,
+        `Worktree: ${worktreePath}`,
+        `Start point: ${startPoint}`,
+        issueOutput,
+    ].join("\n"));
+});
 server.tool("refine_issue", "Add a refinement comment to an Issue. Body is NEVER modified — all changes via append-only comments.", {
     issue: zod_1.z.number().describe("Issue number"),
     action: zod_1.z.enum(["added", "removed", "scope-change", "context-update"]).describe("Type of change"),
@@ -450,6 +531,29 @@ ${detail}
 **Reason:** ${reason}
 **Requested by:** ${requested_by}`;
     const out = runGhWithRetry((0, gh_js_1.ghIssueCommentArgs)(issue, comment));
+    return text(out);
+});
+server.tool("close_issue", "Close an Issue explicitly. Use this for completed, deferred, or duplicate issues when the body should remain immutable.", {
+    issue: zod_1.z.number().describe("Issue number"),
+    comment: zod_1.z.string().optional().describe("Optional closing comment"),
+    reason: zod_1.z.enum(["completed", "not planned", "duplicate"]).optional().describe("Closure reason"),
+    duplicate_of: zod_1.z.number().optional().describe("Issue number this issue duplicates"),
+}, async ({ issue, comment, reason, duplicate_of }) => {
+    if (duplicate_of !== undefined && reason && reason !== "duplicate") {
+        return err("duplicate_of can only be used with reason = duplicate");
+    }
+    const opts = {};
+    if (comment) {
+        opts.comment = comment;
+    }
+    if (reason) {
+        opts.reason = reason;
+    }
+    if (duplicate_of !== undefined) {
+        opts.duplicateOf = duplicate_of;
+        opts.reason = opts.reason ?? "duplicate";
+    }
+    const out = runGhWithRetry((0, gh_js_1.ghIssueCloseArgs)(issue, opts));
     return text(out);
 });
 server.tool("check_issue", "Check off a completed checklist item on an Issue. Only toggles the specific item — no other body changes allowed.", {
@@ -852,17 +956,37 @@ server.tool("open_pr", "Create a Pull Request. Validates all checklist items are
     });
     return text(resultMessage);
 });
-server.tool("merge_pr", "Squash-merge a PR and delete the branch. Returns to the default branch.", { pr: zod_1.z.number().describe("PR number") }, async ({ pr }) => {
-    runWithRetry(`gh pr merge ${pr} --squash --delete-branch`);
-    const defaultBranch = runSafe("git symbolic-ref refs/remotes/origin/HEAD").replace("refs/remotes/origin/", "") || "main";
-    run(`git switch "${defaultBranch}"`);
-    run("git pull");
-    const config = readConfig();
-    config.locked_branch = "";
-    config.locked_issue = null;
-    config.auto_workflow = null;
-    writeConfig(config);
-    return text(`PR #${pr} merged. Now on ${defaultBranch}.`);
+server.tool("merge_pr", "Squash-merge a PR, then run auditable worktree-safe cleanup for the PR worktree and matching branch refs.", { pr: zod_1.z.number().describe("PR number") }, async ({ pr }) => {
+    try {
+        const currentRepoDir = repoDir();
+        const worktreeList = (0, merge_cleanup_js_1.parseWorktreeList)((0, command_js_1.runFile)("git", ["worktree", "list", "--porcelain"], currentRepoDir));
+        const stableProjectDir = worktreeList[0]?.path ?? currentRepoDir;
+        if (stableProjectDir !== currentRepoDir) {
+            process.chdir(stableProjectDir);
+            process.env.ACADEMIC_GIT_PROJECT_DIR = stableProjectDir;
+        }
+        const defaultBranchName = defaultBranch();
+        const result = (0, merge_cleanup_js_1.mergePrWorktreeSafe)(pr, {
+            cwd: stableProjectDir,
+            defaultBranchName,
+            runGit: (args, cwd) => (0, command_js_1.runFile)("git", args, cwd ?? stableProjectDir),
+            runGh: (args, cwd) => runGhWithRetry(args, undefined, cwd ?? stableProjectDir),
+        });
+        const output = (0, merge_cleanup_js_1.formatMergePrResult)(result);
+        return (0, merge_cleanup_js_1.hasCleanupFailures)(result) ? err(output) : text(output);
+    }
+    catch (error) {
+        const message = error instanceof Error ? error.stack ?? error.message : String(error);
+        return err(`merge_pr crashed before completing cleanup:\n${message}`);
+    }
+});
+server.tool("close_pr", "Close a PR without merging. Use this for explicit abandonment or superseded work.", {
+    pr: zod_1.z.number().describe("PR number"),
+    comment: zod_1.z.string().optional().describe("Optional closing comment"),
+    delete_branch: zod_1.z.boolean().optional().describe("Delete the branch after closing"),
+}, async ({ pr, comment, delete_branch }) => {
+    const out = runGhWithRetry((0, gh_js_1.ghPrCloseArgs)(pr, { comment, deleteBranch: delete_branch }));
+    return text(out);
 });
 server.tool("view_pr", "View a Pull Request", { pr: zod_1.z.number().describe("PR number") }, async ({ pr }) => {
     const out = runWithRetry(`gh pr view ${pr} --json number,title,state,body,url`);
@@ -871,8 +995,16 @@ server.tool("view_pr", "View a Pull Request", { pr: zod_1.z.number().describe("P
 // ════════════════════════════════════════
 //  BRANCH TOOLS
 // ════════════════════════════════════════
+server.tool("create_branch", "Legacy/repair helper to create a non-issue branch and switch to it. For new implementation work, use start_issue so the Issue, branch, and worktree remain one SSOT unit.", {
+    branch: zod_1.z.string().describe("New branch name"),
+    start_point: zod_1.z.string().optional().describe("Optional start point; defaults to HEAD"),
+}, async ({ branch, start_point }) => {
+    const args = (0, git_js_1.gitCreateBranchArgs)(branch, start_point ?? "HEAD");
+    (0, command_js_1.runFile)("git", args, repoDir());
+    return text(`Created and switched to ${branch}`);
+});
 server.tool("switch_branch", "Switch to an existing branch", { branch: zod_1.z.string().describe("Branch name (e.g., codex/issue-12-revise-table-3)") }, async ({ branch }) => {
-    run(`git switch "${branch}"`);
+    (0, command_js_1.runFile)("git", (0, git_js_1.gitSwitchBranchArgs)(branch), repoDir());
     return text(`Switched to ${branch}`);
 });
 server.tool("list_branches", "List issue branches", {}, async () => {
@@ -971,6 +1103,7 @@ server.tool("configure", "Set project configuration values (pipeline command, Py
 });
 // ── Start ──
 async function main() {
+    validateRoutingTable();
     const transport = new stdio_js_1.StdioServerTransport();
     await server.connect(transport);
 }

@@ -1,839 +1,552 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Academic Git — Zero-Touch Research Workflow</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fu | 研究过程记录与复核</title>
+  <meta name="description" content="Fu 是面向 AI 辅助社会科学研究的本地工作流基础设施，用于保存研究产物及其生成过程。">
+  <style>
+    :root {
+      --page: #f7f6f1;
+      --wash: #eaf1ee;
+      --wash-strong: #dfeae6;
+      --ink: #17332f;
+      --muted: #4d625f;
+      --line: #d6dfdc;
+      --accent: #315d57;
+      --paper: #fffdf8;
+      --shadow: 0 24px 70px rgba(23, 51, 47, 0.10);
+      --max: 1160px;
+    }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
-  :root {
-    --bg: #ffffff;
-    --surface: #f8f9fa;
-    --surface-2: #f0f2f5;
-    --border: #e1e4e8;
-    --text: #1a1a2e;
-    --text-secondary: #586069;
-    --accent: #0969da;
-    --accent-light: #ddf4ff;
-    --green: #1a7f37;
-    --green-light: #dafbe1;
-    --red: #cf222e;
-    --red-light: #ffebe9;
-    --orange: #9a6700;
-    --orange-light: #fff8c5;
-    --purple: #8250df;
-    --purple-light: #fbefff;
-    --cyan: #0550ae;
-    --cyan-light: #ddf4ff;
-  }
+    html {
+      scroll-behavior: smooth;
+    }
 
-  body {
-    font-family: 'Inter', -apple-system, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
-  }
+    body {
+      margin: 0;
+      background: var(--page);
+      color: var(--ink);
+      font-family: "Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Hiragino Sans GB", sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+      text-rendering: optimizeLegibility;
+    }
 
-  /* ── Hero ── */
-  .hero {
-    padding: 80px 0 60px;
-    text-align: center;
-    background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
-    border-bottom: 1px solid var(--border);
-  }
-  .hero h1 {
-    font-size: 3rem;
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    margin-bottom: 12px;
-  }
-  .hero h1 span { color: var(--accent); }
-  .hero p {
-    font-size: 1.15rem;
-    color: var(--text-secondary);
-    max-width: 600px;
-    margin: 0 auto;
-  }
-  .hero .stats {
-    display: flex;
-    justify-content: center;
-    gap: 48px;
-    margin-top: 36px;
-  }
-  .hero .stat { text-align: center; }
-  .hero .stat-num {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--accent);
-    font-family: 'JetBrains Mono', monospace;
-  }
-  .hero .stat-label {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
 
-  /* ── Principles ── */
-  .principles {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1px;
-    background: var(--border);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-    margin-top: 48px;
-  }
-  .principle {
-    background: var(--bg);
-    padding: 24px;
-    text-align: center;
-  }
-  .principle-label {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-secondary);
-    margin-bottom: 6px;
-  }
-  .principle-value {
-    font-weight: 600;
-    font-size: 0.95rem;
-  }
-  .principle-desc {
-    font-size: 0.78rem;
-    color: var(--text-secondary);
-    margin-top: 4px;
-  }
+    .site-nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: min(var(--max), calc(100% - 48px));
+      margin: 0 auto;
+      padding: 18px 0;
+      background: color-mix(in srgb, var(--page) 86%, transparent);
+      backdrop-filter: blur(16px);
+    }
 
-  /* ── Container ── */
-  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
 
-  /* ── Section ── */
-  section { padding: 64px 0; }
-  section + section { border-top: 1px solid var(--border); }
-  .section-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin-bottom: 8px;
-    letter-spacing: -0.02em;
-  }
-  .section-subtitle {
-    color: var(--text-secondary);
-    margin-bottom: 32px;
-  }
+    .brand-mark {
+      display: grid;
+      width: 30px;
+      height: 30px;
+      place-items: center;
+      background: var(--ink);
+      color: var(--page);
+      border-radius: 4px;
+      font-size: 17px;
+      line-height: 1;
+    }
 
-  /* ── Tags ── */
-  .tag {
-    display: inline-block;
-    font-size: 0.7rem;
-    font-weight: 500;
-    padding: 2px 8px;
-    border-radius: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-  .tag-hook { background: var(--accent-light); color: var(--accent); }
-  .tag-skill { background: var(--purple-light); color: var(--purple); }
-  .tag-block { background: var(--red-light); color: var(--red); }
-  .tag-auto { background: var(--green-light); color: var(--green); }
-  .tag-review { background: var(--orange-light); color: var(--orange); }
+    .nav-links {
+      display: flex;
+      gap: 26px;
+      color: var(--muted);
+      font-size: 14px;
+    }
 
-  /* ── Phase Block ── */
-  .phase {
-    margin-bottom: 48px;
-  }
-  .phase-head {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 16px;
-  }
-  .phase-number {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: var(--accent);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 1rem;
-    flex-shrink: 0;
-  }
-  .phase-meta {
-    flex: 1;
-  }
-  .phase-name {
-    font-weight: 600;
-    font-size: 1.15rem;
-    letter-spacing: -0.01em;
-  }
-  .phase-trigger {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.78rem;
-    color: var(--text-secondary);
-  }
-  .phase-desc {
-    color: var(--text-secondary);
-    font-size: 0.92rem;
-    margin-bottom: 16px;
-    padding-left: 56px;
-  }
+    .cover {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) 380px;
+      gap: clamp(48px, 8vw, 118px);
+      align-items: center;
+      width: min(var(--max), calc(100% - 48px));
+      min-height: calc(100vh - 68px);
+      margin: 0 auto;
+      padding: 72px 0 96px;
+    }
 
-  /* ── Inline Source ── */
-  .source-block {
-    margin-left: 56px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-    margin-bottom: 12px;
-  }
-  .source-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 16px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    user-select: none;
-  }
-  .source-header:hover { background: var(--surface-2); }
-  .source-name {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.82rem;
-    font-weight: 500;
-  }
-  .source-desc {
-    font-size: 0.73rem;
-    color: var(--text-secondary);
-    margin-left: 8px;
-  }
-  .source-toggle {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    transition: transform 0.2s;
-  }
-  .source-toggle.open { transform: rotate(90deg); }
-  .source-body {
-    display: none;
-    max-height: 600px;
-    overflow-y: auto;
-  }
-  .source-body.open { display: block; }
-  .source-body pre {
-    margin: 0;
-    padding: 16px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.73rem;
-    line-height: 1.7;
-    background: #fafbfc;
-    overflow-x: auto;
-    white-space: pre;
-  }
+    .eyebrow {
+      margin: 0 0 28px;
+      color: var(--accent);
+      font-size: 15px;
+      font-weight: 700;
+    }
 
-  /* ── Review Cards ── */
-  .review-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    margin: 16px 0;
-    margin-left: 56px;
-  }
-  .review-card {
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 20px;
-    text-align: center;
-  }
-  .review-card .review-when {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-secondary);
-    margin-bottom: 8px;
-  }
-  .review-card .review-what {
-    font-weight: 600;
-    margin-bottom: 8px;
-  }
-  .review-card .review-checks {
-    font-size: 0.82rem;
-    color: var(--text-secondary);
-    text-align: left;
-  }
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
 
-  /* ── ADHD Guards ── */
-  .guard-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-    margin: 24px 0;
-  }
-  .guard-card {
-    border: 1px solid var(--border);
-    border-left: 4px solid var(--red);
-    border-radius: 0 8px 8px 0;
-    padding: 16px 20px;
-  }
-  .guard-card .guard-scenario {
-    font-weight: 600;
-    font-size: 0.9rem;
-    margin-bottom: 4px;
-  }
-  .guard-card .guard-action {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-  }
+    h1 {
+      margin-bottom: 16px;
+      font-size: clamp(72px, 12vw, 128px);
+      line-height: 0.94;
+      letter-spacing: -0.06em;
+    }
 
-  /* ── Architecture Diagram ── */
-  .arch-diagram {
-    margin-left: 56px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 24px;
-    background: var(--surface);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.78rem;
-    line-height: 2;
-    overflow-x: auto;
-  }
-  .arch-diagram .layer-label {
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-secondary);
-    display: block;
-    margin-bottom: 4px;
-  }
-  .arch-diagram .layer {
-    margin-bottom: 16px;
-  }
-  .arch-diagram .node {
-    display: inline-block;
-    padding: 4px 12px;
-    border-radius: 6px;
-    margin: 2px 4px;
-    font-size: 0.78rem;
-  }
-  .arch-diagram .node-hook { background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent); }
-  .arch-diagram .node-skill { background: var(--purple-light); color: var(--purple); border: 1px solid var(--purple); }
-  .arch-diagram .node-gh { background: var(--green-light); color: var(--green); border: 1px solid var(--green); }
-  .arch-diagram .arrow { color: var(--text-secondary); margin: 0 4px; }
+    .cover-subtitle {
+      margin-bottom: 32px;
+      color: var(--muted);
+      font-size: clamp(24px, 3.3vw, 40px);
+      line-height: 1.28;
+    }
 
-  /* ── Two-tier Table ── */
-  .tier-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.85rem;
-    margin: 16px 0;
-    margin-left: 56px;
-    max-width: calc(100% - 56px);
-  }
-  .tier-table th {
-    text-align: left;
-    padding: 10px 16px;
-    background: var(--surface);
-    border-bottom: 2px solid var(--border);
-    font-weight: 600;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-  .tier-table td {
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--border);
-  }
-  .tier-table tr:last-child td { border-bottom: none; }
-  .tier-table code {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.78rem;
-    background: var(--surface);
-    padding: 2px 6px;
-    border-radius: 3px;
-  }
+    .quote-card {
+      max-width: 650px;
+      margin: 0 0 28px;
+      padding: 20px 24px;
+      border: 1px solid var(--line);
+      background: color-mix(in srgb, var(--page) 80%, white);
+    }
 
-  /* ── Connector Line ── */
-  .connector {
-    margin-left: 19px;
-    width: 2px;
-    height: 24px;
-    background: var(--border);
-  }
+    .quote-card strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 18px;
+    }
 
-  /* ── Footer ── */
-  footer {
-    padding: 40px 0;
-    text-align: center;
-    color: var(--text-secondary);
-    font-size: 0.8rem;
-    border-top: 1px solid var(--border);
-  }
-</style>
+    .quote-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .cover-index {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 28px;
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .portrait {
+      align-self: center;
+    }
+
+    .portrait img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      object-fit: cover;
+      filter: grayscale(100%) contrast(0.94);
+      box-shadow: var(--shadow);
+    }
+
+    .portrait figcaption {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: right;
+    }
+
+    .section {
+      padding: 86px 0;
+    }
+
+    .section:nth-of-type(odd) {
+      background: var(--wash);
+    }
+
+    .section-inner {
+      width: min(var(--max), calc(100% - 48px));
+      margin: 0 auto;
+    }
+
+    .section-kicker {
+      margin-bottom: 12px;
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    .section-title {
+      margin-bottom: 18px;
+      font-size: clamp(34px, 5vw, 58px);
+      line-height: 1.15;
+      letter-spacing: -0.035em;
+    }
+
+    .lead {
+      max-width: 920px;
+      margin-bottom: 42px;
+      color: var(--muted);
+      font-size: clamp(17px, 1.6vw, 21px);
+      line-height: 1.85;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 20px;
+    }
+
+    .text-card {
+      min-height: 210px;
+      padding: 28px;
+      border: 1px solid var(--line);
+      background: color-mix(in srgb, var(--page) 70%, white);
+    }
+
+    .text-card .num {
+      display: block;
+      margin-bottom: 24px;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .text-card h3 {
+      margin-bottom: 12px;
+      font-size: 27px;
+      line-height: 1.2;
+      letter-spacing: -0.025em;
+    }
+
+    .text-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.75;
+    }
+
+    .why-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+      gap: clamp(42px, 7vw, 92px);
+      align-items: start;
+    }
+
+    .risk-list {
+      display: grid;
+      gap: 16px;
+    }
+
+    .risk-item {
+      display: grid;
+      grid-template-columns: 52px 1fr;
+      gap: 18px;
+      padding: 22px 24px;
+      border: 1px solid var(--line);
+      background: color-mix(in srgb, var(--paper) 84%, transparent);
+    }
+
+    .risk-item b {
+      color: var(--accent);
+      font-size: 14px;
+    }
+
+    .risk-item p {
+      margin: 0;
+      color: var(--ink);
+      font-size: 16px;
+      line-height: 1.75;
+    }
+
+    .how {
+      background: var(--wash-strong);
+    }
+
+    .diagram {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+      gap: 18px;
+      align-items: center;
+      margin: 34px 0 44px;
+    }
+
+    .diagram-node {
+      min-height: 150px;
+      padding: 26px 22px;
+      background: var(--paper);
+      border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+      text-align: center;
+    }
+
+    .diagram-node h3 {
+      margin-bottom: 10px;
+      font-size: 24px;
+      line-height: 1.2;
+    }
+
+    .diagram-node p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .arrow {
+      color: var(--accent);
+      font-size: 26px;
+      font-weight: 700;
+    }
+
+    .how-details {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .detail {
+      padding: 24px 26px;
+      border-left: 3px solid var(--accent);
+      background: color-mix(in srgb, var(--paper) 65%, transparent);
+    }
+
+    .detail h3 {
+      margin-bottom: 8px;
+      font-size: 19px;
+    }
+
+    .detail p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.75;
+    }
+
+    .remit {
+      width: min(980px, calc(100% - 48px));
+      margin: 0 auto;
+      padding: 48px 0 56px;
+      color: var(--ink);
+      font-size: clamp(18px, 2vw, 24px);
+      font-weight: 700;
+      line-height: 1.8;
+      text-align: center;
+    }
+
+    .footer {
+      padding: 22px 0 34px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    @media (max-width: 900px) {
+      .site-nav {
+        width: min(var(--max), calc(100% - 32px));
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .cover,
+      .section-inner {
+        width: min(var(--max), calc(100% - 32px));
+      }
+
+      .cover {
+        grid-template-columns: 1fr;
+        min-height: auto;
+        padding-top: 56px;
+      }
+
+      .portrait {
+        max-width: 360px;
+      }
+
+      .card-grid,
+      .why-layout,
+      .how-details {
+        grid-template-columns: 1fr;
+      }
+
+      .diagram {
+        grid-template-columns: 1fr;
+      }
+
+      .arrow {
+        transform: rotate(90deg);
+        justify-self: center;
+      }
+    }
+  </style>
 </head>
 <body>
+  <header class="site-nav" aria-label="主导航">
+    <a class="brand" href="#top" aria-label="Fu 首页">
+      <span class="brand-mark">复</span>
+      <span>Fu</span>
+    </a>
+    <nav class="nav-links" aria-label="页面章节">
+      <a href="#what">What</a>
+      <a href="#why">Why</a>
+      <a href="#how">How</a>
+      <a href="#remit">Remit</a>
+    </nav>
+  </header>
 
-<!-- ══════════════════ HERO ══════════════════ -->
-<div class="hero">
-  <div class="container">
-    <h1>Academic <span>Git</span></h1>
-    <p>A zero-touch, ADHD-friendly Git workflow for solo academic research. Issue-driven. Fully automated. Codex powered.</p>
-    <div class="stats">
-      <div class="stat">
-        <div class="stat-num">2</div>
-        <div class="stat-label">Stop Guards</div>
-      </div>
-      <div class="stat">
-        <div class="stat-num">4</div>
-        <div class="stat-label">Skills</div>
-      </div>
-      <div class="stat">
-        <div class="stat-num">3</div>
-        <div class="stat-label">Codex Reviews</div>
-      </div>
-      <div class="stat">
-        <div class="stat-num">0</div>
-        <div class="stat-label">Git Commands Typed</div>
-      </div>
-    </div>
-
-    <div class="principles">
-      <div class="principle">
-        <div class="principle-label">Architecture</div>
-        <div class="principle-value">Thick Skill, Thin Harness</div>
-        <div class="principle-desc">Plugin metadata stays minimal. All logic lives in skills + hooks.</div>
-      </div>
-      <div class="principle">
-        <div class="principle-label">Source of Truth</div>
-        <div class="principle-value">Issue = SSOT</div>
-        <div class="principle-desc">Body = original plan (immutable). Comments = changelog (append-only).</div>
-      </div>
-      <div class="principle">
-        <div class="principle-label">Mapping</div>
-        <div class="principle-value">1 Issue = 1 Branch = 1 Worktree = 1 PR</div>
-        <div class="principle-desc">Each task: one Issue, one linked <code>codex/issue-&lt;number&gt;-&lt;slug&gt;</code> branch/worktree, one squash-merged PR.</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════ ARCHITECTURE ══════════════════ -->
-<section>
-  <div class="container">
-    <h2 class="section-title">Architecture</h2>
-    <p class="section-subtitle">Codex hooks + skills. No intermediate layers. GitHub is the database.</p>
-
-    <div class="arch-diagram">
-      <div class="layer">
-        <span class="layer-label">Interactive Codex Hook Entry</span>
-        <span class="node node-hook">.codex/hooks.json</span>
-        <span class="arrow">&rarr;</span>
-        <span class="node node-hook">hooks/codex/*.sh</span>
-        <span class="arrow">&rarr;</span>
-        <span style="color: var(--text-secondary)">guarded commit routing + PR-ready routing + crash recovery</span>
-      </div>
-      <div class="layer">
-        <span class="layer-label">Skills (Codex invokes directly)</span>
-        <span class="node node-skill">handle-issue</span>
-        <span class="arrow">&rarr;</span>
-        <span class="node node-skill">/codex-gh-issue-start</span>
-        <span class="arrow">&rarr;</span>
-        <span class="node node-skill">handle-commit</span>
-        <span class="arrow">&larr;</span>
-        <span class="node node-skill">/refine-issue</span>
-      </div>
-      <div class="layer">
-        <span class="layer-label">GitHub (SSOT)</span>
-        <span class="node node-gh">Issue body</span>
-        <span style="color: var(--text-secondary)">(immutable plan)</span>
-        <span class="arrow">+</span>
-        <span class="node node-gh">Issue comments</span>
-        <span style="color: var(--text-secondary)">(append-only changelog)</span>
-        <span class="arrow">+</span>
-        <span class="node node-gh">Checklist [x]</span>
-        <span style="color: var(--text-secondary)">(progress)</span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════════ WORKFLOW ══════════════════ -->
-<section>
-  <div class="container">
-    <h2 class="section-title">Workflow</h2>
-    <p class="section-subtitle">From session start to PR merge &mdash; zero manual git commands.</p>
-
-    <!-- ── Phase 1: Crash Recovery ── -->
-    <div class="phase">
-      <div class="phase-head">
-        <div class="phase-number">1</div>
-        <div class="phase-meta">
-          <div class="phase-name">Crash Recovery</div>
-          <div class="phase-trigger">.codex/hooks.json &rarr; hooks/codex/session-start.sh &mdash; SessionStart event</div>
+  <main id="top">
+    <section class="cover" aria-labelledby="cover-title">
+      <div>
+        <p class="eyebrow">AI for Social Science / 项目说明</p>
+        <h1 id="cover-title">Fu</h1>
+        <p class="cover-subtitle">研究过程记录与复核</p>
+        <div class="quote-card">
+          <strong>严复：《论世变之亟》</strong>
+          <p>“学术则黜伪而崇真，于刑政则屈私以为公。”</p>
         </div>
-      </div>
-      <div class="phase-desc">
-        Session interrupted? The Codex SessionStart hook summarizes branch state and restores audit context.
-        Adrian can resume from the current issue and branch without hunting through local state.
-      </div>
-    </div>
-
-    <div class="connector"></div>
-
-    <!-- ── Phase 2: Task Triage ── -->
-    <div class="phase">
-      <div class="phase-head">
-        <div class="phase-number">2</div>
-        <div class="phase-meta">
-          <div class="phase-name">Task Triage</div>
-          <div class="phase-trigger">handle-issue skill</div>
-        </div>
-      </div>
-      <div class="phase-desc">
-        Adrian describes what he wants. Codex lists open Issues and asks Adrian to choose a scoped path:
-      </div>
-
-      <table class="tier-table">
-        <thead><tr><th>Choice</th><th>Action</th><th>Routes To</th></tr></thead>
-        <tbody>
-          <tr>
-            <td><strong>A</strong> &mdash; Continue existing Issue</td>
-            <td>Open the linked issue branch, read Issue, resume next unblocked item</td>
-            <td>Work Loop</td>
-          </tr>
-          <tr>
-            <td><strong>B</strong> &mdash; Supplement existing Issue</td>
-            <td>Add items via <code>/refine-issue</code>, then switch to branch</td>
-            <td><code>/refine-issue</code></td>
-          </tr>
-          <tr>
-            <td><strong>C</strong> &mdash; New Issue</td>
-            <td>Draft Issue with DAG checklist, then create the issue-linked branch and worktree together</td>
-            <td><code>/codex-gh-issue-start</code></td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div class="source-block">
-        <div class="source-header" onclick="toggle(this)">
-          <div><span class="source-name">skills/handle-issue/SKILL.md</span> <span class="source-desc">Issue routing &mdash; resume or start issue work</span></div>
-          <span class="source-toggle">&#9654;</span>
-        </div>
-        <div class="source-body"><pre id="begin-source"></pre></div>
-      </div>
-    </div>
-
-    <div class="connector"></div>
-
-    <!-- ── Phase 3: Issue Creation ── -->
-    <div class="phase">
-      <div class="phase-head">
-        <div class="phase-number">3</div>
-        <div class="phase-meta">
-          <div class="phase-name">Issue Creation</div>
-          <div class="phase-trigger">/codex-gh-issue-start skill</div>
-        </div>
-      </div>
-      <div class="phase-desc">
-        Draft Issue with DAG checklist &rarr; <span class="tag tag-review">Codex</span> validates template, verifiability, and scope &rarr; Submit through the plugin-owned CLI &rarr; Create the linked <code>codex/issue-&lt;number&gt;-&lt;slug&gt;</code> branch and dedicated worktree &rarr; Start working there.
-      </div>
-
-      <div class="review-grid">
-        <div class="review-card">
-          <div class="review-when">Codex Issue Review</div>
-          <div class="review-what">Quality Gate</div>
-          <div class="review-checks">
-            1. Duplicates any open Issue?<br>
-            2. Each checklist item verifiable?<br>
-            3. Scope clear?
-          </div>
-        </div>
-        <div class="review-card">
-          <div class="review-when">DAG Checklist</div>
-          <div class="review-what">Dependency Graph</div>
-          <div class="review-checks">
-            <code>- [ ] A. Clean data</code><br>
-            <code>- [ ] B. Regression &rarr; after: A</code><br>
-            <code>- [ ] C. Table &rarr; after: B</code><br>
-            Letter IDs + dependency arrows
-          </div>
-        </div>
-        <div class="review-card">
-          <div class="review-when">Adrian Review</div>
-          <div class="review-what">Human Checkpoint</div>
-          <div class="review-checks">
-            "行" / "ok" &rarr; submit as-is<br>
-            Edit &rarr; incorporate changes<br>
-            "不用 issue" &rarr; skip, work on main
-          </div>
+        <div class="cover-index" aria-label="页面索引">
+          <a href="#what">What</a>
+          <a href="#why">Why</a>
+          <a href="#how">How</a>
         </div>
       </div>
 
-      <div class="source-block">
-        <div class="source-header" onclick="toggle(this)">
-          <div><span class="source-name">skills/codex-gh-issue-start/SKILL.md</span> <span class="source-desc">Issue template, linked branch, dedicated worktree</span></div>
-          <span class="source-toggle">&#9654;</span>
-        </div>
-        <div class="source-body"><pre id="codex-issue-start-source"></pre></div>
-      </div>
-    </div>
+      <figure class="portrait">
+        <img src="assets/yan-fu.jpg" alt="严复肖像">
+        <figcaption>严复肖像，Wikimedia Commons</figcaption>
+      </figure>
+    </section>
 
-    <div class="connector"></div>
+    <section class="section" id="what" aria-labelledby="what-title">
+      <div class="section-inner">
+        <p class="section-kicker">What</p>
+        <h2 class="section-title" id="what-title">Fu 是什么</h2>
+        <p class="lead">
+          Fu 是面向 AI 辅助社会科学研究的一套本地工作流基础设施。它不把重点放在生成更多代码，而是把研究任务、研究产物与过程记录组织在同一条可复核路径上，使代码、数据、图表、文本回应和结论保留来源、版本与修改痕迹。
+        </p>
 
-    <!-- ── Phase 4: Work Loop ── -->
-    <div class="phase">
-      <div class="phase-head">
-        <div class="phase-number">4</div>
-        <div class="phase-meta">
-          <div class="phase-name">Work Loop</div>
-          <div class="phase-trigger">.codex/hooks.json &rarr; hooks/codex/stop.sh &mdash; Stop event (after every Codex response)</div>
-        </div>
-      </div>
-      <div class="phase-desc">
-        While Codex works on checklist items, the Stop hook acts as an Auto-Commit guard: dirty work blocks session end and sends Codex back through the commit skill.
-        The same Stop hook acts as an Auto-Pull-Request guard once a clean, pushed issue branch is ready for PR.
-        The hook never commits or creates PRs directly; meaningful issue-linked commits and gated PRs are still created by MCP tools.
-        In Interactive Codex, the loaded repo-local entrypoint is <code>.codex/hooks.json</code>; <code>hooks/codex/hooks.json</code> remains the plugin-packaged copy.
-      </div>
-
-      <table class="tier-table">
-        <thead><tr><th>Layer</th><th>When</th><th>Action</th><th>Tied to Issue?</th></tr></thead>
-        <tbody>
-          <tr>
-            <td><span class="tag tag-auto">Auto</span> Stop guard</td>
-            <td>After every Codex response</td>
-            <td>Block if dirty; instruct Codex to analyze and commit</td>
-            <td>No &mdash; guard only</td>
-          </tr>
-          <tr>
-            <td><span class="tag tag-auto">Auto</span> PR guard</td>
-            <td>Clean branch, completed Issue, no open PR</td>
-            <td>Block session end; route to <code>prepare_pr</code> + <code>open_pr</code></td>
-            <td>Yes &mdash; inferred from locked Issue or branch name</td>
-          </tr>
-          <tr>
-            <td><span class="tag tag-skill">Formal</span> handle-commit</td>
-            <td>When checklist item is done</td>
-            <td><code>type(#N/X): description</code></td>
-            <td>Yes &mdash; mandatory #N + letter X</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div class="source-block">
-        <div class="source-header" onclick="toggle(this)">
-          <div><span class="source-name">.codex/hooks.json</span> <span class="source-desc">Interactive Codex repo-local hook entrypoint</span></div>
-          <span class="source-toggle">&#9654;</span>
-        </div>
-        <div class="source-body"><pre id="codex-hooks-source"></pre></div>
-      </div>
-
-      <div class="source-block">
-        <div class="source-header" onclick="toggle(this)">
-          <div><span class="source-name">hooks/codex/stop.sh</span> <span class="source-desc">Codex Stop hook &mdash; Auto-Commit + Auto-Pull-Request guards</span></div>
-          <span class="source-toggle">&#9654;</span>
-        </div>
-        <div class="source-body"><pre id="autocommit-source"></pre></div>
-      </div>
-    </div>
-
-    <div class="connector"></div>
-
-    <!-- ── Phase 5: Formal Commit ── -->
-    <div class="phase">
-      <div class="phase-head">
-        <div class="phase-number">5</div>
-        <div class="phase-meta">
-          <div class="phase-name">Formal Commit</div>
-          <div class="phase-trigger">handle-commit skill &mdash; 1 commit = 1 checklist item group</div>
+        <div class="card-grid">
+          <article class="text-card">
+            <span class="num">01</span>
+            <h3>会话</h3>
+            <p>新的研究问题或分析开始时，先形成一个清楚的会话边界。一个会话只对应一个研究任务。</p>
+          </article>
+          <article class="text-card">
+            <span class="num">02</span>
+            <h3>边界</h3>
+            <p>任务可以跨会话延续，但问题、数据、模型设定和写作目标不应在事后被悄悄重组。</p>
+          </article>
+          <article class="text-card">
+            <span class="num">03</span>
+            <h3>产物</h3>
+            <p>代码、数据、图表、文本回应和结论都保留来源，使最终文本能够回到生成过程。</p>
+          </article>
         </div>
       </div>
-      <div class="phase-desc">
-        Read Issue (SSOT) &rarr; analyze changes &rarr; <span class="tag tag-review">Codex</span> reviews diff &rarr; commit selected paths as <code>type(#N/A+C): desc</code> &rarr; push &rarr; check off item <code>[x]</code> only when complete.<br>
-        When all items are <code>[x]</code>, the Stop hook refuses to leave a clean, pushed branch without a PR: generate PR body with <code>Closes #N</code> &rarr; create gated PR &rarr; squash merge &rarr; return to the default branch.
-      </div>
+    </section>
 
-      <div class="review-grid">
-        <div class="review-card">
-          <div class="review-when">Each Commit</div>
-          <div class="review-what">Codex Code Review</div>
-          <div class="review-checks">
-            1. Silent error swallowed?<br>
-            2. Hardcoded value?<br>
-            3. Breaks reproducibility?
-          </div>
+    <section class="section" id="why" aria-labelledby="why-title">
+      <div class="section-inner why-layout">
+        <div>
+          <p class="section-kicker">Why</p>
+          <h2 class="section-title" id="why-title">为什么需要 Fu</h2>
+          <p class="lead">
+            计算能力和 AI 编程能力扩展以后，研究者可以更快生成脚本、修改模型和重写图表；与此同时，代码、数据、版本、结果和写作之间的对应关系也更容易断开。Fu 关注的正是这种断开对研究可信度造成的影响。
+          </p>
         </div>
-        <div class="review-card">
-          <div class="review-when">PR Creation</div>
-          <div class="review-what">Codex Diff Review</div>
-          <div class="review-checks">
-            1. Untested spec change?<br>
-            2. Silent error swallowed?<br>
-            3. Scope creep beyond Issue?
-          </div>
-        </div>
-        <div class="review-card">
-          <div class="review-when">PR Templates</div>
-          <div class="review-what">4 Templates</div>
-          <div class="review-checks">
-            A. Feature (new analysis)<br>
-            B. Fix (data bug)<br>
-            C. Revision (peer review)<br>
-            D. Docs / Config
-          </div>
+
+        <div class="risk-list" aria-label="研究过程风险">
+          <article class="risk-item">
+            <b>01</b>
+            <p><strong>复现性：</strong>同一结果能否回到当时的环境、依赖、路径和中间文件。</p>
+          </article>
+          <article class="risk-item">
+            <b>02</b>
+            <p><strong>来源说明：</strong>论文中的表格、图像和结论，是否能够说明脚本、数据版本与修改路径。</p>
+          </article>
+          <article class="risk-item">
+            <b>03</b>
+            <p><strong>假设边界：</strong>分析前设想与分析后修正是否被区分，而不是在定稿中被抹平。</p>
+          </article>
         </div>
       </div>
+    </section>
 
-      <div class="source-block">
-        <div class="source-header" onclick="toggle(this)">
-          <div><span class="source-name">skills/handle-commit/SKILL.md</span> <span class="source-desc">Issue-linked commits, Codex review, PR flow</span></div>
-          <span class="source-toggle">&#9654;</span>
+    <section class="section how" id="how" aria-labelledby="how-title">
+      <div class="section-inner">
+        <p class="section-kicker">How</p>
+        <h2 class="section-title" id="how-title">我们怎么做：把产物接回过程记录</h2>
+        <p class="lead">
+          How 的重点不是研究者怎样操作，而是 Fu 如何在工作流层面承担记录、约束与复核。研究者继续推进自己的分析；Fu 负责保留任务边界、连接研究产物，并为合作者、审稿人或未来的自己提供回到生成过程的入口。
+        </p>
+
+        <div class="diagram" aria-label="Fu 工作流机制图">
+          <article class="diagram-node">
+            <h3>会话</h3>
+            <p>限定任务</p>
+          </article>
+          <span class="arrow" aria-hidden="true">→</span>
+          <article class="diagram-node">
+            <h3>规则</h3>
+            <p>检查留痕</p>
+          </article>
+          <span class="arrow" aria-hidden="true">→</span>
+          <article class="diagram-node">
+            <h3>产物</h3>
+            <p>连接来源</p>
+          </article>
+          <span class="arrow" aria-hidden="true">→</span>
+          <article class="diagram-node">
+            <h3>复核</h3>
+            <p>回到过程</p>
+          </article>
         </div>
-        <div class="source-body"><pre id="commit-source"></pre></div>
-      </div>
-    </div>
 
-    <div class="connector"></div>
-
-    <!-- ── Phase 6: Issue Refinement ── -->
-    <div class="phase">
-      <div class="phase-head">
-        <div class="phase-number">6</div>
-        <div class="phase-meta">
-          <div class="phase-name">Issue Refinement</div>
-          <div class="phase-trigger">/refine-issue skill &mdash; mid-stream scope changes</div>
-        </div>
-      </div>
-      <div class="phase-desc">
-        Scope changed? Need new items? Item no longer needed?
-        <strong>Issue body is never modified.</strong> All changes are logged as timestamped, append-only comments.
-        Codex reconstructs current truth by reading body + all comments sequentially.
-      </div>
-
-      <table class="tier-table">
-        <thead><tr><th>Layer</th><th>What It Holds</th><th>Mutability</th></tr></thead>
-        <tbody>
-          <tr>
-            <td>Issue body</td>
-            <td>Original plan (checklist, scope, context)</td>
-            <td><strong>Immutable</strong> &mdash; frozen at creation</td>
-          </tr>
-          <tr>
-            <td>Issue comments</td>
-            <td>All modifications since creation</td>
-            <td><strong>Append-only</strong> &mdash; never edit, never delete</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div class="source-block">
-        <div class="source-header" onclick="toggle(this)">
-          <div><span class="source-name">skills/refine-issue/SKILL.md</span> <span class="source-desc">Comment-only refinement, append-only audit trail</span></div>
-          <span class="source-toggle">&#9654;</span>
-        </div>
-        <div class="source-body"><pre id="refine-issue-source"></pre></div>
-      </div>
-    </div>
-
-    <div class="connector"></div>
-
-    <!-- ── Phase 7: Completion ── -->
-    <div class="phase">
-      <div class="phase-head">
-        <div class="phase-number">7</div>
-        <div class="phase-meta">
-          <div class="phase-name">Completion</div>
-          <div class="phase-trigger">All checklist items [x] &mdash; guarded PR routing</div>
+        <div class="how-details">
+          <article class="detail">
+            <h3>本地服务</h3>
+            <p>提供版本、议题与工作树等基础能力，使研究过程能够被组织为可定位的对象。</p>
+          </article>
+          <article class="detail">
+            <h3>规则钩子</h3>
+            <p>在关键节点检查任务边界、提交关系和产物来源，避免过程记录被事后补写或绕过。</p>
+          </article>
+          <article class="detail">
+            <h3>操作技能</h3>
+            <p>保存如何开展研究任务的判断指南，把创造性判断和机械检查区分开来。</p>
+          </article>
+          <article class="detail">
+            <h3>工具脚本</h3>
+            <p>负责启动、本地检查和工作流衔接，使日常研究活动能够进入同一条记录链。</p>
+          </article>
         </div>
       </div>
-      <div class="phase-desc">
-        Codex detects all items checked off &rarr; Stop hook blocks session end &rarr; generate PR body &rarr; create PR with <code>Closes #N</code> after gates pass &rarr; squash merge &rarr; return to the default branch.<br>
-        No silent PR creation: the generated body and gate failures remain inspectable. Milestone deliveries get tags: <code>email-YYYY-MM-DD</code>, <code>meeting-YYYY-MM-DD</code>, <code>conference-YYYY-MM-DD</code>.
-      </div>
-    </div>
+    </section>
 
-  </div>
-</section>
+    <section class="remit" id="remit" aria-label="研究者负担边界">
+      研究者只需照常提出问题、清洗数据、建模、制图与写作；Fu 在后台整理任务边界、产物来源与过程记录。
+    </section>
+  </main>
 
-<!-- ══════════════════ ADHD GUARDS ══════════════════ -->
-<section>
-  <div class="container">
-    <h2 class="section-title">Anti-ADHD Safeguards</h2>
-    <p class="section-subtitle">Structural guardrails that don't rely on human discipline.</p>
-
-    <div class="guard-grid">
-      <div class="guard-card">
-        <div class="guard-scenario">Session Start Drift</div>
-        <div class="guard-action"><code>handle-issue</code> forces Issue + branch resolution before any work</div>
-      </div>
-      <div class="guard-card">
-        <div class="guard-scenario">Mid-Task Tangent</div>
-        <div class="guard-action">Mandatory Issue + item set on every <code>create_commit</code> &mdash; can't commit untracked work</div>
-      </div>
-      <div class="guard-card">
-        <div class="guard-scenario">Scope Creep</div>
-        <div class="guard-action">DAG enforces item ordering &mdash; only unblocked items startable</div>
-      </div>
-      <div class="guard-card">
-        <div class="guard-scenario">Forgot to Save</div>
-        <div class="guard-action"><code>.codex/hooks.json</code> activates <code>hooks/codex/stop.sh</code>, which blocks dirty session end and routes back to formal commit</div>
-      </div>
-      <div class="guard-card">
-        <div class="guard-scenario">Crashed / Closed Laptop</div>
-        <div class="guard-action"><code>hooks/codex/session-start.sh</code> restores branch and issue context on resume</div>
-      </div>
-      <div class="guard-card">
-        <div class="guard-scenario">Never Says "Done"</div>
-        <div class="guard-action">Clean completed branches without open PRs are blocked by the Stop hook until <code>prepare_pr</code> + <code>open_pr</code></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════════ FOOTER ══════════════════ -->
-<footer>
-  <div class="container">
-    Academic Git &mdash; Built by Adrian Zheng &times; Codex, 2026-04-21
-  </div>
-</footer>
-
-<script>
-function toggle(header) {
-  const body = header.nextElementSibling;
-  const t = header.querySelector('.source-toggle');
-  body.classList.toggle('open');
-  t.classList.toggle('open');
-}
-
-// Embed source files
-const sources = [
-  { id: 'begin-source', path: 'skills/handle-issue/SKILL.md' },
-  { id: 'codex-issue-start-source', path: 'skills/codex-gh-issue-start/SKILL.md' },
-  { id: 'commit-source', path: 'skills/handle-commit/SKILL.md' },
-  { id: 'refine-issue-source', path: 'skills/refine-issue/SKILL.md' },
-  { id: 'codex-hooks-source', path: '.codex/hooks.json' },
-  { id: 'autocommit-source', path: 'hooks/codex/stop.sh' },
-];
-
-sources.forEach(({ id, path }) => {
-  fetch(path)
-    .then(r => r.text())
-    .then(t => { document.getElementById(id).textContent = t; })
-    .catch(() => {
-      document.getElementById(id).textContent =
-        '(Serve via local server to load source: python3 -m http.server)';
-    });
-});
-</script>
-
+  <footer class="footer">
+    Fu / research process records for AI-assisted social science
+  </footer>
 </body>
 </html>

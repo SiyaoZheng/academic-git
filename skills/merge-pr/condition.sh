@@ -1,6 +1,6 @@
 #!/bin/bash
-# condition.sh for finalize-pr-merge
-# Run: only if a merge just happened
+# condition.sh for merge-pr skill
+# Run only before the academic-git MCP merge_pr tool.
 set -euo pipefail
 
 INPUT="$(cat 2>/dev/null || true)"
