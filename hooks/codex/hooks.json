@@ -19,6 +19,12 @@
         "hooks": [
           {
             "type": "command",
+            "command": "python3 \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/github-issue-shell-guard.py\"",
+            "timeout": 10,
+            "statusMessage": "Checking academic-git issue start workflow"
+          },
+          {
+            "type": "command",
             "command": "bash \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/pretool-bash.sh\"",
             "timeout": 10
           }
@@ -42,6 +48,12 @@
       {
         "matcher": "*",
         "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/github-issue-stop-audit.py\"",
+            "timeout": 30,
+            "statusMessage": "Auditing academic-git issue start workflow"
+          },
           {
             "type": "command",
             "command": "bash \"${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/stop.sh\"",

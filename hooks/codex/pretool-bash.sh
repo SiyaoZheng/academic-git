@@ -9,6 +9,10 @@ if [ -z "$COMMAND_STR" ]; then
   exit 0
 fi
 
+if [[ "$COMMAND_STR" == *"codex-gh-issue-start"* ]]; then
+  exit 0
+fi
+
 if [ -z "$REPO_DIR" ]; then
   REPO_DIR="$PWD"
 fi
@@ -68,6 +72,9 @@ BLOCKED_PATTERNS=(
 
 for pattern in "${BLOCKED_PATTERNS[@]}"; do
   if [[ "$COMMAND_STR" == *"$pattern"* ]]; then
+    if [ "$pattern" = "gh issue create" ]; then
+      deny "Direct '${pattern}' detected in an academic-git repository. Use /codex-gh-issue-start instead."
+    fi
     deny "Direct '${pattern}' detected in an academic-git repository. Use academic-git MCP tools instead."
   fi
 done

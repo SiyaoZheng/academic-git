@@ -1,10 +1,12 @@
 ---
 name: create-issue
-description: Create a well-structured GitHub Issue with DAG checklist template. The body must follow the required template (Context, Task with letter-ID checklist + dependencies, Scope, Affected Files, Verification). Use this skill whenever creating a new issue, starting new work, or when Adrian asks to track a task. Also use when /begin routes to option C (new issue).
+description: Legacy MCP issue template reference. For normal Codex issue-start work, use codex-gh-issue-start instead so the GitHub issue, linked branch, and dedicated worktree are created together. Keep this skill only as the body template reference for MCP-only workflows.
 allowed-tools: ["academic-git"]
 ---
 
 # Create Issue — DAG Checklist Template
+
+Preferred path: use `/codex-gh-issue-start`. Do not use the GitHub connector, MCP `create_issue`, or bare `gh issue create` for normal issue-start work because those can leave the branch/worktree step incomplete.
 
 The `create_issue` MCP tool validates the body structure before creating. If required sections are missing, it returns an error.
 
