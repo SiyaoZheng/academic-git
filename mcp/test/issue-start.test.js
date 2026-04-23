@@ -120,11 +120,12 @@ test("issue-start hook does not allow raw gh issue create through an env bypass"
 });
 
 test("issue-start helpers derive auditable branch and worktree names", () => {
+  const nonAsciiRepo = path.join(os.tmpdir(), "论文", "academic-git");
   assert.equal(slugifyIssueTitle("Make turn metadata headers ASCII-safe for non-ASCII workspace paths"), "make-turn-metadata-headers-ascii-safe");
   assert.equal(issueBranchName(41, "Make turn metadata headers ASCII-safe"), "codex/issue-41-make-turn-metadata-headers-ascii-safe");
   assert.equal(
-    defaultIssueWorktreePath("/Users/siyaozheng/Documents/论文/academic-git", 41, "Make turn metadata headers ASCII-safe"),
-    "/Users/siyaozheng/Documents/论文/academic-git.issue-41-make-turn-metadata-headers-ascii-safe"
+    defaultIssueWorktreePath(nonAsciiRepo, 41, "Make turn metadata headers ASCII-safe"),
+    path.join(os.tmpdir(), "论文", "academic-git.issue-41-make-turn-metadata-headers-ascii-safe")
   );
 });
 
