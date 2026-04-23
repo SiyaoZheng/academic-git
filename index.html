@@ -389,8 +389,8 @@
     <p>A zero-touch, ADHD-friendly Git workflow for solo academic research. Issue-driven. Fully automated. Codex powered.</p>
     <div class="stats">
       <div class="stat">
-        <div class="stat-num">1</div>
-        <div class="stat-label">Hook</div>
+        <div class="stat-num">2</div>
+        <div class="stat-label">Stop Guards</div>
       </div>
       <div class="stat">
         <div class="stat-num">4</div>
@@ -434,10 +434,12 @@
 
     <div class="arch-diagram">
       <div class="layer">
-        <span class="layer-label">Hooks (Stop + SessionStart)</span>
+        <span class="layer-label">Interactive Codex Hook Entry</span>
+        <span class="node node-hook">.codex/hooks.json</span>
+        <span class="arrow">&rarr;</span>
         <span class="node node-hook">hooks/codex/*.sh</span>
         <span class="arrow">&rarr;</span>
-        <span style="color: var(--text-secondary)">wip snapshots + crash recovery + fire-and-forget push</span>
+        <span style="color: var(--text-secondary)">guarded commit routing + PR-ready routing + crash recovery</span>
       </div>
       <div class="layer">
         <span class="layer-label">Skills (Codex invokes directly)</span>
@@ -476,7 +478,7 @@
         <div class="phase-number">1</div>
         <div class="phase-meta">
           <div class="phase-name">Crash Recovery</div>
-          <div class="phase-trigger">hooks/codex/session-start.sh &mdash; SessionStart event</div>
+          <div class="phase-trigger">.codex/hooks.json &rarr; hooks/codex/session-start.sh &mdash; SessionStart event</div>
         </div>
       </div>
       <div class="phase-desc">
@@ -593,12 +595,14 @@
         <div class="phase-number">4</div>
         <div class="phase-meta">
           <div class="phase-name">Work Loop</div>
-          <div class="phase-trigger">hooks/codex/stop.sh &mdash; Stop event (after every Codex response)</div>
+          <div class="phase-trigger">.codex/hooks.json &rarr; hooks/codex/stop.sh &mdash; Stop event (after every Codex response)</div>
         </div>
       </div>
       <div class="phase-desc">
         While Codex works on checklist items, the Stop hook acts as an Auto-Commit guard: dirty work blocks session end and sends Codex back through the commit skill.
-        The hook never commits directly; meaningful issue-linked commits are still created by the MCP commit tool.
+        The same Stop hook acts as an Auto-Pull-Request guard once a clean, pushed issue branch is ready for PR.
+        The hook never commits or creates PRs directly; meaningful issue-linked commits and gated PRs are still created by MCP tools.
+        In Interactive Codex, the loaded repo-local entrypoint is <code>.codex/hooks.json</code>; <code>hooks/codex/hooks.json</code> remains the plugin-packaged copy.
       </div>
 
       <table class="tier-table">
@@ -611,6 +615,12 @@
             <td>No &mdash; guard only</td>
           </tr>
           <tr>
+            <td><span class="tag tag-auto">Auto</span> PR guard</td>
+            <td>Clean branch, completed Issue, no open PR</td>
+            <td>Block session end; route to <code>generate_pr_body</code> + <code>create_pr</code></td>
+            <td>Yes &mdash; inferred from locked Issue or branch name</td>
+          </tr>
+          <tr>
             <td><span class="tag tag-skill">Formal</span> /commit</td>
             <td>When checklist item is done</td>
             <td><code>type(#N/X): description</code></td>
@@ -621,7 +631,15 @@
 
       <div class="source-block">
         <div class="source-header" onclick="toggle(this)">
-          <div><span class="source-name">hooks/codex/stop.sh</span> <span class="source-desc">Codex Stop hook &mdash; dirty-work guard + PR nudge</span></div>
+          <div><span class="source-name">.codex/hooks.json</span> <span class="source-desc">Interactive Codex repo-local hook entrypoint</span></div>
+          <span class="source-toggle">&#9654;</span>
+        </div>
+        <div class="source-body"><pre id="codex-hooks-source"></pre></div>
+      </div>
+
+      <div class="source-block">
+        <div class="source-header" onclick="toggle(this)">
+          <div><span class="source-name">hooks/codex/stop.sh</span> <span class="source-desc">Codex Stop hook &mdash; Auto-Commit + Auto-Pull-Request guards</span></div>
           <span class="source-toggle">&#9654;</span>
         </div>
         <div class="source-body"><pre id="autocommit-source"></pre></div>
@@ -641,7 +659,7 @@
       </div>
       <div class="phase-desc">
         Read Issue (SSOT) &rarr; analyze changes &rarr; <span class="tag tag-review">Codex</span> reviews diff &rarr; commit selected paths as <code>type(#N/X): desc</code> &rarr; push &rarr; check off item <code>[x]</code> only when complete.<br>
-        When all items are <code>[x]</code>: generate PR body with <code>Closes #N</code> &rarr; create gated PR &rarr; squash merge &rarr; return to the default branch.
+        When all items are <code>[x]</code>, the Stop hook refuses to leave a clean, pushed branch without a PR: generate PR body with <code>Closes #N</code> &rarr; create gated PR &rarr; squash merge &rarr; return to the default branch.
       </div>
 
       <div class="review-grid">
@@ -734,12 +752,12 @@
         <div class="phase-number">7</div>
         <div class="phase-meta">
           <div class="phase-name">Completion</div>
-          <div class="phase-trigger">All checklist items [x] &mdash; fully automatic</div>
+          <div class="phase-trigger">All checklist items [x] &mdash; guarded PR routing</div>
         </div>
       </div>
       <div class="phase-desc">
-        Codex detects all items checked off &rarr; <span class="tag tag-review">Codex</span> reviews full diff &rarr; create PR with <code>Closes #N</code> &rarr; squash merge &rarr; return to the default branch.<br>
-        No "done" signal from Adrian needed. Milestone deliveries get tags: <code>email-YYYY-MM-DD</code>, <code>meeting-YYYY-MM-DD</code>, <code>conference-YYYY-MM-DD</code>.
+        Codex detects all items checked off &rarr; Stop hook blocks session end &rarr; generate PR body &rarr; create PR with <code>Closes #N</code> after gates pass &rarr; squash merge &rarr; return to the default branch.<br>
+        No silent PR creation: the generated body and gate failures remain inspectable. Milestone deliveries get tags: <code>email-YYYY-MM-DD</code>, <code>meeting-YYYY-MM-DD</code>, <code>conference-YYYY-MM-DD</code>.
       </div>
     </div>
 
@@ -767,7 +785,7 @@
       </div>
       <div class="guard-card">
         <div class="guard-scenario">Forgot to Save</div>
-        <div class="guard-action"><code>hooks/codex/stop.sh</code> snapshots after every Codex response</div>
+        <div class="guard-action"><code>.codex/hooks.json</code> activates <code>hooks/codex/stop.sh</code>, which blocks dirty session end and routes back to formal commit</div>
       </div>
       <div class="guard-card">
         <div class="guard-scenario">Crashed / Closed Laptop</div>
@@ -775,7 +793,7 @@
       </div>
       <div class="guard-card">
         <div class="guard-scenario">Never Says "Done"</div>
-        <div class="guard-action">Codex checks: all checklist <code>[x]</code> = ready for PR + merge</div>
+        <div class="guard-action">Clean completed branches without open PRs are blocked by the Stop hook until <code>generate_pr_body</code> + <code>create_pr</code></div>
       </div>
     </div>
   </div>
@@ -802,6 +820,7 @@ const sources = [
   { id: 'codex-issue-start-source', path: 'skills/codex-gh-issue-start/SKILL.md' },
   { id: 'commit-source', path: 'skills/commit/SKILL.md' },
   { id: 'refine-issue-source', path: 'skills/refine-issue/SKILL.md' },
+  { id: 'codex-hooks-source', path: '.codex/hooks.json' },
   { id: 'autocommit-source', path: 'hooks/codex/stop.sh' },
 ];
 

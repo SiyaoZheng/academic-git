@@ -65,4 +65,6 @@ If you need to save progress mid-task without completing a checklist item, creat
 
 ## After Committing
 
-The commit is evidence for the checklist item, but completion is a separate act. Once the checklist item is actually done, call `check_item`. If this was the last item, consider creating a PR with `generate_pr_body` + `create_pr`.
+The commit is evidence for the checklist item, but completion is a separate act. Once the checklist item is actually done, call `check_item`.
+
+If that was the last unchecked item, keep going. The Auto-Pull-Request Stop hook will block session end once the branch is clean, pushed, ahead of the default branch, linked to the completed Issue, and has no open PR. At that point run `generate_pr_body` and `create_pr`; do not leave the branch in a PR-ready-but-no-PR state.

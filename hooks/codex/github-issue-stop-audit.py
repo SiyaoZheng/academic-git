@@ -17,7 +17,9 @@ SHELL_SEPARATORS = {";", "&&", "||", "|", "(", ")"}
 
 
 def emit_continue() -> int:
-    print(json.dumps({"continue": True}))
+    # Stop hooks can exit 0 with no output when there is no intervention.
+    # Keeping no-op output empty avoids confusing Codex when another Stop hook
+    # in the same event returns a continuation decision.
     return 0
 
 

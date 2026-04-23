@@ -20,7 +20,7 @@
   "interface": {
     "displayName": "Academic Git",
     "shortDescription": "Issue-driven academic Git workflow with local hooks, lint, and HPC CI",
-    "longDescription": "System-level Codex plugin for academic research repositories. Skills guide issue, commit, lint, PR, and merge workflows; local Codex hooks protect opted-in repositories and preserve work with Stop auto-commit; project scaffolds can install GitHub Actions and SJTU HPC self-hosted CI gates.",
+    "longDescription": "System-level Codex plugin for academic research repositories. Skills guide issue, commit, lint, PR, and merge workflows; repo-local .codex/hooks.json activates Interactive Codex hooks while the packaged hook definitions remain under hooks/codex/hooks.json. Stop hooks protect opted-in repositories with Auto-Commit and Auto-Pull-Request routing; project scaffolds can install GitHub Actions and SJTU HPC self-hosted CI gates.",
     "developerName": "Adrian",
     "category": "Coding",
     "capabilities": [

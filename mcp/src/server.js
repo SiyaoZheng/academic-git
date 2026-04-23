@@ -537,7 +537,7 @@ ${diffStat || "(empty diff)"}
         `Suggested PR body (review before calling create_pr):\n\n` +
         prBodyDraft);
 });
-server.tool("create_pr", "Create a Pull Request. Validates all checklist items are [x] before allowing PR creation.", {
+server.tool("create_pr", "Create a Pull Request. Validates all checklist items are [x] and PR gates run before allowing PR creation.", {
     issue: zod_1.z.number().describe("Issue number this PR closes"),
     title: zod_1.z.string().describe("PR title"),
     body: zod_1.z.string().describe("PR body (must include Closes #N)"),
@@ -574,8 +574,11 @@ server.tool("create_pr", "Create a Pull Request. Validates all checklist items a
             advisoryNote = `\n\nAdvisory: ${advisory.length} MEDIUM/INFO violation(s) noted in gate report.`;
         }
     }
-    catch {
-        // Gate check fails open (network/auth issues shouldn't block PRs)
+    catch (e) {
+        const message = e?.message?.toString?.() ?? "unknown gate error";
+        return err(`Cannot create PR: PR gate checks could not run. ` +
+            `academic-git fails closed here so Auto-Pull-Request cannot bypass review gates. ` +
+            `Details: ${message}`);
     }
     const out = runGhWithRetry((0, gh_js_1.ghPrCreateArgs)(title, prBody));
     return text(`${out}${advisoryNote}`);

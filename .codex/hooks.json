@@ -1,0 +1,72 @@
+{
+  "description": "Repo-local activation point for academic-git Codex hooks.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && exec bash \"$ROOT/hooks/codex/session-start.sh\"'",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && exec python3 \"$ROOT/hooks/codex/github-issue-shell-guard.py\"'",
+            "timeout": 10,
+            "statusMessage": "Checking academic-git issue start workflow"
+          },
+          {
+            "type": "command",
+            "command": "sh -c 'ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && exec bash \"$ROOT/hooks/codex/pretool-bash.sh\"'",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "sh -c 'ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && exec bash \"$ROOT/hooks/hook-runner.sh\" \"$ROOT/skills/office-markdown-guard\" --block'",
+            "timeout": 10,
+            "statusMessage": "Checking Office Markdown source guard"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && exec bash \"$ROOT/hooks/codex/posttool-commit.sh\"'",
+            "timeout": 10,
+            "statusMessage": "Checking academic-git commit context"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && exec python3 \"$ROOT/hooks/codex/github-issue-stop-audit.py\"'",
+            "timeout": 30,
+            "statusMessage": "Auditing academic-git issue start workflow"
+          },
+          {
+            "type": "command",
+            "command": "sh -c 'ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && exec bash \"$ROOT/hooks/codex/stop.sh\"'",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
