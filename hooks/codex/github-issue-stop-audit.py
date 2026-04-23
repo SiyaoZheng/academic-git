@@ -232,20 +232,12 @@ def main() -> int:
 
     if connector_created and not (used_issue_start or (used_develop and used_worktree_add)):
         return block(
-            "GitHub connector issue creation was detected in this turn. Adrian's workflow "
-            "requires the `/codex-gh-issue-start` skill instead. Because the issue already "
-            "exists, continue by using `gh issue develop <issue-number-or-url> --name "
-            "codex/issue-<number>-<slug> --base <default-branch>` and `git worktree add "
-            "<path> <branch>` for the created issue. For future new issues, use "
-            "`/codex-gh-issue-start` instead of the GitHub connector."
+            "blocked connector-created issue: route future issue-bound work through /codex-gh-issue-start; if the issue already exists, pair gh issue develop with git worktree add"
         )
 
     if raw_issue_create and not (used_develop and used_worktree_add):
         return block(
-            "A bare `gh issue create` command was detected. Adrian's workflow requires "
-            "`/codex-gh-issue-start`, which creates the issue-linked branch and opens "
-            "it in a dedicated git worktree. Continue by creating that linked worktree "
-            "now, or redo future issue creation through `/codex-gh-issue-start`."
+            "blocked raw gh issue create: route to create_issue for issue-only bookkeeping or /codex-gh-issue-start for issue-bound code work"
         )
 
     if used_develop_checkout:

@@ -7,19 +7,19 @@ allowed-tools: ["Bash"]
 
 # Codex GitHub Issue Start
 
-Use this skill as the single issue-start entrypoint for academic-git. It creates the issue, creates the linked branch with `gh issue develop`, and opens that branch in a dedicated git worktree so new work does not continue on `main` or `master`.
+Use this skill as the internal issue-start routine for academic-git. It creates the issue, creates the linked branch with `gh issue develop`, and opens that branch in a dedicated git worktree so new code work does not continue on `main` or `master`.
 
 ## When To Use
 
 - Adrian asks to create an issue.
 - Adrian asks to track or start a new implementation task.
-- `/begin` routes to "new issue".
 - A hook reports that an issue was created through the GitHub connector or bare `gh issue create`.
+- The task needs a linked branch and dedicated worktree in the same step.
 
 ## Do Not Use
 
 - Do not call the GitHub connector issue tool.
-- Do not recreate or call an MCP issue-creation tool for normal Codex issue-start work.
+- Do not recreate or call `create_issue` when the task also needs the linked branch/worktree; use this skill instead.
 - Do not run bare `gh issue create` or `gh issue new`.
 - Do not run any form of `git checkout`.
 

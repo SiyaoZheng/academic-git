@@ -4,64 +4,21 @@
 set -euo pipefail
 
 input=$(cat)
-command_str=$(echo "$input" | jq -r '.tool_input.command // ""')
+command_str=$(printf '%s' "$input" | jq -r '.tool_input.command // ""' 2>/dev/null || echo "")
 
 if [ -z "$command_str" ]; then
   exit 0
 fi
 
-if [[ "$command_str" == *"codex-gh-issue-start"* ]]; then
-  exit 0
+PLUGIN_ROOT="${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}}"
+ROUTING_HELPER="$PLUGIN_ROOT/scripts/render-routing-table.sh"
+ROUTING_JSON="$(printf '%s' "$input" | bash "$ROUTING_HELPER" 2>/dev/null || true)"
+ROUTING_DECISION="$(printf '%s' "$ROUTING_JSON" | jq -r '.decision // "allow"' 2>/dev/null || echo "allow")"
+ROUTING_REASON="$(printf '%s' "$ROUTING_JSON" | jq -r '.reason // "Direct git/gh commands are blocked."' 2>/dev/null || echo "")"
+
+if [ "$ROUTING_DECISION" != "allow" ]; then
+  echo "BLOCKED: $ROUTING_REASON" >&2
+  exit 1
 fi
-
-# Allowlisted read-only commands (used by hooks themselves)
-ALLOWED_PATTERNS=(
-  'git branch --show-current'
-  'git rev-parse'
-  'git status --porcelain'
-  'git diff --name-only'
-  'git symbolic-ref'
-  'git remote get-url'
-  'git branch --list'
-)
-
-for pattern in "${ALLOWED_PATTERNS[@]}"; do
-  if [[ "$command_str" == *"$pattern"* ]]; then
-    exit 0
-  fi
-done
-
-# Check for blocked commands
-BLOCKED_PATTERNS=(
-  'git commit'
-  'git push'
-  'git merge'
-  'git rebase'
-  'git reset'
-  'git checkout'
-  'git switch'
-  'git stash'
-  'git cherry-pick'
-  'git revert'
-  'git tag'
-  'gh pr create'
-  'gh pr merge'
-  'gh pr close'
-  'gh issue create'
-  'gh issue close'
-  'gh issue edit'
-  'gh api'
-)
-
-for pattern in "${BLOCKED_PATTERNS[@]}"; do
-  if [[ "$command_str" == *"$pattern"* ]]; then
-    if [ "$pattern" = "gh issue create" ]; then
-      echo "BLOCKED: Direct '$pattern' detected. Use /codex-gh-issue-start instead." >&2
-    else
-      echo "BLOCKED: Direct '$pattern' detected. Use academic-git MCP tools instead." >&2
-    fi
-    exit 1
-  fi
-done
 
 exit 0

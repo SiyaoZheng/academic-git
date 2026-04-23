@@ -62,6 +62,7 @@ Never create `wip`, `misc`, or `update files` commits to satisfy the hook. If th
 ## Mid-Task Progress
 
 If you need to save progress mid-task without completing a checklist item, create a small issue-linked commit only when the diff is coherent and auditable. Do not use raw `git stash` or raw `git commit`; those bypass academic-git controls.
+If the work is not ready for a formal commit, keep the worktree dirty and ask Adrian whether to refine the Issue, split the task, or continue later.
 
 ## After Committing
 
