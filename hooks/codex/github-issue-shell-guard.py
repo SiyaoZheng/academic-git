@@ -6,7 +6,9 @@ from __future__ import annotations
 import json
 import re
 import shlex
+import subprocess
 import sys
+from pathlib import Path
 
 
 HELP_RE = re.compile(r"(^|\s)(--help|-h)(\s|$)")
@@ -26,6 +28,23 @@ def deny(reason: str) -> int:
         )
     )
     return 0
+
+
+def routing_reason(command: str) -> str:
+    helper = Path(__file__).resolve().parents[2] / "scripts" / "render-routing-table.sh"
+    payload = json.dumps({"tool_input": {"command": command}})
+    completed = subprocess.run(["bash", str(helper)], input=payload, capture_output=True, text=True, check=False)
+    if completed.returncode != 0 or not completed.stdout.strip():
+        return ""
+
+    try:
+        decision = json.loads(completed.stdout)
+    except json.JSONDecodeError:
+        return ""
+    if decision.get("decision") not in {"route", "deny"}:
+        return ""
+    reason = decision.get("reason")
+    return reason if isinstance(reason, str) else ""
 
 
 def shell_tokens(command: str) -> list[str]:
@@ -120,10 +139,13 @@ def main() -> int:
         return 0
 
     if has_raw_issue_create(command):
+        reason = routing_reason(command)
+        if not reason:
+            reason = (
+                "blocked raw gh issue create; route to create_issue or /codex-gh-issue-start based on whether a dedicated worktree is required"
+            )
         return deny(
-            "Bare `gh issue create` is blocked. Use the `/codex-gh-issue-start` "
-            "skill so the issue, linked branch, and dedicated git worktree are "
-            "created as one audited academic-git workflow."
+            reason
         )
 
     if has_issue_develop(command) and not has_issue_develop_flag(command, "--list"):

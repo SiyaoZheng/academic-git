@@ -1,0 +1,193 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "decision": "allow",
+      "match": "(^|[^[:alnum:]_])(?:/)?codex-gh-issue-start([[:space:]]|$)",
+      "reason": "Allow the system-level issue-start workflow.",
+      "policy": "issue-start-workflow"
+    },
+    {
+      "decision": "allow",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+branch[[:space:]]+--show-current([[:space:]]|$)",
+      "reason": "Read-only branch introspection used by hooks.",
+      "policy": "read-only-introspection"
+    },
+    {
+      "decision": "allow",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+rev-parse([[:space:]]|$)",
+      "reason": "Read-only repository inspection used by hooks.",
+      "policy": "read-only-introspection"
+    },
+    {
+      "decision": "allow",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+status[[:space:]]+--porcelain([[:space:]]|$)",
+      "reason": "Read-only status check used by hooks.",
+      "policy": "read-only-introspection"
+    },
+    {
+      "decision": "allow",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+diff[[:space:]]+--name-only([[:space:]]|$)",
+      "reason": "Read-only diff summary used by hooks.",
+      "policy": "read-only-introspection"
+    },
+    {
+      "decision": "allow",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+symbolic-ref([[:space:]]|$)",
+      "reason": "Read-only ref inspection used by hooks.",
+      "policy": "read-only-introspection"
+    },
+    {
+      "decision": "allow",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+remote[[:space:]]+get-url([[:space:]]|$)",
+      "reason": "Read-only remote inspection used by hooks.",
+      "policy": "read-only-introspection"
+    },
+    {
+      "decision": "allow",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+branch[[:space:]]+--list([[:space:]]|$)",
+      "reason": "Read-only branch listing used by hooks.",
+      "policy": "read-only-introspection"
+    },
+    {
+      "decision": "allow",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+log[[:space:]]+--oneline([[:space:]]|$)",
+      "reason": "Read-only log inspection used by hooks.",
+      "policy": "read-only-introspection"
+    },
+    {
+      "decision": "route",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+switch[[:space:]]+-c([[:space:]]|$)",
+      "tool": "create_branch",
+      "reason": "Direct git switch -c is blocked. Use create_branch(branch) when you need a new branch.",
+      "policy": "branch-navigation"
+    },
+    {
+      "decision": "route",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+checkout[[:space:]]+-b([[:space:]]|$)",
+      "tool": "create_branch",
+      "reason": "Direct git checkout -b is blocked. Use create_branch(branch) when you need a new branch.",
+      "policy": "branch-navigation"
+    },
+    {
+      "decision": "route",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+switch([[:space:]]|$)",
+      "tool": "switch_branch",
+      "reason": "Direct git switch is blocked. Use switch_branch(branch) to change to an existing branch.",
+      "policy": "branch-navigation"
+    },
+    {
+      "decision": "route",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+checkout([[:space:]]|$)",
+      "tool": "switch_branch",
+      "reason": "Direct git checkout is blocked. Use switch_branch(branch) for existing branches or create_branch(branch) for new ones.",
+      "policy": "branch-navigation"
+    },
+    {
+      "decision": "route",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+commit([[:space:]]|$)",
+      "tool": "commit",
+      "reason": "Direct git commit is blocked. Use commit(issue, item, type, description); it stages, validates, commits, and pushes.",
+      "policy": "formal-commit"
+    },
+    {
+      "decision": "route",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+push([[:space:]]|$)",
+      "tool": "commit",
+      "reason": "Direct git push is blocked. Push is automatic after commit(issue, item, type, description).",
+      "policy": "automatic-after-commit"
+    },
+    {
+      "decision": "route",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+merge([[:space:]]|$)",
+      "tool": "merge_pr",
+      "reason": "Direct git merge is blocked. Use merge_pr(pr) for the PR completion path.",
+      "policy": "pr-merge"
+    },
+    {
+      "decision": "route",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+tag([[:space:]]|$)",
+      "tool": "create_tag",
+      "reason": "Direct git tag is blocked. Use create_tag(name, message) for traceable milestone tags.",
+      "policy": "tagging"
+    },
+    {
+      "decision": "route",
+      "match": "(^|[^[:alnum:]_])gh[[:space:]]+issue[[:space:]]+create([[:space:]]|$)",
+      "tool": "create_issue",
+      "reason": "Direct gh issue create is blocked. Use create_issue(title, body, labels?, assignees?, milestone?) for a standalone issue, or /codex-gh-issue-start when you also need a linked branch and worktree.",
+      "policy": "issue-creation"
+    },
+    {
+      "decision": "route",
+      "match": "(^|[^[:alnum:]_])gh[[:space:]]+issue[[:space:]]+edit([[:space:]]|$)",
+      "tool": "refine_issue",
+      "reason": "Direct gh issue edit is blocked. Use refine_issue(issue, action, items_affected, detail, reason, requested_by) so issue history stays append-only.",
+      "policy": "append-only-issue-history"
+    },
+    {
+      "decision": "route",
+      "match": "(^|[^[:alnum:]_])gh[[:space:]]+issue[[:space:]]+close([[:space:]]|$)",
+      "tool": "close_issue",
+      "reason": "Direct gh issue close is blocked. Use close_issue(issue, comment?, reason?, duplicate_of?) so closure stays explicit and auditable.",
+      "policy": "issue-closure"
+    },
+    {
+      "decision": "route",
+      "match": "(^|[^[:alnum:]_])gh[[:space:]]+pr[[:space:]]+create([[:space:]]|$)",
+      "tool": "create_pr",
+      "reason": "Direct gh pr create is blocked. Use create_pr(issue, title, body) after the checklist is complete.",
+      "policy": "pr-creation"
+    },
+    {
+      "decision": "route",
+      "match": "(^|[^[:alnum:]_])gh[[:space:]]+pr[[:space:]]+merge([[:space:]]|$)",
+      "tool": "merge_pr",
+      "reason": "Direct gh pr merge is blocked. Use merge_pr(pr) so merge, cleanup, and branch/worktree handling stay coordinated.",
+      "policy": "pr-merge"
+    },
+    {
+      "decision": "route",
+      "match": "(^|[^[:alnum:]_])gh[[:space:]]+pr[[:space:]]+close([[:space:]]|$)",
+      "tool": "close_pr",
+      "reason": "Direct gh pr close is blocked. Use close_pr(pr, comment?, delete_branch?) for explicit abandonment or superseded PRs.",
+      "policy": "pr-closure"
+    },
+    {
+      "decision": "deny",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+stash([[:space:]]|$)",
+      "reason": "Direct git stash is blocked. Keep the worktree dirty and rely on session auto-save or a formal commit when ready.",
+      "policy": "keep-worktree-dirty"
+    },
+    {
+      "decision": "deny",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+reset([[:space:]]|$)",
+      "reason": "Direct git reset is blocked. History rewrites are not routed through academic-git.",
+      "policy": "history-rewrite-not-routed"
+    },
+    {
+      "decision": "deny",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+rebase([[:space:]]|$)",
+      "reason": "Direct git rebase is blocked. History rewrites are not routed through academic-git.",
+      "policy": "history-rewrite-not-routed"
+    },
+    {
+      "decision": "deny",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+cherry-pick([[:space:]]|$)",
+      "reason": "Direct git cherry-pick is blocked. History rewrites are not routed through academic-git.",
+      "policy": "history-rewrite-not-routed"
+    },
+    {
+      "decision": "deny",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+revert([[:space:]]|$)",
+      "reason": "Direct git revert is blocked. History rewrites are not routed through academic-git.",
+      "policy": "history-rewrite-not-routed"
+    },
+    {
+      "decision": "deny",
+      "match": "(^|[^[:alnum:]_])gh[[:space:]]+api([[:space:]]|$)",
+      "reason": "Direct gh api is blocked. Use narrow MCP tools instead of the raw GitHub API escape hatch.",
+      "policy": "raw-gh-api-blocked"
+    }
+  ]
+}

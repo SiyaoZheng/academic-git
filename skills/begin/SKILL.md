@@ -7,9 +7,9 @@ allowed-tools: ["academic-git"]
 
 # Begin — Task Triage
 
-When Adrian describes a task, determine whether it maps to an existing Issue or needs a new one.
+`/begin` is the single front door for task routing. Adrian does not choose among multiple paths; the AI resolves the route internally from the task text and repo state.
 
-Git/GitHub mutations usually go through the `academic-git` MCP tools. The exception is new issue-start work, which must go through `/codex-gh-issue-start` so issue creation, branch creation, and worktree creation happen together.
+Git/GitHub mutations usually go through the `academic-git` MCP tools. For code work that needs a tracked branch/worktree, route through `/codex-gh-issue-start`. For issue-only bookkeeping, use `create_issue`. Do not present those as user choices.
 
 ## Shortcut
 
@@ -21,47 +21,27 @@ Use MCP tools:
 - `list_issues` — get open Issues
 - `list_branches` — get feature branches
 
-## Step 2: Ask Adrian (AskUserQuestion)
+## Step 2: Resolve Internally
 
-Present open Issues and ask which path:
+Use the current branch lock, the explicit issue number in the request, and the task text to choose one route:
 
-```
-Open Issues:
-#5  Revise Table 3 FE per Li's feedback
-#8  Add mechanism section
-#12 Fix income variable coding
+1. If a locked issue/branch exists, continue that work.
+2. If the request names an issue number, switch to that issue's branch and read the issue.
+3. If the request is a refinement of existing scope, call `refine_issue` and continue on the same branch.
+4. If the request starts new code work, call `/codex-gh-issue-start`.
+5. If the request is issue-only bookkeeping, call `create_issue`.
 
-Your task: "<Adrian's message>"
-
-(A) Continue an existing Issue → which #?
-(B) Add to an existing Issue → which #?
-(C) New Issue
-```
-
-If no open Issues exist → skip to (C).
+Never ask Adrian to choose between these routes.
 
 ## Step 3: Execute
 
-### A. Continue existing Issue
-
-Use MCP tools:
-- `switch_branch(branch: "<linked issue branch>")` — switch to the branch
-- `view_issue(issue: N)` — read the Issue (body + comments = current truth)
-
-Read the checklist, find the next unblocked item (all `→ after:` predecessors are `[x]`), resume working.
-
-### B. Supplement existing Issue
-
-Invoke `/refine-issue #N` to add new items via append-only comment, then:
-- `switch_branch(branch: "<linked issue branch>")`
-
-### C. New Issue
-
-Invoke `/codex-gh-issue-start` with Adrian's task description. This is the system-level issue-start path: it creates the GitHub Issue, creates the linked `codex/issue-<number>-<slug>` branch, and opens that branch in a dedicated git worktree.
+- For active issue work, use `switch_branch(branch: "<linked issue branch>")` and `view_issue(issue: N)`.
+- For new code work, invoke `/codex-gh-issue-start` directly.
+- For issue-only bookkeeping, invoke `create_issue(...)` directly.
 
 ## Task Switching
 
-Adrian describes a new task while on an issue branch:
+If Adrian describes a new task while on an issue branch:
 1. Auto-commit hook blocks task switching until dirty work is committed or Adrian explicitly decides how to handle it
 2. `switch_branch(branch: "main")`
 3. New `/begin` cycle starts

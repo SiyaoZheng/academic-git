@@ -19,7 +19,7 @@ The `merge_pr` MCP tool handles squash-merge + branch deletion + switch to main 
 1. **Verify working tree** — `status` should show `(clean)`
 2. **Close linked issue** — add a comment referencing the merged PR, then close:
    ```
-   gh issue close N --comment "Closed by PR #M"
+   close_issue(issue: N, comment: "Closed by PR #M", reason: "completed")
    ```
 3. **Check for stale branches** — `list_branches` to see if other branches need cleanup
 

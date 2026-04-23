@@ -43,6 +43,11 @@ merge_pr(pr: N)
 
 This squash-merges, deletes the remote branch, switches to main, and pulls.
 
+If the PR should be abandoned instead of merged:
+```
+close_pr(pr: N, comment: "...", delete_branch: true|false)
+```
+
 ## Gate Checks (9 Rules, No LLM)
 
 Severities shown are for PR mode. Commit mode may downgrade some.

@@ -16,6 +16,8 @@ All mutation operations must go through the `academic-git` MCP tools because the
 
 Bypassing MCP tools circumvents these safeguards.
 
+The shared routing table at `.academic-git-routing.json` is the source of truth for what gets allowed, routed, or denied.
+
 ## What Gets Blocked
 
 The `check.sh` script inspects the Bash command for these patterns:
@@ -40,11 +42,15 @@ These introspection commands are allowlisted because hooks use them internally:
 | Blocked CLI | Use MCP Tool Instead |
 |-------------|---------------------|
 | `git commit` | `commit(issue, item, type, description)` |
-| `git push` | Automatic after `commit` |
+| `git push` | Automatic after `commit(issue, item, type, description)` |
 | `gh pr create` | `create_pr(issue, title, body)` |
 | `gh pr merge` | `merge_pr(pr)` |
-| `gh issue create` | `/codex-gh-issue-start` |
+| `gh pr close` | `close_pr(pr, comment?, delete_branch?)` |
+| `gh issue create` | `create_issue(title, body, labels?, assignees?, milestone?)` |
 | `gh issue edit` | `refine_issue(issue, action, ...)` |
-| `git switch -c` | `/codex-gh-issue-start` for new issue-bound work |
+| `gh issue close` | `close_issue(issue, comment?, reason?, duplicate_of?)` |
+| `git switch -c` | `create_branch(branch)` |
 | `git switch` | `switch_branch(branch)` |
+| `git checkout -b` | `create_branch(branch)` |
+| `git checkout` | `switch_branch(branch)` |
 | `git tag -a` | `create_tag(name, message)` |

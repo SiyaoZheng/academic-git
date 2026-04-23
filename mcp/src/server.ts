@@ -7,10 +7,15 @@ import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 import { commandPreview, runFile } from "./command.js";
 import {
+  ghIssueCreateArgs,
+  ghIssueCloseArgs,
   ghIssueCommentArgs,
   ghIssueEditBodyArgs,
   ghPrCreateArgs,
+  ghPrCloseArgs,
+  ghPrMergeArgs,
 } from "./gh.js";
+import { gitCreateBranchArgs, gitSwitchBranchArgs } from "./git.js";
 
 // ── Helpers ──
 
@@ -79,6 +84,23 @@ function defaultBaseRef(): string {
 
 function defaultBranchRange(): string {
   return `${shellArgs([defaultBaseRef()])}...HEAD`;
+}
+
+function currentWorktreePath(): string {
+  return run("git rev-parse --show-toplevel");
+}
+
+function primaryWorktreePath(): string {
+  const worktreeList = splitNonEmptyLines(runSafe("git worktree list --porcelain"));
+  const paths = worktreeList
+    .filter((line) => line.startsWith("worktree "))
+    .map((line) => line.slice("worktree ".length).trim());
+  return paths[0] ?? repoDir();
+}
+
+function currentBranchName(): string {
+  const branch = runSafe("git branch --show-current").trim();
+  return branch.toLowerCase().startsWith("fatal:") ? "" : branch;
 }
 
 // ── Retry & Error Classification ──
@@ -223,6 +245,76 @@ function projectDirFromEnv(): string | undefined {
     process.env.CODEX_WORKSPACE_ROOT ??
     process.env.CODEX_PROJECT_DIR
   );
+}
+
+// ── Routing Table ──
+
+type RoutingDecision = "allow" | "route" | "deny";
+
+interface RoutingEntry {
+  decision: RoutingDecision;
+  match: string;
+  reason: string;
+  tool?: string;
+  policy?: string;
+}
+
+interface RoutingTable {
+  version: number;
+  entries: RoutingEntry[];
+}
+
+const MCP_TOOL_NAMES = new Set([
+  "status",
+  "diff",
+  "log",
+  "current_branch",
+  "list_issues",
+  "view_issue",
+  "create_issue",
+  "refine_issue",
+  "check_item",
+  "close_issue",
+  "commit",
+  "generate_pr_body",
+  "create_pr",
+  "merge_pr",
+  "close_pr",
+  "view_pr",
+  "create_branch",
+  "switch_branch",
+  "list_branches",
+  "create_tag",
+  "run_gates",
+  "lint",
+  "configure",
+]);
+
+function routingTablePath(): string {
+  return join(repoDir(), ".academic-git-routing.json");
+}
+
+function readRoutingTable(): RoutingTable {
+  const p = routingTablePath();
+  if (!existsSync(p)) {
+    throw new Error(`Missing routing table: ${p}`);
+  }
+  return JSON.parse(readFileSync(p, "utf-8")) as RoutingTable;
+}
+
+function validateRoutingTable(): void {
+  const table = readRoutingTable();
+  if (!Array.isArray(table.entries) || table.entries.length === 0) {
+    throw new Error("Routing table has no entries");
+  }
+
+  const unknownTools = table.entries.filter(
+    (entry) => entry.decision === "route" && (!entry.tool || !MCP_TOOL_NAMES.has(entry.tool))
+  );
+  if (unknownTools.length > 0) {
+    const labels = unknownTools.map((entry) => `${entry.match} -> ${entry.tool ?? "(missing tool)"}`);
+    throw new Error(`Routing table references unknown MCP tools:\n${labels.map((label) => `  ${label}`).join("\n")}`);
+  }
 }
 
 // ── Config ──
@@ -428,6 +520,23 @@ server.tool(
 );
 
 server.tool(
+  "create_issue",
+  "Create a standalone GitHub Issue. Use /codex-gh-issue-start when you need a new issue plus linked branch and worktree.",
+  {
+    title: z.string().describe("Issue title"),
+    body: z.string().describe("Issue body"),
+    labels: z.array(z.string()).optional().describe("Optional labels to apply"),
+    assignees: z.array(z.string()).optional().describe("Optional assignees to add"),
+    milestone: z.string().optional().describe("Optional milestone"),
+  },
+  async ({ title, body, labels, assignees, milestone }) => {
+    const args = ghIssueCreateArgs(title, body, { labels, assignees, milestone });
+    const out = runGhWithRetry(args);
+    return text(out);
+  }
+);
+
+server.tool(
   "refine_issue",
   "Add a refinement comment to an Issue. Body is NEVER modified — all changes via append-only comments.",
   {
@@ -451,6 +560,37 @@ ${detail}
 **Requested by:** ${requested_by}`;
 
     const out = runGhWithRetry(ghIssueCommentArgs(issue, comment));
+    return text(out);
+  }
+);
+
+server.tool(
+  "close_issue",
+  "Close an Issue explicitly. Use this for completed, deferred, or duplicate issues when the body should remain immutable.",
+  {
+    issue: z.number().describe("Issue number"),
+    comment: z.string().optional().describe("Optional closing comment"),
+    reason: z.enum(["completed", "not planned", "duplicate"]).optional().describe("Closure reason"),
+    duplicate_of: z.number().optional().describe("Issue number this issue duplicates"),
+  },
+  async ({ issue, comment, reason, duplicate_of }) => {
+    if (duplicate_of !== undefined && reason && reason !== "duplicate") {
+      return err("duplicate_of can only be used with reason = duplicate");
+    }
+
+    const opts: { comment?: string; reason?: "completed" | "not planned" | "duplicate"; duplicateOf?: number } = {};
+    if (comment) {
+      opts.comment = comment;
+    }
+    if (reason) {
+      opts.reason = reason;
+    }
+    if (duplicate_of !== undefined) {
+      opts.duplicateOf = duplicate_of;
+      opts.reason = opts.reason ?? "duplicate";
+    }
+
+    const out = runGhWithRetry(ghIssueCloseArgs(issue, opts));
     return text(out);
   }
 );
@@ -757,14 +897,49 @@ server.tool(
 
 server.tool(
   "merge_pr",
-  "Squash-merge a PR and delete the branch. Returns to the default branch.",
+  "Squash-merge a PR, delete the branch, and return to the default branch. If run from a dedicated worktree, remove that worktree safely.",
   { pr: z.number().describe("PR number") },
   async ({ pr }) => {
-    runWithRetry(`gh pr merge ${pr} --squash --delete-branch`);
-    const defaultBranch = runSafe("git symbolic-ref refs/remotes/origin/HEAD").replace("refs/remotes/origin/", "") || "main";
-    run(`git switch "${defaultBranch}"`);
-    run("git pull");
-    return text(`PR #${pr} merged. Now on ${defaultBranch}.`);
+    const defaultBranchName = defaultBranch();
+    const currentBranch = currentBranchName();
+    const currentWorktree = currentWorktreePath();
+    const primaryWorktree = primaryWorktreePath();
+    const isPrimaryWorktree = currentWorktree === primaryWorktree;
+
+    runGhWithRetry(ghPrMergeArgs(pr));
+    run("git switch " + JSON.stringify(defaultBranchName), primaryWorktree);
+    run("git pull --ff-only", primaryWorktree);
+
+    if (currentBranch && currentBranch !== defaultBranchName) {
+      if (!isPrimaryWorktree) {
+        run("git worktree remove --force " + JSON.stringify(currentWorktree), primaryWorktree);
+      }
+      run("git branch -D " + JSON.stringify(currentBranch), primaryWorktree);
+      runSafe("git push origin --delete " + JSON.stringify(currentBranch), primaryWorktree);
+    }
+
+    const cleanupNote =
+      !isPrimaryWorktree && currentBranch && currentBranch !== defaultBranchName
+        ? ` Cleaned up worktree ${currentWorktree} and deleted ${currentBranch}.`
+        : currentBranch && currentBranch !== defaultBranchName
+          ? ` Deleted ${currentBranch}.`
+          : "";
+
+    return text(`PR #${pr} merged. Now on ${defaultBranchName}.${cleanupNote}`);
+  }
+);
+
+server.tool(
+  "close_pr",
+  "Close a PR without merging. Use this for explicit abandonment or superseded work.",
+  {
+    pr: z.number().describe("PR number"),
+    comment: z.string().optional().describe("Optional closing comment"),
+    delete_branch: z.boolean().optional().describe("Delete the branch after closing"),
+  },
+  async ({ pr, comment, delete_branch }) => {
+    const out = runGhWithRetry(ghPrCloseArgs(pr, { comment, deleteBranch: delete_branch }));
+    return text(out);
   }
 );
 
@@ -783,11 +958,25 @@ server.tool(
 // ════════════════════════════════════════
 
 server.tool(
+  "create_branch",
+  "Create a new branch and switch to it. Defaults to the current HEAD unless a start point is provided.",
+  {
+    branch: z.string().describe("New branch name"),
+    start_point: z.string().optional().describe("Optional start point; defaults to HEAD"),
+  },
+  async ({ branch, start_point }) => {
+    const args = gitCreateBranchArgs(branch, start_point ?? "HEAD");
+    runFile("git", args, repoDir());
+    return text(`Created and switched to ${branch}`);
+  }
+);
+
+server.tool(
   "switch_branch",
   "Switch to an existing branch",
   { branch: z.string().describe("Branch name (e.g., codex/issue-12-revise-table-3)") },
   async ({ branch }) => {
-    run(`git switch "${branch}"`);
+    runFile("git", gitSwitchBranchArgs(branch), repoDir());
     return text(`Switched to ${branch}`);
   }
 );
@@ -921,6 +1110,7 @@ server.tool(
 // ── Start ──
 
 async function main() {
+  validateRoutingTable();
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }
