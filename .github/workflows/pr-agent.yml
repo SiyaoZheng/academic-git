@@ -57,3 +57,34 @@ jobs:
             --squash \
             --delete-branch \
             --match-head-commit "$PR_HEAD_SHA"
+
+      - name: Close linked issues
+        if: >-
+          ${{
+            success() &&
+            github.event_name == 'pull_request' &&
+            github.event.pull_request.draft == false
+          }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          linked_issues=$(
+            gh pr view "$PR_URL" \
+              --json closingIssuesReferences \
+              --jq '.closingIssuesReferences[].number' \
+              2>/dev/null || true
+          )
+
+          if [ -z "$linked_issues" ]; then
+            echo "No linked issues to close."
+            exit 0
+          fi
+
+          while IFS= read -r issue_number; do
+            [ -n "$issue_number" ] || continue
+            gh issue close "$issue_number" \
+              --comment "Closed automatically after merge of $PR_URL"
+          done <<EOF
+          $linked_issues
+          EOF
