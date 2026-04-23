@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Academic Git — Zero-Touch Research Workflow</title>
+<title>Academic Git — Codex Research Workflow</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
@@ -386,31 +386,31 @@
 <div class="hero">
   <div class="container">
     <h1>Academic <span>Git</span></h1>
-    <p>A zero-touch, ADHD-friendly Git workflow for solo academic research. Issue-driven. Fully automated. Claude Code powered.</p>
+    <p>An issue-driven Git workflow for solo academic research. Codex powered, worktree isolated, and guarded by deterministic checks.</p>
     <div class="stats">
       <div class="stat">
         <div class="stat-num">1</div>
-        <div class="stat-label">Hook</div>
+        <div class="stat-label">MCP Server</div>
       </div>
       <div class="stat">
-        <div class="stat-num">4</div>
+        <div class="stat-num">10</div>
         <div class="stat-label">Skills</div>
       </div>
       <div class="stat">
-        <div class="stat-num">3</div>
-        <div class="stat-label">Codex Reviews</div>
+        <div class="stat-num">4</div>
+        <div class="stat-label">Hook Events</div>
       </div>
       <div class="stat">
-        <div class="stat-num">0</div>
-        <div class="stat-label">Git Commands Typed</div>
+        <div class="stat-num">9</div>
+        <div class="stat-label">Gates</div>
       </div>
     </div>
 
     <div class="principles">
       <div class="principle">
         <div class="principle-label">Architecture</div>
-        <div class="principle-value">Thick Skill, Thin Harness</div>
-        <div class="principle-desc">CLAUDE.md stays minimal. All logic lives in skills + 1 hook.</div>
+        <div class="principle-value">Thin MCP, Fat Skills &amp; Hooks</div>
+        <div class="principle-desc">MCP exposes data primitives; hooks enforce process; skills carry judgment.</div>
       </div>
       <div class="principle">
         <div class="principle-label">Source of Truth</div>
@@ -419,8 +419,8 @@
       </div>
       <div class="principle">
         <div class="principle-label">Mapping</div>
-        <div class="principle-value">1 Issue = 1 Branch = 1 PR</div>
-        <div class="principle-desc">Each task: one Issue, one <code>feat/&lt;slug&gt;</code>, one squash-merged PR.</div>
+        <div class="principle-value">1 Issue = 1 Branch = 1 Worktree = 1 PR</div>
+        <div class="principle-desc">Each task lives in an issue-linked <code>codex/issue-N-slug</code> worktree.</div>
       </div>
     </div>
   </div>
@@ -430,17 +430,26 @@
 <section>
   <div class="container">
     <h2 class="section-title">Architecture</h2>
-    <p class="section-subtitle">1 hook + 4 skills. No intermediate layers. GitHub is the database.</p>
+    <p class="section-subtitle">Thin MCP data primitives, first-class hooks, and skill workflows. GitHub Issues remain the database.</p>
 
     <div class="arch-diagram">
       <div class="layer">
-        <span class="layer-label">Hook (Stop + SessionStart)</span>
-        <span class="node node-hook">auto-commit.sh</span>
+        <span class="layer-label">MCP Server (thin)</span>
+        <span class="node node-hook">status / diff / issues / PRs</span>
         <span class="arrow">&rarr;</span>
-        <span style="color: var(--text-secondary)">wip snapshots + crash recovery + fire-and-forget push</span>
+        <span style="color: var(--text-secondary)">CRUD GitHub and git data through guarded tools</span>
       </div>
       <div class="layer">
-        <span class="layer-label">Skills (Claude invokes directly)</span>
+        <span class="layer-label">Hooks (enforcement)</span>
+        <span class="node node-hook">git-firewall</span>
+        <span class="arrow">+</span>
+        <span class="node node-hook">branch-lock</span>
+        <span class="arrow">+</span>
+        <span class="node node-hook">review-pr</span>
+        <span style="color: var(--text-secondary)">block unsafe mutations before they happen</span>
+      </div>
+      <div class="layer">
+        <span class="layer-label">Skills (judgment)</span>
         <span class="node node-skill">/begin</span>
         <span class="arrow">&rarr;</span>
         <span class="node node-skill">/create-issue</span>
@@ -468,20 +477,20 @@
 <section>
   <div class="container">
     <h2 class="section-title">Workflow</h2>
-    <p class="section-subtitle">From session start to PR merge &mdash; zero manual git commands.</p>
+    <p class="section-subtitle">From issue-linked worktree to PR merge, with explicit gates at every durable transition.</p>
 
-    <!-- ── Phase 1: Crash Recovery ── -->
+    <!-- ── Phase 1: Session Guard ── -->
     <div class="phase">
       <div class="phase-head">
         <div class="phase-number">1</div>
         <div class="phase-meta">
-          <div class="phase-name">Crash Recovery</div>
-          <div class="phase-trigger">auto-commit.sh &mdash; SessionStart event</div>
+          <div class="phase-name">Session Guard</div>
+          <div class="phase-trigger">SessionStart + Stop hooks</div>
         </div>
       </div>
       <div class="phase-desc">
-        Laptop closed? Claude Code crashed? The same <code>auto-commit.sh</code> that runs on Stop also runs on SessionStart.
-        It commits any leftover dirty files as <code>wip:</code> snapshots and pushes in the background. Adrian never notices.
+        SessionStart runs the <code>/begin</code> guard so work starts from an explicit Issue context.
+        Stop runs auto-save and begin checks so dirty work is traceable and the next step stays visible.
       </div>
     </div>
 
@@ -497,7 +506,7 @@
         </div>
       </div>
       <div class="phase-desc">
-        Adrian describes what he wants. Claude lists open Issues and asks Adrian to choose via <code>AskUserQuestion</code>:
+        Adrian describes what he wants. Codex resolves whether to continue an existing Issue, refine one, or start a new issue-linked worktree:
       </div>
 
       <table class="tier-table">
@@ -505,18 +514,18 @@
         <tbody>
           <tr>
             <td><strong>A</strong> &mdash; Continue existing Issue</td>
-            <td><code>git switch feat/&lt;slug&gt;</code>, read Issue, resume next unblocked item</td>
+            <td>Open the issue-linked worktree, read Issue, resume next unblocked item</td>
             <td>Work Loop</td>
           </tr>
           <tr>
             <td><strong>B</strong> &mdash; Supplement existing Issue</td>
-            <td>Add items via <code>/refine-issue</code>, then switch to branch</td>
+            <td>Add items via <code>/refine-issue</code>, then continue in its worktree</td>
             <td><code>/refine-issue</code></td>
           </tr>
           <tr>
             <td><strong>C</strong> &mdash; New Issue</td>
-            <td>Draft Issue with DAG checklist, Codex reviews, Adrian confirms</td>
-            <td><code>/create-issue</code></td>
+            <td>Draft Issue with DAG checklist, Adrian confirms, run <code>codex-gh-issue-start</code></td>
+            <td>New worktree</td>
           </tr>
         </tbody>
       </table>
@@ -538,11 +547,11 @@
         <div class="phase-number">3</div>
         <div class="phase-meta">
           <div class="phase-name">Issue Creation</div>
-          <div class="phase-trigger">/create-issue skill</div>
+          <div class="phase-trigger">/create-issue template + codex-gh-issue-start</div>
         </div>
       </div>
       <div class="phase-desc">
-        Draft Issue with DAG checklist &rarr; <span class="tag tag-review">Codex</span> reviews for duplicates, verifiability, scope &rarr; <span class="tag tag-block">Adrian confirms</span> (the ONLY manual checkpoint) &rarr; Submit to GitHub &rarr; Create <code>feat/&lt;slug&gt;</code> branch &rarr; Start working.
+        Draft Issue with DAG checklist &rarr; <span class="tag tag-review">Codex</span> reviews for duplicates, verifiability, scope &rarr; <span class="tag tag-block">Adrian confirms</span> &rarr; <code>codex-gh-issue-start</code> creates the GitHub Issue, <code>codex/issue-N-slug</code> branch, and dedicated worktree &rarr; continue from the printed worktree path.
       </div>
 
       <div class="review-grid">
@@ -571,14 +580,14 @@
           <div class="review-checks">
             "行" / "ok" &rarr; submit as-is<br>
             Edit &rarr; incorporate changes<br>
-            "不用 issue" &rarr; skip, work on main
+            "不用 issue" &rarr; skip issue workflow
           </div>
         </div>
       </div>
 
       <div class="source-block">
         <div class="source-header" onclick="toggle(this)">
-          <div><span class="source-name">skills/create-issue/SKILL.md</span> <span class="source-desc">Issue template, Codex review, branch creation</span></div>
+          <div><span class="source-name">skills/create-issue/SKILL.md</span> <span class="source-desc">Issue template, Codex review, worktree handoff</span></div>
           <span class="source-toggle">&#9654;</span>
         </div>
         <div class="source-body"><pre id="create-issue-source"></pre></div>
@@ -593,11 +602,11 @@
         <div class="phase-number">4</div>
         <div class="phase-meta">
           <div class="phase-name">Work Loop</div>
-          <div class="phase-trigger">auto-commit.sh &mdash; Stop event (after every Claude response)</div>
+          <div class="phase-trigger">Stop hook + checklist commits</div>
         </div>
       </div>
       <div class="phase-desc">
-        While Claude works on checklist items, the single hook silently snapshots every change as <code>wip:</code> commits.
+        While Codex works on checklist items, the Stop hook can snapshot dirty work as <code>wip(#0):</code> commits.
         These are safety nets, not real commits. Background push with 10s kill timer prevents zombie processes.
       </div>
 
@@ -606,8 +615,8 @@
         <tbody>
           <tr>
             <td><span class="tag tag-auto">Auto</span> wip snapshot</td>
-            <td>After every Claude response</td>
-            <td><code>wip: file1, file2</code></td>
+            <td>On Stop when dirty work exists</td>
+            <td><code>wip(#0): session-sweep N files</code></td>
             <td>No &mdash; safety net only</td>
           </tr>
           <tr>
@@ -621,7 +630,7 @@
 
       <div class="source-block">
         <div class="source-header" onclick="toggle(this)">
-          <div><span class="source-name">hooks/auto-commit.sh</span> <span class="source-desc">The ONLY hook &mdash; Stop + SessionStart</span></div>
+          <div><span class="source-name">hooks/auto-commit.sh</span> <span class="source-desc">Stop auto-save and PR-readiness hint</span></div>
           <span class="source-toggle">&#9654;</span>
         </div>
         <div class="source-body"><pre id="autocommit-source"></pre></div>
@@ -641,7 +650,7 @@
       </div>
       <div class="phase-desc">
         Read Issue (SSOT) &rarr; analyze changes &rarr; <span class="tag tag-review">Codex</span> reviews staged diff &rarr; commit as <code>type(#N/X): desc</code> &rarr; check off item <code>[x]</code> on GitHub &rarr; push &rarr; check DAG for next unblocked item.<br>
-        When all items are <code>[x]</code>: auto-create PR with <code>Closes #N</code> &rarr; Codex reviews full diff &rarr; squash merge &rarr; return to main.
+        When all items are <code>[x]</code>: create PR with <code>Closes #N</code> &rarr; review-pr hook checks the full diff &rarr; squash merge &rarr; return to the default branch.
       </div>
 
       <div class="review-grid">
@@ -698,7 +707,7 @@
       <div class="phase-desc">
         Scope changed? Need new items? Item no longer needed?
         <strong>Issue body is never modified.</strong> All changes are logged as timestamped, append-only comments.
-        Claude reconstructs current truth by reading body + all comments sequentially.
+        Codex reconstructs current truth by reading body + all comments sequentially.
       </div>
 
       <table class="tier-table">
@@ -734,11 +743,11 @@
         <div class="phase-number">7</div>
         <div class="phase-meta">
           <div class="phase-name">Completion</div>
-          <div class="phase-trigger">All checklist items [x] &mdash; fully automatic</div>
+          <div class="phase-trigger">All checklist items [x] &mdash; PR-ready</div>
         </div>
       </div>
       <div class="phase-desc">
-        Claude detects all items checked off &rarr; <span class="tag tag-review">Codex</span> reviews full diff &rarr; <code>gh pr create</code> with <code>Closes #N</code> &rarr; <code>gh pr merge --squash --delete-branch</code> &rarr; <code>git switch main &amp;&amp; git pull</code>.<br>
+        Codex detects all items checked off &rarr; <span class="tag tag-review">review-pr</span> checks full diff &rarr; PR is opened with <code>Closes #N</code> &rarr; merge returns the project to its detected default branch.<br>
         No "done" signal from Adrian needed. Milestone deliveries get tags: <code>email-YYYY-MM-DD</code>, <code>meeting-YYYY-MM-DD</code>, <code>conference-YYYY-MM-DD</code>.
       </div>
     </div>
@@ -755,7 +764,7 @@
     <div class="guard-grid">
       <div class="guard-card">
         <div class="guard-scenario">Session Start Drift</div>
-        <div class="guard-action"><code>/begin</code> forces Issue + item selection via AskUserQuestion before any work</div>
+        <div class="guard-action"><code>/begin</code> keeps work tied to an explicit Issue and checklist item</div>
       </div>
       <div class="guard-card">
         <div class="guard-scenario">Mid-Task Tangent</div>
@@ -767,15 +776,15 @@
       </div>
       <div class="guard-card">
         <div class="guard-scenario">Forgot to Save</div>
-        <div class="guard-action"><code>auto-commit.sh</code> silently snapshots after every Claude response</div>
+        <div class="guard-action"><code>auto-commit.sh</code> snapshots dirty work on Stop when needed</div>
       </div>
       <div class="guard-card">
         <div class="guard-scenario">Crashed / Closed Laptop</div>
-        <div class="guard-action"><code>auto-commit.sh</code> commits leftovers on next SessionStart</div>
+        <div class="guard-action">Issue, branch, worktree, and commits preserve enough state to resume safely</div>
       </div>
       <div class="guard-card">
         <div class="guard-scenario">Never Says "Done"</div>
-        <div class="guard-action">Claude auto-judges: all checklist <code>[x]</code> = auto PR + merge</div>
+        <div class="guard-action">Checklist completion makes PR readiness visible without a separate status ritual</div>
       </div>
     </div>
   </div>
@@ -784,7 +793,7 @@
 <!-- ══════════════════ FOOTER ══════════════════ -->
 <footer>
   <div class="container">
-    Academic Git &mdash; Built by Adrian Zheng &times; Claude Code, 2026-04-21
+    Academic Git &mdash; Built by Adrian Zheng &times; Codex, 2026-04-21
   </div>
 </footer>
 

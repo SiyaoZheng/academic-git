@@ -5,7 +5,7 @@
 参考 CI/CD 最佳实践，PR 阶段需要补全：
 
 ### 1. PR 创建时自动生成 diff 摘要
-- 从 `git diff main...HEAD` 提取变更
+- 从 `git diff <default-branch>...HEAD` 提取变更
 - 按 Issue checklist 对照，标注每个 item 对应的变更
 - 自动填充 PR body template
 
@@ -29,7 +29,7 @@
 ### 4. 合并后流程
 - **Tag 判断**: 是否是 milestone delivery（email/meeting/conference trigger）
 - **下一个 Issue 路由**: 检查是否有 open Issues，提示 Adrian
-- **分支清理**: 确认 feat/* 已删除
+- **分支清理**: 确认 issue-linked `codex/issue-*` 分支和 worktree 已清理
 - **Linear 同步**: 如果接了 Linear，触发状态更新
 
 ## 其他待做
