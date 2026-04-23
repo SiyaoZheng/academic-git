@@ -597,18 +597,18 @@
         </div>
       </div>
       <div class="phase-desc">
-        While Codex works on checklist items, the Stop hook preserves dirty feature-branch work as traceable <code>wip(#0)</code> safety commits.
-        These are safety nets, not formal checklist commits.
+        While Codex works on checklist items, the Stop hook acts as an Auto-Commit guard: dirty work blocks session end and sends Codex back through the commit skill.
+        The hook never commits directly; meaningful issue-linked commits are still created by the MCP commit tool.
       </div>
 
       <table class="tier-table">
-        <thead><tr><th>Commit Type</th><th>When</th><th>Message Format</th><th>Tied to Issue?</th></tr></thead>
+        <thead><tr><th>Layer</th><th>When</th><th>Action</th><th>Tied to Issue?</th></tr></thead>
         <tbody>
           <tr>
-            <td><span class="tag tag-auto">Auto</span> wip snapshot</td>
+            <td><span class="tag tag-auto">Auto</span> Stop guard</td>
             <td>After every Codex response</td>
-            <td><code>wip: file1, file2</code></td>
-            <td>No &mdash; safety net only</td>
+            <td>Block if dirty; instruct Codex to analyze and commit</td>
+            <td>No &mdash; guard only</td>
           </tr>
           <tr>
             <td><span class="tag tag-skill">Formal</span> /commit</td>
@@ -621,7 +621,7 @@
 
       <div class="source-block">
         <div class="source-header" onclick="toggle(this)">
-          <div><span class="source-name">hooks/codex/stop.sh</span> <span class="source-desc">Codex Stop hook &mdash; autosave + PR nudge</span></div>
+          <div><span class="source-name">hooks/codex/stop.sh</span> <span class="source-desc">Codex Stop hook &mdash; dirty-work guard + PR nudge</span></div>
           <span class="source-toggle">&#9654;</span>
         </div>
         <div class="source-body"><pre id="autocommit-source"></pre></div>
@@ -640,8 +640,8 @@
         </div>
       </div>
       <div class="phase-desc">
-        Read Issue (SSOT) &rarr; analyze changes &rarr; <span class="tag tag-review">Codex</span> reviews staged diff &rarr; commit as <code>type(#N/X): desc</code> &rarr; check off item <code>[x]</code> on GitHub &rarr; push &rarr; check DAG for next unblocked item.<br>
-        When all items are <code>[x]</code>: auto-create PR with <code>Closes #N</code> &rarr; Codex reviews full diff &rarr; squash merge &rarr; return to main.
+        Read Issue (SSOT) &rarr; analyze changes &rarr; <span class="tag tag-review">Codex</span> reviews diff &rarr; commit selected paths as <code>type(#N/X): desc</code> &rarr; push &rarr; check off item <code>[x]</code> only when complete.<br>
+        When all items are <code>[x]</code>: generate PR body with <code>Closes #N</code> &rarr; create gated PR &rarr; squash merge &rarr; return to the default branch.
       </div>
 
       <div class="review-grid">

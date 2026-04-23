@@ -24,6 +24,48 @@ function runSafe(cmd, cwd) {
         return e.stderr?.trim() ?? e.message;
     }
 }
+function shellArgs(values) {
+    return values.map((value) => JSON.stringify(value)).join(" ");
+}
+function splitNonEmptyLines(value) {
+    return value.split("\n").map((line) => line.trim()).filter(Boolean);
+}
+function gitRefExists(ref) {
+    try {
+        run(`git show-ref --verify --quiet ${JSON.stringify(ref)}`);
+        return true;
+    }
+    catch {
+        return false;
+    }
+}
+function defaultBranch() {
+    const symbolic = runSafe("git symbolic-ref refs/remotes/origin/HEAD")
+        .replace("refs/remotes/origin/", "")
+        .trim();
+    if (symbolic && !symbolic.toLowerCase().includes("fatal")) {
+        return symbolic;
+    }
+    const remoteShow = runSafe("git remote show origin");
+    const remoteMatch = remoteShow.match(/HEAD branch:\s*(\S+)/);
+    if (remoteMatch?.[1]) {
+        return remoteMatch[1];
+    }
+    if (gitRefExists("refs/remotes/origin/master"))
+        return "master";
+    if (gitRefExists("refs/remotes/origin/main"))
+        return "main";
+    if (gitRefExists("refs/heads/master"))
+        return "master";
+    return "main";
+}
+function defaultBaseRef() {
+    const branch = defaultBranch();
+    return gitRefExists(`refs/remotes/origin/${branch}`) ? `origin/${branch}` : branch;
+}
+function defaultBranchRange() {
+    return `${shellArgs([defaultBaseRef()])}...HEAD`;
+}
 // ── Retry & Error Classification ──
 // Borrowed from octokit/plugin-retry.js + plugin-throttling.js
 const DO_NOT_RETRY_PATTERNS = [
@@ -156,7 +198,7 @@ function runLintCommand(cmd, cwd) {
     }
 }
 // ── Gate Context Builder ──
-function buildGateContext(issue) {
+function buildGateContext(issue, opts) {
     const issueJson = runWithRetry(`gh issue view ${issue} --json body`);
     const issueBody = JSON.parse(issueJson).body;
     const checklist = issueBody
@@ -169,10 +211,28 @@ function buildGateContext(issue) {
         return { letter, desc, done };
     });
     const branch = run("git branch --show-current");
-    const diffStat = runSafe("git diff main...HEAD --stat");
-    const changedFiles = runSafe("git diff main...HEAD --name-only").split("\n").filter(Boolean);
-    const patch = runSafe("git diff main...HEAD");
-    const commits = runSafe("git log main...HEAD --oneline").split("\n").filter(Boolean);
+    const range = defaultBranchRange();
+    const branchDiffStat = runSafe(`git diff ${range} --stat`);
+    const stagedDiffStat = opts?.includeStaged ? runSafe("git diff --cached --stat") : "";
+    const diffStat = [
+        branchDiffStat,
+        stagedDiffStat ? `Staged changes pending commit:\n${stagedDiffStat}` : "",
+    ].filter(Boolean).join("\n\n");
+    const branchFiles = splitNonEmptyLines(runSafe(`git diff ${range} --name-only`));
+    const stagedFiles = opts?.includeStaged
+        ? splitNonEmptyLines(runSafe("git diff --cached --name-only"))
+        : [];
+    const changedFiles = Array.from(new Set([...branchFiles, ...stagedFiles]));
+    const branchPatch = runSafe(`git diff ${range}`);
+    const stagedPatch = opts?.includeStaged ? runSafe("git diff --cached") : "";
+    const patch = [
+        branchPatch,
+        stagedPatch ? `\n\n# Staged changes pending commit\n${stagedPatch}` : "",
+    ].filter(Boolean).join("\n");
+    const commits = splitNonEmptyLines(runSafe(`git log ${range} --oneline`));
+    if (opts?.pendingCommitMessage) {
+        commits.push(`[pending] ${opts.pendingCommitMessage}`);
+    }
     const ctx = {
         issueBody,
         issueNumber: issue,
@@ -280,12 +340,13 @@ server.tool("check_item", "Check off a completed checklist item on an Issue. Onl
 // ════════════════════════════════════════
 //  COMMIT TOOLS
 // ════════════════════════════════════════
-server.tool("commit", "Create a formal commit tied to a specific Issue checklist item. Format: type(#N/X): description. Auto adds all changes, commits, and pushes.", {
+server.tool("commit", "Create a formal commit tied to a specific Issue checklist item. Format: type(#N/X): description. Stages selected paths (or all dirty files), commits, and pushes.", {
     issue: zod_1.z.number().describe("Issue number"),
     item: zod_1.z.string().regex(/^[A-Z]$/).describe("Checklist item letter (A-Z)"),
     type: zod_1.z.enum(["feat", "fix", "refactor", "docs", "test", "chore", "perf"]).describe("Commit type"),
     description: zod_1.z.string().describe("Commit description (imperative mood)"),
-}, async ({ issue, item, type, description }) => {
+    paths: zod_1.z.array(zod_1.z.string()).optional().describe("Optional explicit file or directory paths to stage for this commit. Use this for grouped Auto-Commit cleanup; omit only when all dirty files belong in one commit."),
+}, async ({ issue, item, type, description, paths }) => {
     // Ensure config exists
     ensureConfig();
     // Verify issue exists and item is valid
@@ -311,6 +372,10 @@ server.tool("commit", "Create a formal commit tied to a specific Issue checklist
             }
         }
     }
+    const requestedPaths = (paths ?? []).map((p) => p.trim()).filter(Boolean);
+    if (requestedPaths.some((p) => p.includes("\n") || p.includes("\0"))) {
+        return err("Invalid path: paths must not contain newlines or NUL bytes");
+    }
     // --- Pipeline check (if configured) ---
     const config = ensureConfig();
     if (config.pipeline.run) {
@@ -321,16 +386,41 @@ server.tool("commit", "Create a formal commit tied to a specific Issue checklist
             return err(`Pipeline FAILED: ${e.message}. Fix before committing.`);
         }
     }
+    // Stage only the selected group, unless the caller explicitly omits paths.
+    const preStaged = splitNonEmptyLines(runSafe("git diff --cached --name-only"));
+    if (preStaged.length > 0) {
+        return err("Index already has staged changes. The commit tool expects a clean index so grouped commits stay auditable:\n" +
+            preStaged.map((p) => `  ${p}`).join("\n"));
+    }
+    if (requestedPaths.length > 0) {
+        run(`git add -- ${shellArgs(requestedPaths)}`);
+    }
+    else {
+        run("git add -A");
+    }
+    const unstageRequested = () => {
+        const pathspec = requestedPaths.length > 0 ? shellArgs(requestedPaths) : ".";
+        runSafe(`git restore --staged -- ${pathspec}`);
+    };
+    const staged = runSafe("git diff --cached --stat");
+    if (!staged) {
+        return err("Nothing to commit for the requested paths");
+    }
     // --- Gate check (block on CRITICAL) ---
     let gateWarning = "";
+    const msg = `${type}(#${issue}/${item}): ${description}`;
     try {
-        const gateCtx = buildGateContext(issue);
+        const gateCtx = buildGateContext(issue, {
+            includeStaged: true,
+            pendingCommitMessage: msg,
+        });
         const gateResult = (0, gates_js_1.runAllGates)(gateCtx, "commit");
         const critical = gateResult.violations.filter(v => v.severity === "CRITICAL");
         if (critical.length > 0) {
+            unstageRequested();
             return err(`Gate BLOCKED — ${critical.length} CRITICAL violation(s):\n` +
                 critical.map(v => `  ${v.ruleId}: ${v.message}`).join("\n") +
-                `\nRun run_gates(issue=${issue}) for full report.`);
+                `\nRequested paths were unstaged; working tree changes are preserved. Run run_gates(issue=${issue}) for full report.`);
         }
         // HIGH violations are advisory for commits
         const highViolations = gateResult.violations.filter(v => v.severity === "HIGH");
@@ -342,20 +432,15 @@ server.tool("commit", "Create a formal commit tied to a specific Issue checklist
     catch {
         // Gate check fails open (network/auth issues shouldn't block commits)
     }
-    // Stage all changes
-    run("git add -A");
-    // Check something is staged
-    const staged = runSafe("git diff --cached --stat");
-    if (!staged) {
-        return err("Nothing to commit (working tree clean)");
-    }
     // Commit
-    const msg = `${type}(#${issue}/${item}): ${description}`;
     run(`git commit -m ${JSON.stringify(msg)}`);
     // Push
     const branch = run("git branch --show-current");
     runSafe(`git push -u origin "${branch}"`);
-    return text(`Committed: ${msg}\nPushed to ${branch}${gateWarning}`);
+    const scope = requestedPaths.length > 0
+        ? `\nPaths:\n${requestedPaths.map((p) => `  ${p}`).join("\n")}`
+        : "\nPaths: all dirty files";
+    return text(`Committed: ${msg}\nPushed to ${branch}${scope}${gateWarning}`);
 });
 // ════════════════════════════════════════
 //  PR TOOLS
@@ -376,13 +461,12 @@ server.tool("generate_pr_body", "Generate a PR body draft by mapping git diff ch
         const desc = l.replace(/^- \[[x ]\] [A-Z]\. /, "").replace(/→ after:.*$/, "").trim();
         return { letter, desc, done };
     });
-    // Get diff stats: files changed per commit, grouped
-    const diffStat = runSafe("git diff main...HEAD --stat");
-    const changedFiles = runSafe("git diff main...HEAD --name-only")
-        .split("\n")
-        .filter(Boolean);
+    // Get diff stats against the configured default branch.
+    const range = defaultBranchRange();
+    const diffStat = runSafe(`git diff ${range} --stat`);
+    const changedFiles = splitNonEmptyLines(runSafe(`git diff ${range} --name-only`));
     // Get commit log with messages (to infer which item each commit belongs to)
-    const commitLog = runSafe("git log main...HEAD --oneline");
+    const commitLog = runSafe(`git log ${range} --oneline`);
     // Map commits to items using commit message pattern type(#N/X):
     const commitsByItem = {};
     for (const line of commitLog.split("\n").filter(Boolean)) {
@@ -471,7 +555,7 @@ server.tool("create_pr", "Create a Pull Request. Validates all checklist items a
     const out = runWithRetry(`gh pr create --title ${JSON.stringify(title)} --body ${JSON.stringify(prBody)}`);
     return text(`${out}${advisoryNote}`);
 });
-server.tool("merge_pr", "Squash-merge a PR and delete the branch. Returns to main.", { pr: zod_1.z.number().describe("PR number") }, async ({ pr }) => {
+server.tool("merge_pr", "Squash-merge a PR and delete the branch. Returns to the default branch.", { pr: zod_1.z.number().describe("PR number") }, async ({ pr }) => {
     runWithRetry(`gh pr merge ${pr} --squash --delete-branch`);
     const defaultBranch = runSafe("git symbolic-ref refs/remotes/origin/HEAD").replace("refs/remotes/origin/", "") || "main";
     run(`git switch "${defaultBranch}"`);
@@ -485,7 +569,7 @@ server.tool("view_pr", "View a Pull Request", { pr: zod_1.z.number().describe("P
 // ════════════════════════════════════════
 //  BRANCH TOOLS
 // ════════════════════════════════════════
-server.tool("create_branch", "Create a new feature branch from main. Naming: feat/<slug>", { slug: zod_1.z.string().describe("Branch slug (lowercase, hyphens, max 40 chars)") }, async ({ slug }) => {
+server.tool("create_branch", "Create a new feature branch from the default branch. Naming: feat/<slug>", { slug: zod_1.z.string().describe("Branch slug (lowercase, hyphens, max 40 chars)") }, async ({ slug }) => {
     // Ensure config exists
     ensureConfig();
     // Enforce naming
@@ -518,7 +602,7 @@ server.tool("list_branches", "List feature branches", {}, async () => {
 // ════════════════════════════════════════
 //  TAG TOOLS
 // ════════════════════════════════════════
-server.tool("create_tag", "Create a milestone tag on main. Types: email-YYYY-MM-DD, meeting-YYYY-MM-DD, chat-YYYY-MM-DD, conference-YYYY-MM-DD", {
+server.tool("create_tag", "Create a milestone tag on the current branch. Types: email-YYYY-MM-DD, meeting-YYYY-MM-DD, chat-YYYY-MM-DD, conference-YYYY-MM-DD", {
     name: zod_1.z.string().describe("Tag name (e.g., email-2026-04-21)"),
     message: zod_1.z.string().describe("Tag message describing the milestone"),
 }, async ({ name, message }) => {

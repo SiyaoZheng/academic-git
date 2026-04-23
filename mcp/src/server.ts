@@ -25,6 +25,52 @@ function runSafe(cmd: string, cwd?: string): string {
   }
 }
 
+function shellArgs(values: string[]): string {
+  return values.map((value) => JSON.stringify(value)).join(" ");
+}
+
+function splitNonEmptyLines(value: string): string[] {
+  return value.split("\n").map((line) => line.trim()).filter(Boolean);
+}
+
+function gitRefExists(ref: string): boolean {
+  try {
+    run(`git show-ref --verify --quiet ${JSON.stringify(ref)}`);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function defaultBranch(): string {
+  const symbolic = runSafe("git symbolic-ref refs/remotes/origin/HEAD")
+    .replace("refs/remotes/origin/", "")
+    .trim();
+  if (symbolic && !symbolic.toLowerCase().includes("fatal")) {
+    return symbolic;
+  }
+
+  const remoteShow = runSafe("git remote show origin");
+  const remoteMatch = remoteShow.match(/HEAD branch:\s*(\S+)/);
+  if (remoteMatch?.[1]) {
+    return remoteMatch[1];
+  }
+
+  if (gitRefExists("refs/remotes/origin/master")) return "master";
+  if (gitRefExists("refs/remotes/origin/main")) return "main";
+  if (gitRefExists("refs/heads/master")) return "master";
+  return "main";
+}
+
+function defaultBaseRef(): string {
+  const branch = defaultBranch();
+  return gitRefExists(`refs/remotes/origin/${branch}`) ? `origin/${branch}` : branch;
+}
+
+function defaultBranchRange(): string {
+  return `${shellArgs([defaultBaseRef()])}...HEAD`;
+}
+
 // ── Retry & Error Classification ──
 // Borrowed from octokit/plugin-retry.js + plugin-throttling.js
 
@@ -195,7 +241,10 @@ function runLintCommand(cmd: string, cwd: string): { ok: boolean; output: string
 
 // ── Gate Context Builder ──
 
-function buildGateContext(issue: number): GateContext {
+function buildGateContext(
+  issue: number,
+  opts?: { includeStaged?: boolean; pendingCommitMessage?: string }
+): GateContext {
   const issueJson = runWithRetry(`gh issue view ${issue} --json body`);
   const issueBody = JSON.parse(issueJson).body as string;
 
@@ -210,10 +259,31 @@ function buildGateContext(issue: number): GateContext {
     });
 
   const branch = run("git branch --show-current");
-  const diffStat = runSafe("git diff main...HEAD --stat");
-  const changedFiles = runSafe("git diff main...HEAD --name-only").split("\n").filter(Boolean);
-  const patch = runSafe("git diff main...HEAD");
-  const commits = runSafe("git log main...HEAD --oneline").split("\n").filter(Boolean);
+  const range = defaultBranchRange();
+  const branchDiffStat = runSafe(`git diff ${range} --stat`);
+  const stagedDiffStat = opts?.includeStaged ? runSafe("git diff --cached --stat") : "";
+  const diffStat = [
+    branchDiffStat,
+    stagedDiffStat ? `Staged changes pending commit:\n${stagedDiffStat}` : "",
+  ].filter(Boolean).join("\n\n");
+
+  const branchFiles = splitNonEmptyLines(runSafe(`git diff ${range} --name-only`));
+  const stagedFiles = opts?.includeStaged
+    ? splitNonEmptyLines(runSafe("git diff --cached --name-only"))
+    : [];
+  const changedFiles = Array.from(new Set([...branchFiles, ...stagedFiles]));
+
+  const branchPatch = runSafe(`git diff ${range}`);
+  const stagedPatch = opts?.includeStaged ? runSafe("git diff --cached") : "";
+  const patch = [
+    branchPatch,
+    stagedPatch ? `\n\n# Staged changes pending commit\n${stagedPatch}` : "",
+  ].filter(Boolean).join("\n");
+
+  const commits = splitNonEmptyLines(runSafe(`git log ${range} --oneline`));
+  if (opts?.pendingCommitMessage) {
+    commits.push(`[pending] ${opts.pendingCommitMessage}`);
+  }
 
   const ctx: GateContext = {
     issueBody,
@@ -390,14 +460,15 @@ server.tool(
 
 server.tool(
   "commit",
-  "Create a formal commit tied to a specific Issue checklist item. Format: type(#N/X): description. Auto adds all changes, commits, and pushes.",
+  "Create a formal commit tied to a specific Issue checklist item. Format: type(#N/X): description. Stages selected paths (or all dirty files), commits, and pushes.",
   {
     issue: z.number().describe("Issue number"),
     item: z.string().regex(/^[A-Z]$/).describe("Checklist item letter (A-Z)"),
     type: z.enum(["feat", "fix", "refactor", "docs", "test", "chore", "perf"]).describe("Commit type"),
     description: z.string().describe("Commit description (imperative mood)"),
+    paths: z.array(z.string()).optional().describe("Optional explicit file or directory paths to stage for this commit. Use this for grouped Auto-Commit cleanup; omit only when all dirty files belong in one commit."),
   },
-  async ({ issue, item, type, description }) => {
+  async ({ issue, item, type, description, paths }) => {
     // Ensure config exists
     ensureConfig();
 
@@ -426,6 +497,11 @@ server.tool(
       }
     }
 
+    const requestedPaths = (paths ?? []).map((p) => p.trim()).filter(Boolean);
+    if (requestedPaths.some((p) => p.includes("\n") || p.includes("\0"))) {
+      return err("Invalid path: paths must not contain newlines or NUL bytes");
+    }
+
     // --- Pipeline check (if configured) ---
     const config = ensureConfig();
     if (config.pipeline.run) {
@@ -436,17 +512,47 @@ server.tool(
       }
     }
 
+    // Stage only the selected group, unless the caller explicitly omits paths.
+    const preStaged = splitNonEmptyLines(runSafe("git diff --cached --name-only"));
+    if (preStaged.length > 0) {
+      return err(
+        "Index already has staged changes. The commit tool expects a clean index so grouped commits stay auditable:\n" +
+        preStaged.map((p) => `  ${p}`).join("\n")
+      );
+    }
+
+    if (requestedPaths.length > 0) {
+      run(`git add -- ${shellArgs(requestedPaths)}`);
+    } else {
+      run("git add -A");
+    }
+
+    const unstageRequested = () => {
+      const pathspec = requestedPaths.length > 0 ? shellArgs(requestedPaths) : ".";
+      runSafe(`git restore --staged -- ${pathspec}`);
+    };
+
+    const staged = runSafe("git diff --cached --stat");
+    if (!staged) {
+      return err("Nothing to commit for the requested paths");
+    }
+
     // --- Gate check (block on CRITICAL) ---
     let gateWarning = "";
+    const msg = `${type}(#${issue}/${item}): ${description}`;
     try {
-      const gateCtx = buildGateContext(issue);
+      const gateCtx = buildGateContext(issue, {
+        includeStaged: true,
+        pendingCommitMessage: msg,
+      });
       const gateResult = runAllGates(gateCtx, "commit");
       const critical = gateResult.violations.filter(v => v.severity === "CRITICAL");
       if (critical.length > 0) {
+        unstageRequested();
         return err(
           `Gate BLOCKED — ${critical.length} CRITICAL violation(s):\n` +
           critical.map(v => `  ${v.ruleId}: ${v.message}`).join("\n") +
-          `\nRun run_gates(issue=${issue}) for full report.`
+          `\nRequested paths were unstaged; working tree changes are preserved. Run run_gates(issue=${issue}) for full report.`
         );
       }
       // HIGH violations are advisory for commits
@@ -459,24 +565,18 @@ server.tool(
       // Gate check fails open (network/auth issues shouldn't block commits)
     }
 
-    // Stage all changes
-    run("git add -A");
-
-    // Check something is staged
-    const staged = runSafe("git diff --cached --stat");
-    if (!staged) {
-      return err("Nothing to commit (working tree clean)");
-    }
-
     // Commit
-    const msg = `${type}(#${issue}/${item}): ${description}`;
     run(`git commit -m ${JSON.stringify(msg)}`);
 
     // Push
     const branch = run("git branch --show-current");
     runSafe(`git push -u origin "${branch}"`);
 
-    return text(`Committed: ${msg}\nPushed to ${branch}${gateWarning}`);
+    const scope = requestedPaths.length > 0
+      ? `\nPaths:\n${requestedPaths.map((p) => `  ${p}`).join("\n")}`
+      : "\nPaths: all dirty files";
+
+    return text(`Committed: ${msg}\nPushed to ${branch}${scope}${gateWarning}`);
   }
 );
 
@@ -506,14 +606,13 @@ server.tool(
         return { letter, desc, done };
       });
 
-    // Get diff stats: files changed per commit, grouped
-    const diffStat = runSafe("git diff main...HEAD --stat");
-    const changedFiles = runSafe("git diff main...HEAD --name-only")
-      .split("\n")
-      .filter(Boolean);
+    // Get diff stats against the configured default branch.
+    const range = defaultBranchRange();
+    const diffStat = runSafe(`git diff ${range} --stat`);
+    const changedFiles = splitNonEmptyLines(runSafe(`git diff ${range} --name-only`));
 
     // Get commit log with messages (to infer which item each commit belongs to)
-    const commitLog = runSafe("git log main...HEAD --oneline");
+    const commitLog = runSafe(`git log ${range} --oneline`);
 
     // Map commits to items using commit message pattern type(#N/X):
     const commitsByItem: Record<string, string[]> = {};
@@ -629,7 +728,7 @@ server.tool(
 
 server.tool(
   "merge_pr",
-  "Squash-merge a PR and delete the branch. Returns to main.",
+  "Squash-merge a PR and delete the branch. Returns to the default branch.",
   { pr: z.number().describe("PR number") },
   async ({ pr }) => {
     runWithRetry(`gh pr merge ${pr} --squash --delete-branch`);
@@ -656,7 +755,7 @@ server.tool(
 
 server.tool(
   "create_branch",
-  "Create a new feature branch from main. Naming: feat/<slug>",
+  "Create a new feature branch from the default branch. Naming: feat/<slug>",
   { slug: z.string().describe("Branch slug (lowercase, hyphens, max 40 chars)") },
   async ({ slug }) => {
     // Ensure config exists
@@ -711,7 +810,7 @@ server.tool(
 
 server.tool(
   "create_tag",
-  "Create a milestone tag on main. Types: email-YYYY-MM-DD, meeting-YYYY-MM-DD, chat-YYYY-MM-DD, conference-YYYY-MM-DD",
+  "Create a milestone tag on the current branch. Types: email-YYYY-MM-DD, meeting-YYYY-MM-DD, chat-YYYY-MM-DD, conference-YYYY-MM-DD",
   {
     name: z.string().describe("Tag name (e.g., email-2026-04-21)"),
     message: z.string().describe("Tag message describing the milestone"),
