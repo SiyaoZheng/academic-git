@@ -1,9 +1,0 @@
-{
-  "mcpServers": {
-    "academic-git": {
-      "command": "./scripts/start-mcp.sh",
-      "cwd": ".",
-      "note": "System-level Codex launcher for the academic-git MCP server."
-    }
-  }
-}

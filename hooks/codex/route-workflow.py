@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Route academic-git workflow events into canonical handle-* actions."""
+"""Route Fu workflow events into canonical handle-* actions."""
 
 from __future__ import annotations
 
@@ -13,6 +13,8 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+
+from self_disable import is_fu_source_repo
 
 
 ISSUE_BRANCH_RE = re.compile(r"^codex/issue-(\d+)")
@@ -79,6 +81,12 @@ def parse_json_file(path: Path) -> dict[str, Any]:
         return {}
 
 
+def repo_config_path(repo_dir: str) -> Path:
+    canonical = Path(repo_dir) / ".fu.json"
+    legacy = Path(repo_dir) / ".academic-git.json"
+    return canonical if canonical.exists() or not legacy.exists() else legacy
+
+
 def is_linked_worktree(repo_dir: str) -> bool:
     git_dir = git(["rev-parse", "--git-dir"], repo_dir, check=False)
     common_dir = git(["rev-parse", "--git-common-dir"], repo_dir, check=False)
@@ -91,7 +99,7 @@ def is_linked_worktree(repo_dir: str) -> bool:
 
 
 def current_state(repo_dir: str) -> dict[str, Any]:
-    config = parse_json_file(Path(repo_dir) / ".academic-git.json")
+    config = parse_json_file(repo_config_path(repo_dir))
     branch = git(["branch", "--show-current"], repo_dir, check=False)
     head_sha = git(["rev-parse", "HEAD"], repo_dir, check=False)
     branch_issue = issue_from_branch(branch)
@@ -190,9 +198,9 @@ def invariant_diagnostics(state: dict[str, Any]) -> list[str]:
     if branch_issue is None:
         diags.append(f"branch '{branch or 'unknown'}' is not an issue branch")
     if locked_issue in (None, ""):
-        diags.append("locked_issue is missing from .academic-git.json")
+        diags.append("locked_issue is missing from .fu.json")
     if locked_branch in (None, ""):
-        diags.append("locked_branch is missing from .academic-git.json")
+        diags.append("locked_branch is missing from .fu.json")
     if locked_branch and branch and locked_branch != branch:
         diags.append(f"locked_branch '{locked_branch}' does not match current branch '{branch}'")
     if locked_issue and branch_issue and int(locked_issue) != int(branch_issue):
@@ -296,7 +304,7 @@ def emit_route(event: str, payload: dict[str, Any]) -> int:
     print(
         json.dumps(
             {
-                "systemMessage": f"[academic-git] route({payload['action']})",
+                "systemMessage": f"[Fu] route({payload['action']})",
                 "hookSpecificOutput": {
                     "hookEventName": event,
                     "additionalContext": text,
@@ -398,6 +406,10 @@ def main() -> int:
         repo_dir = git(["rev-parse", "--show-toplevel"], repo_dir, check=False) or repo_dir
     except RuntimeError:
         pass
+
+    if is_fu_source_repo(repo_dir):
+        return 0
+
     if not repo_dir or not Path(repo_dir).exists():
         return 0
     if git(["rev-parse", "--git-dir"], repo_dir, check=False) == "":
@@ -410,11 +422,11 @@ def main() -> int:
 
     if args.event == "SessionStart":
         summary = (
-            f"academic-git status: branch={state['branch'] or 'unknown'}, "
+            f"fu status: branch={state['branch'] or 'unknown'}, "
             f"dirty_files={state['dirty_count']}, ahead_of_{state['main_branch']}={state['ahead_commits']}, "
             f"locked_issue={state['locked_issue'] or '(none)'}, locked_branch={state['locked_branch'] or '(none)'}."
         )
-        return emit_allow(args.event, system_message="[academic-git] session recovery scan complete", additional_context=summary)
+        return emit_allow(args.event, system_message="[Fu] session recovery scan complete", additional_context=summary)
 
     return 0
 

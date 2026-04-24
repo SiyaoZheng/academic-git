@@ -11,6 +11,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from self_disable import is_fu_source_repo
+
 
 HELP_RE = re.compile(r"(^|\s)(--help|-h)(\s|$)")
 SHELL_SEPARATORS = {";", "&&", "||", "|", "(", ")"}
@@ -161,7 +163,6 @@ def connector_issue_created(event: dict[str, Any]) -> bool:
     if event.get("type") == "response_item":
         return (
             payload.get("type") == "function_call"
-            and payload.get("namespace") == "mcp__codex_apps__github"
             and payload.get("name") == "_create_issue"
         )
 
@@ -195,6 +196,9 @@ def main() -> int:
     try:
         payload = json.load(sys.stdin)
     except json.JSONDecodeError:
+        return emit_continue()
+
+    if is_fu_source_repo(payload.get("cwd")):
         return emit_continue()
 
     if payload.get("stop_hook_active"):
@@ -252,7 +256,7 @@ def main() -> int:
     if used_develop_checkout:
         branch = current_branch(payload.get("cwd"))
         return block(
-            "`gh issue develop --checkout` was used, but academic-git must not switch "
+            "`gh issue develop --checkout` was used, but fu must not switch "
             f"the existing workspace with checkout. Current branch: {branch or 'unknown'}. "
             "Continue by opening issue work in a dedicated git worktree instead."
         )

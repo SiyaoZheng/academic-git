@@ -1,16 +1,20 @@
 ---
 name: handle-commit
 description: Formal issue-linked commit workflow. Uses create_commit to record one auditable change set tied to one or more checklist items, with explicit paths and automation journal support.
-allowed-tools: ["academic-git"]
+allowed-tools: ["fu"]
 ---
 
 # Handle Commit
+
+## Source Repo Self-Disable
+
+If the current repo top-level contains Fu's own `.codex-plugin/plugin.json`, `hooks/codex/hooks.json`, and `skills/handle-issue/SKILL.md`, then you are developing Fu itself. This skill is disabled there, including linked worktrees of the same repo. Work on the repository in plain code mode instead.
 
 `handle-commit` is the canonical executor for `route-commit`.
 
 The hook only routes. This skill decides how to group the diff and then calls `create_commit(...)`.
 
-## Canonical MCP Tool
+## Canonical Fu Workflow Tool
 
 `create_commit(issue: N, items: ["A", "C"], type: "feat", description: "...", paths: [...], idempotency_key?: "...")`
 

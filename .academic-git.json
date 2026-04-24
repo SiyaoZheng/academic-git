@@ -1,0 +1,25 @@
+{
+  "pipeline": {
+    "run": ""
+  },
+  "lint": {},
+  "locked_branch": "",
+  "locked_issue": null,
+  "checkpoint_count": 0,
+  "auto_workflow": {
+    "status": "completed",
+    "action": "open_pr",
+    "issue": 50,
+    "branch": "codex/issue-50-system-plugin-hook-install",
+    "worktree_path": "/Users/siyaozheng/Documents/论文/fu",
+    "head_sha": "4c7035922f1742bf0a57f47ca1f96528a95820df",
+    "tree_fingerprint": "3374e27437b595d6",
+    "idempotency_key": "issue-50-system-plugin-hook-install-pr",
+    "last_result": {
+      "message": "https://github.com/SiyaoZheng/fu/pull/51\n\nAdvisory: 2 MEDIUM/INFO violation(s) noted in gate report.",
+      "pr_number": 51,
+      "pr_url": "https://github.com/SiyaoZheng/fu/pull/51",
+      "branch": "codex/issue-50-system-plugin-hook-install"
+    }
+  }
+}

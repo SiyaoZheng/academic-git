@@ -1,13 +1,17 @@
 ---
 name: guard-write-route
-description: Internal hook policy that blocks direct git/gh mutations and keeps all academic-git state changes routed through canonical MCP tools.
+description: Internal hook policy that blocks direct git/gh mutations and keeps all fu state changes routed through canonical workflow tools.
 ---
 
 # Guard Write Route
 
-Blocked direct mutations must be rerouted to canonical academic-git tools:
+## Source Repo Self-Disable
 
-| Blocked CLI | Canonical MCP Path |
+If the current repo top-level contains Fu's own `.codex-plugin/plugin.json`, `hooks/codex/hooks.json`, and `skills/handle-issue/SKILL.md`, then you are developing Fu itself. This skill is disabled there, including linked worktrees of the same repo. Work on the repository in plain code mode instead.
+
+Blocked direct mutations must be rerouted to canonical Fu workflow tools:
+
+| Blocked CLI | Canonical Fu Path |
 |-------------|--------------------|
 | `git commit` | `create_commit(...)` |
 | `gh pr create` | `open_pr(...)` |

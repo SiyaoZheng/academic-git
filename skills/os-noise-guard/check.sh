@@ -3,7 +3,7 @@ set -euo pipefail
 
 INPUT="$(cat 2>/dev/null || true)"
 REPO_DIR="$(printf '%s' "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")"
-STRICT_STOP="${ACADEMIC_GIT_OS_NOISE_STRICT:-false}"
+STRICT_STOP="${FU_OS_NOISE_STRICT:-${ACADEMIC_GIT_OS_NOISE_STRICT:-false}}"
 
 if [ -z "$REPO_DIR" ]; then
   REPO_DIR="$PWD"
@@ -76,7 +76,7 @@ PY
 }
 
 ensure_global_ignore() {
-  local excludes_file="${ACADEMIC_GIT_OS_NOISE_EXCLUDESFILE:-}"
+  local excludes_file="${FU_OS_NOISE_EXCLUDESFILE:-${ACADEMIC_GIT_OS_NOISE_EXCLUDESFILE:-}}"
   local configured=""
 
   if [ -z "$excludes_file" ]; then
@@ -156,17 +156,17 @@ cleanup_os_noise
 collect_nested_dirty_repos
 
 if [ "$GLOBAL_IGNORE_CHANGED" -eq 1 ]; then
-  append_line "[academic-git] Added OS metadata patterns to global Git ignore: ${GLOBAL_IGNORE_PATH}."
+  append_line "[Fu] Added OS metadata patterns to global Git ignore: ${GLOBAL_IGNORE_PATH}."
 fi
 
 if [ "$CLEANED_COUNT" -gt 0 ]; then
-  append_line "[academic-git] Removed ${CLEANED_COUNT} OS metadata item(s) from the working tree before dirty checks."
+  append_line "[Fu] Removed ${CLEANED_COUNT} OS metadata item(s) from the working tree before dirty checks."
   append_line "cleaned_sample:
 ${CLEANED_SAMPLE}"
 fi
 
 if [ "$NESTED_DIRTY_COUNT" -gt 0 ]; then
-  append_line "[academic-git] ${NESTED_DIRTY_COUNT} nested Git repo(s) remain dirty after OS-noise cleanup; inspect or commit those child-repo changes explicitly."
+  append_line "[Fu] ${NESTED_DIRTY_COUNT} nested Git repo(s) remain dirty after OS-noise cleanup; inspect or commit those child-repo changes explicitly."
   append_line "nested_dirty_sample:
 ${NESTED_DIRTY_SAMPLE}"
 fi

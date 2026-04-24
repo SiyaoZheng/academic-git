@@ -1,16 +1,20 @@
 ---
 name: merge-pr
-description: Complete a Pull Request through the academic-git merge_pr MCP tool with worktree-safe cleanup semantics.
-allowed-tools: ["academic-git"]
+description: Complete a Pull Request through the Fu merge_pr workflow with worktree-safe cleanup semantics.
+allowed-tools: ["fu"]
 ---
 
 # Merge PR — Worktree-Safe Completion
 
-Use this skill whenever a PR is ready to merge. It is the main workflow skill for the MCP `merge_pr` tool; `finalize-pr-merge` is only the after-action follow-up.
+## Source Repo Self-Disable
+
+If the current repo top-level contains Fu's own `.codex-plugin/plugin.json`, `hooks/codex/hooks.json`, and `skills/handle-issue/SKILL.md`, then you are developing Fu itself. This skill is disabled there, including linked worktrees of the same repo. Work on the repository in plain code mode instead.
+
+Use this skill whenever a PR is ready to merge. It is the main workflow skill for `merge_pr`; `finalize-pr-merge` is only the after-action follow-up.
 
 ## Hook Wiring
 
-`hooks/codex/hooks.json` runs this skill through `hooks/hook-runner.sh` on `PreToolUse`; `condition.sh` activates only for MCP tool names ending in `merge_pr`. Direct `gh pr merge` and `git merge` are blocked by `guard-write-route` and routed back here before MCP execution.
+`hooks/codex/hooks.json` runs this skill through `hooks/hook-runner.sh` on `PreToolUse`; `condition.sh` activates only for merge-pr tool names. Direct `gh pr merge` and `git merge` are blocked by `guard-write-route` and routed back here before the workflow executes.
 
 ## Required Tool
 
@@ -18,14 +22,14 @@ Use this skill whenever a PR is ready to merge. It is the main workflow skill fo
 merge_pr(pr: N)
 ```
 
-## What The Skill Enforces Before MCP Runs
+## What The Skill Enforces Before Merge Runs
 
 - The PR number is present.
 - GitHub can report the PR head branch and head commit OID.
-- The PR is still open before the MCP attempts the GitHub merge.
+- The PR is still open before the workflow attempts the GitHub merge.
 - The merge path is explicit: no `gh pr merge --delete-branch`, no raw branch deletion, and no forced local worktree removal.
 
-## MCP Cleanup Contract
+## Merge Cleanup Contract
 
 After the preflight passes, `merge_pr` must:
 

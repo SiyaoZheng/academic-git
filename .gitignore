@@ -21,7 +21,7 @@ Desktop.ini
 .env
 .env.*
 !.env.example
-.academic-git.json
+.fu.json
 
 # Local assistant instructions and memory
 /AGENTS.md
@@ -41,12 +41,9 @@ Desktop.ini
 /hooks.json
 /hooks *.json
 /hooks.local.json
-/.mcp.json
-/.mcp *.json
 
 # Generated or local documentation artifacts
 /TODO.md
-/mcp/README.md
 
 # Local reference repositories are for inspection only; do not track them in PRs.
 /references/

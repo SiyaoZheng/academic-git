@@ -1,12 +1,16 @@
 ---
 name: refine-issue
 description: Refine an existing GitHub Issue by adding an append-only comment (body is immutable). Adds context, splits scope, or updates acceptance criteria. Use this skill when Adrian wants to add items to an issue, change scope, update requirements, or when handle-issue routes to supplement existing issue work.
-allowed-tools: ["academic-git"]
+allowed-tools: ["fu"]
 ---
 
 # Refine Issue — Append-Only Comments
 
-The issue body is **immutable** — it's the single source of truth. All changes are made through the `refine_issue` MCP tool, which adds a structured comment to the issue.
+## Source Repo Self-Disable
+
+If the current repo top-level contains Fu's own `.codex-plugin/plugin.json`, `hooks/codex/hooks.json`, and `skills/handle-issue/SKILL.md`, then you are developing Fu itself. This skill is disabled there, including linked worktrees of the same repo. Work on the repository in plain code mode instead.
+
+The issue body is **immutable** — it's the single source of truth. All changes are made through `refine_issue`, which adds a structured comment to the issue.
 
 ## How It Works
 

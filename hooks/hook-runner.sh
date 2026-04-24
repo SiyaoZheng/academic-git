@@ -16,6 +16,7 @@ set -euo pipefail
 
 SKILL_DIR="$1"
 BLOCK_MODE="${2:-}"
+HOOKS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [ -z "$SKILL_DIR" ]; then
   exit 0
@@ -23,6 +24,17 @@ fi
 
 # Buffer stdin (tool input JSON) so we can forward it to skill scripts
 INPUT=$(cat)
+REPO_DIR="$(printf '%s' "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")"
+
+if [ -z "$REPO_DIR" ]; then
+  REPO_DIR="$PWD"
+fi
+
+# Fu must not govern its own source repo or linked worktrees.
+source "$HOOKS_DIR/self-disable.sh"
+if fu_is_source_repo "$REPO_DIR"; then
+  exit 0
+fi
 
 # --- Condition: should this hook even run? ---
 if [ -f "$SKILL_DIR/condition.sh" ]; then

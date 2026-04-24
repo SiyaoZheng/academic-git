@@ -3,7 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-TABLE_PATH="$REPO_DIR/.academic-git-routing.json"
+TABLE_PATH="$REPO_DIR/.fu-routing.json"
+LEGACY_TABLE_PATH="$REPO_DIR/.academic-git-routing.json"
 
 INPUT="$(cat 2>/dev/null || true)"
 COMMAND="$(printf '%s' "$INPUT" | jq -r '.tool_input.command // .command // ""' 2>/dev/null || true)"
@@ -100,8 +101,12 @@ if [ -z "$ROUTE_COMMAND" ]; then
   exit 0
 fi
 
+if [ ! -f "$TABLE_PATH" ] && [ -f "$LEGACY_TABLE_PATH" ]; then
+  TABLE_PATH="$LEGACY_TABLE_PATH"
+fi
+
 if [ ! -f "$TABLE_PATH" ]; then
-  jq -n '{decision:"deny", reason:"Missing .academic-git-routing.json routing table."}'
+  jq -n '{decision:"deny", reason:"Missing .fu-routing.json routing table (legacy .academic-git-routing.json also not found)."}'
   exit 0
 fi
 

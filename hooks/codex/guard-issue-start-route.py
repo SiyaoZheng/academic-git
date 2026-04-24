@@ -10,6 +10,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from self_disable import is_fu_source_repo
+
 
 HELP_RE = re.compile(r"(^|\s)(--help|-h)(\s|$)")
 SHELL_SEPARATORS = {";", "&&", "||", "|", "(", ")"}
@@ -125,6 +127,9 @@ def main() -> int:
     except json.JSONDecodeError:
         return 0
 
+    if is_fu_source_repo(payload.get("cwd")):
+        return 0
+
     command = payload.get("tool_input", {}).get("command", "")
     if not isinstance(command, str) or not command.strip():
         return 0
@@ -137,14 +142,14 @@ def main() -> int:
         if not reason:
             reason = (
                 "blocked raw gh issue create; route to create_issue for standalone issue bookkeeping "
-                "or the codex-gh-issue-start skill/MCP path for issue-bound code work"
+                "or the codex-gh-issue-start workflow for issue-bound code work"
             )
         return deny(reason)
 
     if has_issue_develop(command) and not has_issue_develop_flag(command, "--list"):
         if has_issue_develop_flag(command, "--checkout") or has_issue_develop_flag(command, "-c"):
             return deny(
-                "`gh issue develop --checkout` is not allowed in academic-git. "
+                "`gh issue develop --checkout` is not allowed in fu. "
                 "Use `start_issue` or `/codex-gh-issue-start`, or pair `gh issue develop` with "
                 "`git worktree add` so no existing worktree is switched."
             )

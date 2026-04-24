@@ -18,14 +18,26 @@ Fu supports research workflows that prioritize:
 
 In Fu, reproducibility does not mean only preserving code and final outputs. It also means preserving the exploratory process: the sequence of questions, trials, revisions, and decisions that led to the result.
 
-The repository is organized around a thin execution layer and a thicker workflow layer.
+The repository is organized around enforcement hooks, workflow skills, and supporting scripts.
+
+## Source Repo Self-Disable
+
+If the current Git repository is Fu's own source repository, or any linked worktree of that same repository, treat Fu as disabled.
+
+- Do not route through Fu skills or workflow tools.
+- Do not rely on Fu hooks to police changes here.
+- Work on this repository in plain code mode and test Fu entrypoints explicitly.
+
+Treat the repo as Fu's own source when its top-level contains:
+- `.codex-plugin/plugin.json` with `name: "fu"`
+- `hooks/codex/hooks.json`
+- `skills/handle-issue/SKILL.md`
 
 ## Repository Map
 
-- `mcp/` contains the thin MCP server that exposes Git/GitHub primitives.
 - `hooks/` contains enforcement hooks that block unsafe or out-of-policy actions.
 - `skills/` contains workflow playbooks and operational guidance.
-- `scripts/` contains helper scripts only. Issue-start policy lives in skills and MCP-owned tools.
+- `scripts/` contains helper scripts only. Issue-start policy lives in skills and hook-owned checks.
 - `.codex-plugin/` contains plugin metadata used by the local Codex setup.
 - `index.html` provides a visual overview page.
 - `README.md` is the human-facing overview.
@@ -42,43 +54,18 @@ The repository is organized around a thin execution layer and a thicker workflow
 ## Recommended Workflow
 
 1. Triage the task with the `handle-issue` skill.
-2. If this is new work, use the `codex-gh-issue-start` skill route so issue-start policy and DAG validation happen before the MCP `start_issue` mutation creates the GitHub Issue, branch, and worktree.
+2. If this is new work, use the `codex-gh-issue-start` route so issue-start policy and DAG validation happen before issue, branch, and worktree mutations.
 3. If the task already exists, switch to the linked branch and continue there.
 4. Keep the work scoped to the issue or task boundary.
 5. Use the `handle-commit` skill for formal commits tied to checklist items.
 6. Close out the session only when the worktree is clean or the remaining dirty state is intentional.
 
-## Important Commands
-
-### Type-check the MCP server
-
-```bash
-cd mcp
-npm ci
-npm run typecheck
-```
-
-`npm run typecheck` is equivalent to `npx tsc --noEmit`.
-
-### Run the MCP server tests
-
-```bash
-cd mcp
-npm test
-```
-
-### Start the local MCP server
-
-```bash
-./scripts/start-mcp.sh
-```
-
 ## Workflow Rules
 
 - Never run `git checkout`.
-- Prefer the provided skills and MCP tools over raw `git` or `gh` commands.
+- Prefer the provided skills and workflow tools over raw `git` or `gh` commands.
 - Use the issue-start workflow for new issue-bound work.
-- Treat `codex-gh-issue-start` as a hook-skill-MCP entrypoint and Issue SSOT boundary: hooks guard, the skill validates policy, and the MCP `start_issue` tool owns issue/branch/worktree mutation. Do not split a new implementation task across separate issue and branch tools.
+- Treat `codex-gh-issue-start` as the issue SSOT boundary: hooks guard, the skill validates policy, and the routed workflow owns issue/branch/worktree mutation. Do not split a new implementation task across separate issue and branch tools.
 - Keep issue, branch, and worktree aligned when the task is issue-bound.
 - Preserve user changes unless the user explicitly asks for a revert.
 - Treat hooks as enforcement, not suggestions.
