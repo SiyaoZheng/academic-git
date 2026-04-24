@@ -6,6 +6,10 @@ allowed-tools: ["academic-git"]
 
 # Refine Issue — Append-Only Comments
 
+## Source Repo Self-Disable
+
+If the current repo top-level contains the packaged `.codex-plugin/plugin.json`, `hooks/codex/hooks.json`, and `skills/handle-issue/SKILL.md`, then you are developing Fu itself. This skill is disabled there, including linked worktrees of the same repo. Work on the repository in plain code mode instead.
+
 The issue body is **immutable** — it's the single source of truth. All changes are made through the `refine_issue` workflow command, which adds a structured comment to the issue.
 
 ## How It Works

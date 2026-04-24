@@ -6,6 +6,10 @@ allowed-tools: ["academic-git"]
 
 # Handle Commit
 
+## Source Repo Self-Disable
+
+If the current repo top-level contains the packaged `.codex-plugin/plugin.json`, `hooks/codex/hooks.json`, and `skills/handle-issue/SKILL.md`, then you are developing Fu itself. This skill is disabled there, including linked worktrees of the same repo. Work on the repository in plain code mode instead.
+
 `handle-commit` is the canonical executor for `route-commit`.
 
 The hook only routes. This skill decides how to group the diff and then calls `fu_git create_commit`.

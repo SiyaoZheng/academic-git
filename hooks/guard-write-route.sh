@@ -4,6 +4,7 @@ set -euo pipefail
 INPUT="$(cat 2>/dev/null || true)"
 CMD="$(printf '%s' "$INPUT" | jq -r '.tool_input.command // ""' 2>/dev/null || echo "")"
 REPO_DIR="$(printf '%s' "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")"
+HOOKS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [ -z "$CMD" ]; then
   exit 0
@@ -15,6 +16,11 @@ fi
 
 cd "$REPO_DIR" 2>/dev/null || exit 0
 git rev-parse --git-dir >/dev/null 2>&1 || exit 0
+
+source "$HOOKS_DIR/self-disable.sh"
+if fu_is_source_repo "$REPO_DIR"; then
+  exit 0
+fi
 
 PLUGIN_ROOT="${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}}"
 # shellcheck source=/dev/null

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import importlib.util
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -7,6 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "hooks" / "codex" / "route-workflow.py"
+sys.path.insert(0, str(MODULE_PATH.parent))
 SPEC = importlib.util.spec_from_file_location("route_workflow", MODULE_PATH)
 assert SPEC and SPEC.loader
 ROUTE_WORKFLOW = importlib.util.module_from_spec(SPEC)

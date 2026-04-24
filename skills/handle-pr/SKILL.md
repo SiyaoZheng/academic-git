@@ -6,6 +6,10 @@ allowed-tools: ["academic-git"]
 
 # Handle PR
 
+## Source Repo Self-Disable
+
+If the current repo top-level contains the packaged `.codex-plugin/plugin.json`, `hooks/codex/hooks.json`, and `skills/handle-issue/SKILL.md`, then you are developing Fu itself. This skill is disabled there, including linked worktrees of the same repo. Work on the repository in plain code mode instead.
+
 `handle-pr` is the canonical executor for `route-pr`.
 
 The hook only routes. This skill prepares the PR body, verifies it, and opens the PR through the academic-git workflow.
