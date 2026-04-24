@@ -86,6 +86,20 @@
     },
     {
       "decision": "route",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+add([[:space:]]|$)",
+      "tool": "create_commit",
+      "reason": "Direct git add is blocked. Use create_commit(issue, items, type, description, paths?) so staging, validation, commit, and push stay issue-linked and auditable.",
+      "policy": "formal-commit"
+    },
+    {
+      "decision": "route",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+(rm|mv|clean)([[:space:]]|$)",
+      "tool": "create_commit",
+      "reason": "Direct git worktree/index mutation is blocked. Use the academic-git commit workflow with explicit paths so file changes stay issue-linked and auditable.",
+      "policy": "formal-commit"
+    },
+    {
+      "decision": "route",
       "match": "(^|[^[:alnum:]_])git[[:space:]]+push([[:space:]]|$)",
       "tool": "create_commit",
       "reason": "Direct git push is blocked. Push is automatic after create_commit(issue, items, type, description, paths?).",

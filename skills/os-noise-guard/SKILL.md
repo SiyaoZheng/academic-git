@@ -1,3 +1,8 @@
+---
+name: os-noise-guard
+description: Prevent macOS and Windows metadata files from polluting academic-git worktrees and blocking session cleanup.
+---
+
 # OS Noise Guard
 
 Prevent macOS and Windows filesystem metadata from making academic-git worktrees
