@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Fu | 研究过程记录与复核</title>
-  <meta name="description" content="Fu 是面向 AI 辅助社会科学研究的本地工作流基础设施，用于保存研究产物及其生成过程。">
+  <title>ScholarOS | AI时代社会科学研究的过程治理与训练基础设施</title>
+  <meta name="description" content="ScholarOS 是面向 AI 时代社会科学研究的过程治理与训练基础设施探索，帮助研究者保存研究过程、任务边界与产物来源。">
   <style>
     :root {
       --page: #f7f6f1;
@@ -149,6 +149,37 @@
       color: var(--accent);
       font-size: 14px;
       font-weight: 700;
+    }
+
+    .artifact-links {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+      width: min(var(--max), calc(100% - 48px));
+      margin: -48px auto 72px;
+    }
+
+    .artifact-link {
+      display: block;
+      min-height: 118px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      background: color-mix(in srgb, var(--paper) 80%, transparent);
+    }
+
+    .artifact-link b {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.35;
+    }
+
+    .artifact-link span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
     }
 
     .portrait {
@@ -366,6 +397,7 @@
       }
 
       .cover,
+      .artifact-links,
       .section-inner {
         width: min(var(--max), calc(100% - 32px));
       }
@@ -380,11 +412,12 @@
         max-width: 360px;
       }
 
-      .card-grid,
-      .why-layout,
-      .how-details {
-        grid-template-columns: 1fr;
-      }
+	      .card-grid,
+	      .artifact-links,
+	      .why-layout,
+	      .how-details {
+	        grid-template-columns: 1fr;
+	      }
 
       .diagram {
         grid-template-columns: 1fr;
@@ -399,14 +432,15 @@
 </head>
 <body>
   <header class="site-nav" aria-label="主导航">
-    <a class="brand" href="#top" aria-label="Fu 首页">
-      <span class="brand-mark">复</span>
-      <span>Fu</span>
+    <a class="brand" href="#top" aria-label="ScholarOS 首页">
+      <span class="brand-mark">S</span>
+      <span>ScholarOS</span>
     </a>
     <nav class="nav-links" aria-label="页面章节">
       <a href="#what">What</a>
       <a href="#why">Why</a>
       <a href="#how">How</a>
+      <a href="#artifacts">Artifacts</a>
       <a href="#remit">Remit</a>
     </nav>
   </header>
@@ -414,9 +448,9 @@
   <main id="top">
     <section class="cover" aria-labelledby="cover-title">
       <div>
-        <p class="eyebrow">AI for Social Science / 项目说明</p>
-        <h1 id="cover-title">Fu</h1>
-        <p class="cover-subtitle">研究过程记录与复核</p>
+        <p class="eyebrow">社会科学研究 / 项目说明</p>
+        <h1 id="cover-title">ScholarOS</h1>
+        <p class="cover-subtitle">AI时代社会科学研究的过程治理与训练基础设施</p>
         <div class="quote-card">
           <strong>严复：《论世变之亟》</strong>
           <p>“学术则黜伪而崇真，于刑政则屈私以为公。”</p>
@@ -425,6 +459,7 @@
           <a href="#what">What</a>
           <a href="#why">Why</a>
           <a href="#how">How</a>
+          <a href="#artifacts">Artifacts</a>
         </div>
       </div>
 
@@ -434,29 +469,52 @@
       </figure>
     </section>
 
+    <section class="artifact-links" id="artifacts" aria-label="核心公开材料">
+      <a class="artifact-link" href="README.md">
+        <b>Public entry</b>
+        <span>从熟悉的研究问题进入 ScholarOS。</span>
+      </a>
+      <a class="artifact-link" href="docs/endorsement/endorsement-packet-zh.md">
+        <b>Endorsement packet</b>
+        <span>给前辈学者和学科建设者的说明材料。</span>
+      </a>
+      <a class="artifact-link" href="docs/workflows/solo-research-git-flow.md">
+        <b>Solo research flow</b>
+        <span>把 solo Git flow 转译成研究过程治理。</span>
+      </a>
+      <a class="artifact-link" href="docs/diagrams/question-session-artifact-paper.md">
+        <b>Core diagram</b>
+        <span>问题、会话、产物与论文之间的过程链。</span>
+      </a>
+      <a class="artifact-link" href="docs/cases/README.md">
+        <b>Case archive</b>
+        <span>用真实 case 说明过程如何失踪或转变。</span>
+      </a>
+    </section>
+
     <section class="section" id="what" aria-labelledby="what-title">
       <div class="section-inner">
         <p class="section-kicker">What</p>
-        <h2 class="section-title" id="what-title">Fu 是什么</h2>
+        <h2 class="section-title" id="what-title">ScholarOS 是什么</h2>
         <p class="lead">
-          Fu 是面向 AI 辅助社会科学研究的一套本地工作流基础设施。它不把重点放在生成更多代码，而是把研究任务、研究产物与过程记录组织在同一条可复核路径上，使代码、数据、图表、文本回应和结论保留来源、版本与修改痕迹。
+          ScholarOS 不是先从“做一个更聪明的 AI 工具”出发，而是先从一个更熟悉的学术问题出发：在 AI 深度介入研究之后，研究过程怎样才不会失踪。它要做的是把研究任务、研究过程与研究产物重新接回同一条可复核路径。
         </p>
 
         <div class="card-grid">
           <article class="text-card">
             <span class="num">01</span>
-            <h3>会话</h3>
-            <p>新的研究问题或分析开始时，先形成一个清楚的会话边界。一个会话只对应一个研究任务。</p>
+            <h3>问题</h3>
+            <p>先从一个真实研究问题出发，而不是先从工具功能出发。ScholarOS 关心的是研究如何保持可解释。</p>
           </article>
           <article class="text-card">
             <span class="num">02</span>
-            <h3>边界</h3>
-            <p>任务可以跨会话延续，但问题、数据、模型设定和写作目标不应在事后被悄悄重组。</p>
+            <h3>过程</h3>
+            <p>AI 让脚本、图表与文字改得更快，也让研究过程更容易失踪。ScholarOS 处理的是这个风险。</p>
           </article>
           <article class="text-card">
             <span class="num">03</span>
             <h3>产物</h3>
-            <p>代码、数据、图表、文本回应和结论都保留来源，使最终文本能够回到生成过程。</p>
+            <p>代码、数据、图表、文本和结论都应当能回到来源。最终文本不该与生成过程脱节。</p>
           </article>
         </div>
       </div>
@@ -466,16 +524,16 @@
       <div class="section-inner why-layout">
         <div>
           <p class="section-kicker">Why</p>
-          <h2 class="section-title" id="why-title">为什么需要 Fu</h2>
+          <h2 class="section-title" id="why-title">为什么需要 ScholarOS</h2>
           <p class="lead">
-            计算能力和 AI 编程能力扩展以后，研究者可以更快生成脚本、修改模型和重写图表；与此同时，代码、数据、版本、结果和写作之间的对应关系也更容易断开。Fu 关注的正是这种断开对研究可信度造成的影响。
+            AI 让社会科学研究进入了一个新的速度条件。脚本、回归、图表和文字都可以更快改写，但问题、过程、版本、产物和最后论证之间的关系，也更容易断开。ScholarOS 关心的正是这种断开对研究可信度、研究训练与方法规范造成的影响。
           </p>
         </div>
 
         <div class="risk-list" aria-label="研究过程风险">
           <article class="risk-item">
             <b>01</b>
-            <p><strong>复现性：</strong>同一结果能否回到当时的环境、依赖、路径和中间文件。</p>
+            <p><strong>过程可见性：</strong>研究者是否还能解释自己在做什么，为什么这样做，以及哪些判断属于事前设定。</p>
           </article>
           <article class="risk-item">
             <b>02</b>
@@ -483,7 +541,7 @@
           </article>
           <article class="risk-item">
             <b>03</b>
-            <p><strong>假设边界：</strong>分析前设想与分析后修正是否被区分，而不是在定稿中被抹平。</p>
+            <p><strong>研究训练：</strong>学生、合作者和未来的自己，是否还能从结果回到过程，而不是只看到最后的定稿。</p>
           </article>
         </div>
       </div>
@@ -492,61 +550,61 @@
     <section class="section how" id="how" aria-labelledby="how-title">
       <div class="section-inner">
         <p class="section-kicker">How</p>
-        <h2 class="section-title" id="how-title">我们怎么做：把产物接回过程记录</h2>
+        <h2 class="section-title" id="how-title">第二层才谈机制：把产物接回过程记录</h2>
         <p class="lead">
-          How 的重点不是研究者怎样操作，而是 Fu 如何在工作流层面承担记录、约束与复核。研究者继续推进自己的分析；Fu 负责保留任务边界、连接研究产物，并为合作者、审稿人或未来的自己提供回到生成过程的入口。
+          第一层先说明学术问题，第二层才说明承接机制。ScholarOS 是 `Scholar Operating System` 的缩写，但它首先对外呈现为一种研究过程治理与训练基础设施。技术机制服务于这个目标，而不是反过来让读者先适应技术词汇。
         </p>
 
-        <div class="diagram" aria-label="Fu 工作流机制图">
+        <div class="diagram" aria-label="ScholarOS 工作流机制图">
           <article class="diagram-node">
-            <h3>会话</h3>
-            <p>限定任务</p>
+            <h3>问题</h3>
+            <p>提出研究问题</p>
           </article>
           <span class="arrow" aria-hidden="true">→</span>
           <article class="diagram-node">
-            <h3>规则</h3>
-            <p>检查留痕</p>
+            <h3>会话</h3>
+            <p>限定任务边界</p>
           </article>
           <span class="arrow" aria-hidden="true">→</span>
           <article class="diagram-node">
             <h3>产物</h3>
-            <p>连接来源</p>
+            <p>连接来源与修改</p>
           </article>
           <span class="arrow" aria-hidden="true">→</span>
           <article class="diagram-node">
-            <h3>复核</h3>
-            <p>回到过程</p>
+            <h3>论文</h3>
+            <p>从结果回到过程</p>
           </article>
         </div>
 
         <div class="how-details">
           <article class="detail">
-            <h3>本地服务</h3>
-            <p>提供版本、议题与工作树等基础能力，使研究过程能够被组织为可定位的对象。</p>
+            <h3>ScholarOS</h3>
+            <p>先从一个真实研究者如何组织 AI 时代研究工作出发，再把这套过程逐步开放为公共对象。</p>
           </article>
           <article class="detail">
-            <h3>规则钩子</h3>
-            <p>在关键节点检查任务边界、提交关系和产物来源，避免过程记录被事后补写或绕过。</p>
+            <h3>过程治理</h3>
+            <p>在关键节点保护任务边界、修改关系和产物来源，避免研究过程只剩下事后补写的结果说明。</p>
           </article>
           <article class="detail">
-            <h3>操作技能</h3>
-            <p>保存如何开展研究任务的判断指南，把创造性判断和机械检查区分开来。</p>
+            <h3>训练功能</h3>
+            <p>让学生、合作者和未来的自己能够从最终结果回到中间判断，而不只看到技术残骸。</p>
           </article>
           <article class="detail">
-            <h3>工具脚本</h3>
-            <p>负责启动、本地检查和工作流衔接，使日常研究活动能够进入同一条记录链。</p>
+            <h3>技术承接</h3>
+            <p>只有到了这里，才需要 GitHub、hooks、skills 和脚本来承担那条记录链的具体机制。</p>
           </article>
         </div>
       </div>
     </section>
 
     <section class="remit" id="remit" aria-label="研究者负担边界">
-      研究者只需照常提出问题、清洗数据、建模、制图与写作；Fu 在后台整理任务边界、产物来源与过程记录。
+      研究者继续照常提出问题、清洗数据、建模、制图与写作；ScholarOS 的目标，是让这些工作在 AI 时代仍然保有可见的过程、清楚的边界与可回看的来源。
     </section>
   </main>
 
   <footer class="footer">
-    Fu / research process records for AI-assisted social science
+    ScholarOS / research process records for AI-assisted social science
   </footer>
 </body>
 </html>

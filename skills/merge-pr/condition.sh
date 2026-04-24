@@ -1,6 +1,6 @@
 #!/bin/bash
 # condition.sh for merge-pr skill
-# Run only before the Fu merge_pr workflow.
+# Run only before the ScholarOS merge_pr workflow.
 set -euo pipefail
 
 INPUT="$(cat 2>/dev/null || true)"

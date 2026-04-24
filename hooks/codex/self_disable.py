@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Helpers for disabling Fu inside its own source repository and worktrees."""
+"""Helpers for disabling ScholarOS inside its own source repository and worktrees."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ def repo_root(candidate: str | Path | None) -> Path | None:
     return Path(root) if root else None
 
 
-def is_fu_source_repo(candidate: str | Path | None) -> bool:
+def is_scholaros_source_repo(candidate: str | Path | None) -> bool:
     root = repo_root(candidate)
     if root is None:
         return False
@@ -46,4 +46,4 @@ def is_fu_source_repo(candidate: str | Path | None) -> bool:
     except (OSError, json.JSONDecodeError):
         return False
 
-    return data.get("name") == "fu"
+    return data.get("name") == "scholaros"

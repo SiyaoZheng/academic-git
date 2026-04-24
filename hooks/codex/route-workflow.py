@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Route Fu workflow events into canonical handle-* actions."""
+"""Route ScholarOS workflow events into canonical handle-* actions."""
 
 from __future__ import annotations
 
@@ -14,12 +14,12 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from self_disable import is_fu_source_repo
+from self_disable import is_scholaros_source_repo
 
 
 ISSUE_BRANCH_RE = re.compile(r"^codex/issue-(\d+)")
 PROTECTED_BRANCHES = {"", "main", "master", "develop", "trunk"}
-CONFIG_FILENAMES = (".fu_git.json", ".fu-git.json", ".fu.json", ".academic-git.json")
+CONFIG_FILENAMES = (".scholaros_git.json", ".scholaros-git.json", ".scholaros.json")
 
 
 def run_cmd(args: list[str], cwd: str, check: bool = True) -> str:
@@ -259,18 +259,18 @@ def route_text(payload: dict[str, Any]) -> str:
     instructions = {
         "handle-issue": (
             "Use handle-issue now. If this branch already belongs to an issue, prefer "
-            f"`fu_git resume_issue {context['issue']}` on branch `{context['branch']}`. "
-            "Only use `fu_git start_issue ...` when Adrian is explicitly beginning new issue work."
+            f"`scholaros_git resume_issue {context['issue']}` on branch `{context['branch']}`. "
+            "Only use `scholaros_git start_issue ...` when Adrian is explicitly beginning new issue work."
         ),
         "handle-commit": (
             "Use handle-commit now. Read the issue, group the diff by checklist meaning, then call "
-            f"`fu_git create_commit {context['issue']} --type <type> --description \"...\" "
+            f"`scholaros_git create_commit {context['issue']} --type <type> --description \"...\" "
             f"--idempotency-key {context['idempotency_key']} [...]`."
         ),
         "handle-pr": (
             "Use handle-pr now. Call "
-            f"`fu_git prepare_pr {context['issue']}` first, review the body, then call "
-            f"`fu_git open_pr {context['issue']} --title \"...\" --body-file <path> "
+            f"`scholaros_git prepare_pr {context['issue']}` first, review the body, then call "
+            f"`scholaros_git open_pr {context['issue']} --title \"...\" --body-file <path> "
             f"--idempotency-key {context['idempotency_key']}`."
         ),
     }[action]
@@ -311,7 +311,7 @@ def emit_route(event: str, payload: dict[str, Any]) -> int:
     print(
         json.dumps(
             {
-                "systemMessage": f"[Fu] route({payload['action']})",
+                "systemMessage": f"[ScholarOS] route({payload['action']})",
                 "hookSpecificOutput": {
                     "hookEventName": event,
                     "additionalContext": text,
@@ -414,7 +414,7 @@ def main() -> int:
     except RuntimeError:
         pass
 
-    if is_fu_source_repo(repo_dir):
+    if is_scholaros_source_repo(repo_dir):
         return 0
 
     if not repo_dir or not Path(repo_dir).exists():
@@ -429,11 +429,11 @@ def main() -> int:
 
     if args.event == "SessionStart":
         summary = (
-            f"fu status: branch={state['branch'] or 'unknown'}, "
+            f"ScholarOS status: branch={state['branch'] or 'unknown'}, "
             f"dirty_files={state['dirty_count']}, ahead_of_{state['main_branch']}={state['ahead_commits']}, "
             f"locked_issue={state['locked_issue'] or '(none)'}, locked_branch={state['locked_branch'] or '(none)'}."
         )
-        return emit_allow(args.event, system_message="[Fu] session recovery scan complete", additional_context=summary)
+        return emit_allow(args.event, system_message="[ScholarOS] session recovery scan complete", additional_context=summary)
 
     return 0
 

@@ -3,11 +3,12 @@
 # Run: when Write/Edit/Bash modifies project files AND no locked_issue exists
 set -euo pipefail
 
-PROJECT_DIR="${FU_PROJECT_DIR:-${ACADEMIC_GIT_PROJECT_DIR:-${CODEX_WORKSPACE_ROOT:-${CODEX_PROJECT_DIR:-.}}}}"
+PROJECT_DIR="${SCHOLAROS_GIT_PROJECT_DIR:-${SCHOLAROS_PROJECT_DIR:-${CODEX_WORKSPACE_ROOT:-${CODEX_PROJECT_DIR:-.}}}}"
 cd "$PROJECT_DIR" 2>/dev/null || exit 1
 
-CONFIG_PATH=".fu.json"
-[ -f "$CONFIG_PATH" ] || CONFIG_PATH=".academic-git.json"
+CONFIG_PATH=".scholaros_git.json"
+[ -f "$CONFIG_PATH" ] || CONFIG_PATH=".scholaros-git.json"
+[ -f "$CONFIG_PATH" ] || CONFIG_PATH=".scholaros.json"
 
 # Not in a git repo → skip (degraded mode, no enforcement)
 git rev-parse --git-dir &>/dev/null || exit 1
@@ -64,12 +65,12 @@ REL_PATH="${FILE_PATH#"$PROJECT_DIR/"}"
 REL_PATH="${REL_PATH#"$PWD/"}"
 
 case "$REL_PATH" in
-  .codex/*|.fu.json|.academic-git.json|AGENTS.md|.gitignore|README.md|.DS_Store)
+  .codex/*|.scholaros_git.json|.scholaros-git.json|.scholaros.json|AGENTS.md|.gitignore|README.md|.DS_Store)
     exit 1  # Config file → skip guard
     ;;
 esac
 
-# Check if locked_issue exists in .fu.json
+# Check if locked_issue exists in .scholaros.json
 if [ -f "$CONFIG_PATH" ]; then
   LOCKED_ISSUE=$(jq -r '.locked_issue // empty' "$CONFIG_PATH" 2>/dev/null || echo "")
   if [ -n "$LOCKED_ISSUE" ]; then

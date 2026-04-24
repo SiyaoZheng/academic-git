@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from self_disable import is_fu_source_repo
+from self_disable import is_scholaros_source_repo
 
 
 HELP_RE = re.compile(r"(^|\s)(--help|-h)(\s|$)")
@@ -198,7 +198,7 @@ def main() -> int:
     except json.JSONDecodeError:
         return emit_continue()
 
-    if is_fu_source_repo(payload.get("cwd")):
+    if is_scholaros_source_repo(payload.get("cwd")):
         return emit_continue()
 
     if payload.get("stop_hook_active"):
@@ -256,7 +256,7 @@ def main() -> int:
     if used_develop_checkout:
         branch = current_branch(payload.get("cwd"))
         return block(
-            "`gh issue develop --checkout` was used, but fu must not switch "
+            "`gh issue develop --checkout` was used, but ScholarOS must not switch "
             f"the existing workspace with checkout. Current branch: {branch or 'unknown'}. "
             "Continue by opening issue work in a dedicated git worktree instead."
         )

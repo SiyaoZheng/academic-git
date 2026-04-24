@@ -3,7 +3,7 @@
 # Non-blocking summary for issue routing and recovery context
 set -euo pipefail
 
-PROJECT_DIR="${FU_PROJECT_DIR:-${ACADEMIC_GIT_PROJECT_DIR:-${CODEX_WORKSPACE_ROOT:-${CODEX_PROJECT_DIR:-}}}}"
+PROJECT_DIR="${SCHOLAROS_GIT_PROJECT_DIR:-${SCHOLAROS_PROJECT_DIR:-${CODEX_WORKSPACE_ROOT:-${CODEX_PROJECT_DIR:-}}}}"
 [ -z "$PROJECT_DIR" ] && exit 0
 cd "$PROJECT_DIR" 2>/dev/null || exit 0
 git rev-parse --git-dir &>/dev/null || exit 0
@@ -22,8 +22,9 @@ echo "Branch: ${BRANCH:-unknown} | Dirty files: ${DIRTY:-0} | Commits ahead: ${A
 # --- Enforcement: check locked_issue ---
 LOCKED_ISSUE=""
 LOCKED_BRANCH=""
-CONFIG_PATH=".fu.json"
-[ -f "$CONFIG_PATH" ] || CONFIG_PATH=".academic-git.json"
+CONFIG_PATH=".scholaros_git.json"
+[ -f "$CONFIG_PATH" ] || CONFIG_PATH=".scholaros-git.json"
+[ -f "$CONFIG_PATH" ] || CONFIG_PATH=".scholaros.json"
 if [ -f "$CONFIG_PATH" ]; then
   LOCKED_ISSUE=$(jq -r '.locked_issue // empty' "$CONFIG_PATH" 2>/dev/null || echo "")
   LOCKED_BRANCH=$(jq -r '.locked_branch // empty' "$CONFIG_PATH" 2>/dev/null || echo "")
@@ -31,7 +32,7 @@ fi
 
 if [ -z "$LOCKED_ISSUE" ]; then
   echo ""
-  echo "[Fu] No issue locked. Route through handle-issue and use resume_issue or start_issue before writing code."
+  echo "[ScholarOS] No issue locked. Route through handle-issue and use resume_issue or start_issue before writing code."
 fi
 
 # --- Enforcement: auto-switch to locked branch ---
@@ -39,10 +40,10 @@ if [ -n "$LOCKED_BRANCH" ] && [ "$BRANCH" != "$LOCKED_BRANCH" ]; then
   if git rev-parse --verify "$LOCKED_BRANCH" &>/dev/null; then
     git switch "$LOCKED_BRANCH" 2>/dev/null || true
     echo ""
-    echo "[Fu] Switched back to locked branch '${LOCKED_BRANCH}'."
+    echo "[ScholarOS] Switched back to locked branch '${LOCKED_BRANCH}'."
   else
     echo ""
-    echo "[Fu] Locked branch '${LOCKED_BRANCH}' does not exist locally. Route through handle-issue to resolve."
+    echo "[ScholarOS] Locked branch '${LOCKED_BRANCH}' does not exist locally. Route through handle-issue to resolve."
   fi
 fi
 

@@ -1,17 +1,17 @@
 ---
 name: guard-write-route
-description: Internal hook policy that blocks direct git/gh mutations and keeps all fu state changes routed through canonical workflow tools.
+description: Internal hook policy that blocks direct git/gh mutations and keeps all ScholarOS state changes routed through canonical workflow tools.
 ---
 
 # Guard Write Route
 
 ## Source Repo Self-Disable
 
-If the current repo top-level contains Fu's own `.codex-plugin/plugin.json`, `hooks/codex/hooks.json`, and `skills/handle-issue/SKILL.md`, then you are developing Fu itself. This skill is disabled there, including linked worktrees of the same repo. Work on the repository in plain code mode instead.
+If the current repo top-level contains ScholarOS's own `.codex-plugin/plugin.json`, `hooks/codex/hooks.json`, and `skills/handle-issue/SKILL.md`, then you are developing ScholarOS itself. This skill is disabled there, including linked worktrees of the same repo. Work on the repository in plain code mode instead.
 
-Blocked direct mutations must be rerouted to canonical Fu workflow tools:
+Blocked direct mutations must be rerouted to canonical ScholarOS workflow tools:
 
-| Blocked CLI | Canonical Fu Path |
+| Blocked CLI | Canonical ScholarOS Path |
 |-------------|--------------------|
 | `git commit` | `create_commit(...)` |
 | `gh pr create` | `open_pr(...)` |

@@ -21,10 +21,10 @@ PR_NUMBER="$(printf '%s' "$INPUT" | jq -r '
 MERGE_OUTPUT="$(printf '%s' "$INPUT" | jq -r '[.. | objects | select(.type? == "text") | .text?] | join("\n")' 2>/dev/null || echo "")"
 
 if [ -z "$PROJECT_DIR" ]; then
-  PROJECT_DIR="${FU_PROJECT_DIR:-${ACADEMIC_GIT_PROJECT_DIR:-${CODEX_WORKSPACE_ROOT:-${CODEX_PROJECT_DIR:-.}}}}"
+  PROJECT_DIR="${SCHOLAROS_GIT_PROJECT_DIR:-${SCHOLAROS_PROJECT_DIR:-${CODEX_WORKSPACE_ROOT:-${CODEX_PROJECT_DIR:-.}}}}"
 fi
 
-OUTPUT="[Fu] Post-merge follow-up"
+OUTPUT="[ScholarOS] Post-merge follow-up"
 if [ -n "$PR_NUMBER" ]; then
   OUTPUT="${OUTPUT} for merge_pr #${PR_NUMBER}"
 fi
@@ -36,7 +36,7 @@ append_output() {
 emit_output() {
   jq -n \
     --arg supplementary_output "$OUTPUT" \
-    --arg system_message "[Fu] Post-merge follow-up ready" \
+    --arg system_message "[ScholarOS] Post-merge follow-up ready" \
     --arg additional_context "$OUTPUT" \
     '{
       supplementary_output: $supplementary_output,
@@ -75,12 +75,15 @@ fi
 
 if printf '%s\n%s' "$MERGE_OUTPUT" "$PR_TEXT" | grep -qiE 'email|meeting|conference|submit|send|deadline'; then
   TAG_DATE="$(date +%Y-%m-%d)"
-  append_output "[Fu] Milestone keywords detected. Consider: create_tag(name='email-${TAG_DATE}', message='...')"
+  append_output "[ScholarOS] Milestone keywords detected. Consider: create_tag(name='email-${TAG_DATE}', message='...')"
 fi
 
-CONFIG_PATH=".fu.json"
-if [ ! -f "$CONFIG_PATH" ] && [ -f ".academic-git.json" ]; then
-  CONFIG_PATH=".academic-git.json"
+CONFIG_PATH=".scholaros_git.json"
+if [ ! -f "$CONFIG_PATH" ] && [ -f ".scholaros-git.json" ]; then
+  CONFIG_PATH=".scholaros-git.json"
+fi
+if [ ! -f "$CONFIG_PATH" ] && [ -f ".scholaros.json" ]; then
+  CONFIG_PATH=".scholaros.json"
 fi
 
 if [ "$CLEANUP_COMPLETED" = true ] && [ -f "$CONFIG_PATH" ]; then
@@ -102,9 +105,9 @@ for key in ("locked_branch", "locked_issue", "auto_workflow"):
 if changed:
     path.write_text(json.dumps(data, indent=2) + "\n")
 PY
-  append_output "[Fu] Branch lock cleared."
+  append_output "[ScholarOS] Branch lock cleared."
 elif [ -f "$CONFIG_PATH" ]; then
-  append_output "[Fu] Branch lock retained because merge_pr cleanup was not confirmed complete."
+  append_output "[ScholarOS] Branch lock retained because merge_pr cleanup was not confirmed complete."
 fi
 
 emit_output

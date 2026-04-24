@@ -30,9 +30,9 @@ if [ -z "$REPO_DIR" ]; then
   REPO_DIR="$PWD"
 fi
 
-# Fu must not govern its own source repo or linked worktrees.
+# ScholarOS must not govern its own source repo or linked worktrees.
 source "$HOOKS_DIR/self-disable.sh"
-if fu_is_source_repo "$REPO_DIR"; then
+if scholaros_is_source_repo "$REPO_DIR"; then
   exit 0
 fi
 

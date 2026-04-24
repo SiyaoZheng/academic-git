@@ -315,7 +315,7 @@ def write_markdown_source(markdown_path: Path, office_path: Path, text: list[str
             [
                 f"# {office_path.name}",
                 "",
-                "<!-- fu: edit document text here, then sync it back to the Office file. -->",
+                "<!-- scholaros: edit document text here, then sync it back to the Office file. -->",
             ]
         )
         + body,
@@ -488,7 +488,7 @@ def has_office_write_intent(command: str) -> bool:
 
 def format_violation_message(violations: list[Violation]) -> str:
     lines = [
-        "[Fu] Office text edits must go through Markdown sources.",
+        "[ScholarOS] Office text edits must go through Markdown sources.",
         "",
     ]
     for violation in violations:

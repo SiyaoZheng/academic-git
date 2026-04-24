@@ -1,14 +1,14 @@
 ---
 name: merge-pr
-description: Complete a Pull Request through the Fu merge_pr workflow with worktree-safe cleanup semantics.
-allowed-tools: ["fu"]
+description: Complete a Pull Request through the ScholarOS merge_pr workflow with worktree-safe cleanup semantics.
+allowed-tools: ["scholaros"]
 ---
 
 # Merge PR — Worktree-Safe Completion
 
 ## Source Repo Self-Disable
 
-If the current repo top-level contains Fu's own `.codex-plugin/plugin.json`, `hooks/codex/hooks.json`, and `skills/handle-issue/SKILL.md`, then you are developing Fu itself. This skill is disabled there, including linked worktrees of the same repo. Work on the repository in plain code mode instead.
+If the current repo top-level contains ScholarOS's own `.codex-plugin/plugin.json`, `hooks/codex/hooks.json`, and `skills/handle-issue/SKILL.md`, then you are developing ScholarOS itself. This skill is disabled there, including linked worktrees of the same repo. Work on the repository in plain code mode instead.
 
 Use this skill whenever a PR is ready to merge. It is the main workflow skill for `merge_pr`; `finalize-pr-merge` is only the after-action follow-up.
 

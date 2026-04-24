@@ -16,22 +16,22 @@ SPEC.loader.exec_module(ROUTE_WORKFLOW)
 
 
 class RouteWorkflowTests(unittest.TestCase):
-    def test_resolve_config_path_prefers_fu_git_json(self) -> None:
+    def test_resolve_config_path_prefers_scholaros_git_json(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
-            (tmp_path / ".academic-git.json").write_text("{}\n", encoding="utf-8")
-            (tmp_path / ".fu_git.json").write_text("{}\n", encoding="utf-8")
+            (tmp_path / ".scholaros.json").write_text("{}\n", encoding="utf-8")
+            (tmp_path / ".scholaros_git.json").write_text("{}\n", encoding="utf-8")
             resolved = ROUTE_WORKFLOW.resolve_config_path(str(tmp_path))
-            self.assertEqual(resolved, tmp_path / ".fu_git.json")
+            self.assertEqual(resolved, tmp_path / ".scholaros_git.json")
 
-    def test_resolve_config_path_falls_back_to_legacy(self) -> None:
+    def test_resolve_config_path_falls_back_to_scholaros_json(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
-            (tmp_path / ".academic-git.json").write_text("{}\n", encoding="utf-8")
+            (tmp_path / ".scholaros.json").write_text("{}\n", encoding="utf-8")
             resolved = ROUTE_WORKFLOW.resolve_config_path(str(tmp_path))
-            self.assertEqual(resolved, tmp_path / ".academic-git.json")
+            self.assertEqual(resolved, tmp_path / ".scholaros.json")
 
-    def test_route_text_uses_fu_git_commands(self) -> None:
+    def test_route_text_uses_scholaros_git_commands(self) -> None:
         payload = {
             "action": "handle-pr",
             "diagnostics": ["clean pushed issue branch is PR-ready"],
@@ -42,8 +42,8 @@ class RouteWorkflowTests(unittest.TestCase):
             },
         }
         text = ROUTE_WORKFLOW.route_text(payload)
-        self.assertIn("fu_git prepare_pr 52", text)
-        self.assertIn("fu_git open_pr 52", text)
+        self.assertIn("scholaros_git prepare_pr 52", text)
+        self.assertIn("scholaros_git open_pr 52", text)
 
 
 if __name__ == "__main__":

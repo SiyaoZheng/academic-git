@@ -4,8 +4,8 @@ This supplements the root `AGENTS.md` with a repo-local ECC baseline.
 
 ## Repo Skill
 
-- Repo-generated Codex skill: `.agents/skills/fu/SKILL.md`
-- Claude-facing companion skill: `.claude/skills/fu/SKILL.md`
+- Repo-generated Codex skill: `.agents/skills/scholaros/SKILL.md`
+- Claude-facing companion skill: `.claude/skills/scholaros/SKILL.md`
 - Keep user-specific credentials and personal tool config in `~/.codex/config.toml`, not in this repo.
 
 ## Repo Baseline

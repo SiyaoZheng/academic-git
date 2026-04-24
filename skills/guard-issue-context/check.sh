@@ -4,12 +4,13 @@
 # Uses hookSpecificOutput.permissionDecision for blocking hook responses
 set -euo pipefail
 
-PROJECT_DIR="${FU_PROJECT_DIR:-${ACADEMIC_GIT_PROJECT_DIR:-${CODEX_WORKSPACE_ROOT:-${CODEX_PROJECT_DIR:-.}}}}"
+PROJECT_DIR="${SCHOLAROS_GIT_PROJECT_DIR:-${SCHOLAROS_PROJECT_DIR:-${CODEX_WORKSPACE_ROOT:-${CODEX_PROJECT_DIR:-.}}}}"
 cd "$PROJECT_DIR" 2>/dev/null || exit 0
 
 CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
-CONFIG_PATH=".fu.json"
-[ -f "$CONFIG_PATH" ] || CONFIG_PATH=".academic-git.json"
+CONFIG_PATH=".scholaros_git.json"
+[ -f "$CONFIG_PATH" ] || CONFIG_PATH=".scholaros-git.json"
+[ -f "$CONFIG_PATH" ] || CONFIG_PATH=".scholaros.json"
 LOCKED_BRANCH=$(jq -r '.locked_branch // empty' "$CONFIG_PATH" 2>/dev/null || echo "")
 
 if [ -n "$LOCKED_BRANCH" ] && [ "$CURRENT_BRANCH" != "$LOCKED_BRANCH" ]; then

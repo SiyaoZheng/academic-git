@@ -1,14 +1,14 @@
 ---
 name: lint
-description: Run the Fu local data-science lint pass. Use when Adrian asks for local lint, Python lint, R lint, ruff, lintr, or a quick static check before pushing.
-allowed-tools: ["fu"]
+description: Run the ScholarOS local data-science lint pass. Use when Adrian asks for local lint, Python lint, R lint, ruff, lintr, or a quick static check before pushing.
+allowed-tools: ["scholaros"]
 ---
 
 # Lint — Local Python/R Static Checks
 
 ## Source Repo Self-Disable
 
-If the current repo top-level contains Fu's own `.codex-plugin/plugin.json`, `hooks/codex/hooks.json`, and `skills/handle-issue/SKILL.md`, then you are developing Fu itself. This skill is disabled there, including linked worktrees of the same repo. Work on the repository in plain code mode instead.
+If the current repo top-level contains ScholarOS's own `.codex-plugin/plugin.json`, `hooks/codex/hooks.json`, and `skills/handle-issue/SKILL.md`, then you are developing ScholarOS itself. This skill is disabled there, including linked worktrees of the same repo. Work on the repository in plain code mode instead.
 
 This skill runs only the two configured local lint commands:
 
@@ -19,7 +19,7 @@ Do not add Quarto lint, research-policy lint, data-pipeline lint, or Git safety 
 
 ## Configuration
 
-Commands live in the project `.fu.json` file:
+Commands live in the project `.scholaros.json` file:
 
 ```json
 {
@@ -34,7 +34,7 @@ Projects may choose stricter commands or leave either command blank. The plugin 
 
 ## Workflow
 
-1. Run the `fu` `lint` tool with `target: "all"`.
+1. Run the `scholaros` `lint` tool with `target: "all"`.
 2. If only one language is requested, run `lint` with `target: "python"` or `target: "r"`.
 3. Treat non-zero lint results as failures to fix before pushing, but do not confuse lint with the remote CI render gate.
 

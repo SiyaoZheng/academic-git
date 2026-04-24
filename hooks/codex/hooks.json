@@ -1,5 +1,5 @@
 {
-  "description": "Fu Codex hooks for issue-driven research workflows.",
+  "description": "ScholarOS Codex hooks for issue-driven research workflows.",
   "hooks": {
     "SessionStart": [
       {
@@ -7,12 +7,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${FU_PLUGIN_ROOT:-${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}}/hooks/codex/session-start.sh\"",
+            "command": "bash \"${SCHOLAROS_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/session-start.sh\"",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "bash \"${FU_PLUGIN_ROOT:-${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}}/hooks/hook-runner.sh\" \"${FU_PLUGIN_ROOT:-${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}}/skills/os-noise-guard\"",
+            "command": "bash \"${SCHOLAROS_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/hook-runner.sh\" \"${SCHOLAROS_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/skills/os-noise-guard\"",
             "timeout": 20,
             "statusMessage": "Cleaning OS metadata noise"
           }
@@ -25,9 +25,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${FU_PLUGIN_ROOT:-${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}}/hooks/codex/user-prompt-submit.sh\"",
+            "command": "bash \"${SCHOLAROS_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/user-prompt-submit.sh\"",
             "timeout": 20,
-            "statusMessage": "Routing fu issue workflow"
+            "statusMessage": "Routing ScholarOS issue workflow"
           }
         ]
       }
@@ -38,18 +38,18 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${FU_PLUGIN_ROOT:-${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}}/hooks/codex/guard-issue-start-route.py\"",
+            "command": "python3 \"${SCHOLAROS_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/guard-issue-start-route.py\"",
             "timeout": 10,
             "statusMessage": "Checking guard-issue-start-route"
           },
           {
             "type": "command",
-            "command": "bash \"${FU_PLUGIN_ROOT:-${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}}/hooks/codex/pretool-bash.sh\"",
+            "command": "bash \"${SCHOLAROS_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/pretool-bash.sh\"",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "bash \"${FU_PLUGIN_ROOT:-${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}}/hooks/hook-runner.sh\" \"${FU_PLUGIN_ROOT:-${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}}/skills/guard-write-office-source\" --block",
+            "command": "bash \"${SCHOLAROS_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/hook-runner.sh\" \"${SCHOLAROS_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/skills/guard-write-office-source\" --block",
             "timeout": 10,
             "statusMessage": "Checking guard-write-office-source"
           }
@@ -60,9 +60,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${FU_PLUGIN_ROOT:-${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}}/hooks/hook-runner.sh\" \"${FU_PLUGIN_ROOT:-${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}}/skills/merge-pr\" --block",
+            "command": "bash \"${SCHOLAROS_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/hook-runner.sh\" \"${SCHOLAROS_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/skills/merge-pr\" --block",
             "timeout": 10,
-            "statusMessage": "Checking fu merge-pr preflight"
+            "statusMessage": "Checking ScholarOS merge-pr preflight"
           }
         ]
       }
@@ -73,7 +73,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${FU_PLUGIN_ROOT:-${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}}/hooks/codex/finalize-commit.sh\"",
+            "command": "bash \"${SCHOLAROS_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/finalize-commit.sh\"",
             "timeout": 10,
             "statusMessage": "Running finalize-commit"
           }
@@ -84,7 +84,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${FU_PLUGIN_ROOT:-${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}}/hooks/hook-runner.sh\" \"${FU_PLUGIN_ROOT:-${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}}/skills/finalize-pr-merge\"",
+            "command": "bash \"${SCHOLAROS_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/hook-runner.sh\" \"${SCHOLAROS_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/skills/finalize-pr-merge\"",
             "timeout": 10,
             "statusMessage": "Running finalize-pr-merge"
           }
@@ -97,19 +97,19 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${FU_PLUGIN_ROOT:-${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}}/hooks/codex/audit-issue-start-route.py\"",
+            "command": "python3 \"${SCHOLAROS_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/audit-issue-start-route.py\"",
             "timeout": 30,
             "statusMessage": "Auditing issue-start repair path"
           },
           {
             "type": "command",
-            "command": "FU_OS_NOISE_STRICT=true bash \"${FU_PLUGIN_ROOT:-${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}}/hooks/hook-runner.sh\" \"${FU_PLUGIN_ROOT:-${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}}/skills/os-noise-guard\" --block",
+            "command": "SCHOLAROS_OS_NOISE_STRICT=true bash \"${SCHOLAROS_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/hook-runner.sh\" \"${SCHOLAROS_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/skills/os-noise-guard\" --block",
             "timeout": 20,
             "statusMessage": "Cleaning OS metadata noise"
           },
           {
             "type": "command",
-            "command": "bash \"${FU_PLUGIN_ROOT:-${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}}/hooks/codex/stop.sh\"",
+            "command": "bash \"${SCHOLAROS_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}/hooks/codex/stop.sh\"",
             "timeout": 30
           }
         ]

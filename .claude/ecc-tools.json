@@ -3,7 +3,7 @@
   "schemaVersion": "1.0",
   "generatedBy": "ecc-tools",
   "generatedAt": "2026-04-23T03:38:17.715Z",
-  "repo": "https://github.com/SiyaoZheng/academic-git",
+  "repo": "https://github.com/SiyaoZheng/ScholarOS",
   "profiles": {
     "requested": "core",
     "recommended": "core",
@@ -64,59 +64,59 @@
     "runtime-core"
   ],
   "managedFiles": [
-    ".claude/skills/fu/SKILL.md",
-    ".agents/skills/fu/SKILL.md",
-    ".agents/skills/fu/agents/openai.yaml",
+    ".claude/skills/scholaros/SKILL.md",
+    ".agents/skills/scholaros/SKILL.md",
+    ".agents/skills/scholaros/agents/openai.yaml",
     ".claude/identity.json",
     ".codex/config.toml",
     ".codex/AGENTS.md",
     ".codex/agents/explorer.toml",
     ".codex/agents/reviewer.toml",
     ".codex/agents/docs-researcher.toml",
-    ".claude/homunculus/instincts/inherited/fu-instincts.yaml"
+    ".claude/homunculus/instincts/inherited/scholaros-instincts.yaml"
   ],
   "packageFiles": {
     "runtime-core": [
-      ".claude/skills/fu/SKILL.md",
-      ".agents/skills/fu/SKILL.md",
-      ".agents/skills/fu/agents/openai.yaml",
+      ".claude/skills/scholaros/SKILL.md",
+      ".agents/skills/scholaros/SKILL.md",
+      ".agents/skills/scholaros/agents/openai.yaml",
       ".claude/identity.json",
       ".codex/config.toml",
       ".codex/AGENTS.md",
       ".codex/agents/explorer.toml",
       ".codex/agents/reviewer.toml",
       ".codex/agents/docs-researcher.toml",
-      ".claude/homunculus/instincts/inherited/fu-instincts.yaml"
+      ".claude/homunculus/instincts/inherited/scholaros-instincts.yaml"
     ]
   },
   "moduleFiles": {
     "runtime-core": [
-      ".claude/skills/fu/SKILL.md",
-      ".agents/skills/fu/SKILL.md",
-      ".agents/skills/fu/agents/openai.yaml",
+      ".claude/skills/scholaros/SKILL.md",
+      ".agents/skills/scholaros/SKILL.md",
+      ".agents/skills/scholaros/agents/openai.yaml",
       ".claude/identity.json",
       ".codex/config.toml",
       ".codex/AGENTS.md",
       ".codex/agents/explorer.toml",
       ".codex/agents/reviewer.toml",
       ".codex/agents/docs-researcher.toml",
-      ".claude/homunculus/instincts/inherited/fu-instincts.yaml"
+      ".claude/homunculus/instincts/inherited/scholaros-instincts.yaml"
     ]
   },
   "files": [
     {
       "moduleId": "runtime-core",
-      "path": ".claude/skills/fu/SKILL.md",
+      "path": ".claude/skills/scholaros/SKILL.md",
       "description": "Repository-specific Claude Code skill generated from git history."
     },
     {
       "moduleId": "runtime-core",
-      "path": ".agents/skills/fu/SKILL.md",
+      "path": ".agents/skills/scholaros/SKILL.md",
       "description": "Codex-facing copy of the generated repository skill."
     },
     {
       "moduleId": "runtime-core",
-      "path": ".agents/skills/fu/agents/openai.yaml",
+      "path": ".agents/skills/scholaros/agents/openai.yaml",
       "description": "Codex skill metadata so the repo skill appears cleanly in the skill interface."
     },
     {
@@ -151,21 +151,21 @@
     },
     {
       "moduleId": "runtime-core",
-      "path": ".claude/homunculus/instincts/inherited/fu-instincts.yaml",
+      "path": ".claude/homunculus/instincts/inherited/scholaros-instincts.yaml",
       "description": "Continuous-learning instincts derived from repository patterns."
     }
   ],
   "workflows": [],
   "adapters": {
     "claudeCode": {
-      "skillPath": ".claude/skills/fu/SKILL.md",
+      "skillPath": ".claude/skills/scholaros/SKILL.md",
       "identityPath": ".claude/identity.json",
       "commandPaths": []
     },
     "codex": {
       "configPath": ".codex/config.toml",
       "agentsGuidePath": ".codex/AGENTS.md",
-      "skillPath": ".agents/skills/fu/SKILL.md"
+      "skillPath": ".agents/skills/scholaros/SKILL.md"
     }
   }
 }

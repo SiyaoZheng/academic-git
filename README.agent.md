@@ -1,4 +1,4 @@
-# Fu Agent Guide
+# ScholarOS Agent Guide
 
 This is the agent-facing companion to `README.md` for an open-source community project.
 
@@ -6,9 +6,9 @@ This is the agent-facing companion to `README.md` for an open-source community p
 - This file explains how to operate in this repository.
 - Treat the repository as a workflow system, not as a plain codebase.
 
-## What Fu Is
+## What ScholarOS Is
 
-Fu supports research workflows that prioritize:
+ScholarOS supports research workflows that prioritize:
 
 - reproducibility
 - traceability
@@ -16,20 +16,20 @@ Fu supports research workflows that prioritize:
 - explicit task boundaries
 - recoverable state
 
-In Fu, reproducibility does not mean only preserving code and final outputs. It also means preserving the exploratory process: the sequence of questions, trials, revisions, and decisions that led to the result.
+In ScholarOS, reproducibility does not mean only preserving code and final outputs. It also means preserving the exploratory process: the sequence of questions, trials, revisions, and decisions that led to the result.
 
 The repository is organized around enforcement hooks, workflow skills, and supporting scripts.
 
 ## Source Repo Self-Disable
 
-If the current Git repository is Fu's own source repository, or any linked worktree of that same repository, treat Fu as disabled.
+If the current Git repository is ScholarOS's own source repository, or any linked worktree of that same repository, treat ScholarOS workflow tools as disabled.
 
-- Do not route through Fu skills or workflow tools.
-- Do not rely on Fu hooks to police changes here.
-- Work on this repository in plain code mode and test Fu entrypoints explicitly.
+- Do not route through ScholarOS skills or workflow tools.
+- Do not rely on ScholarOS hooks to police changes here.
+- Work on this repository in plain code mode and test entrypoints explicitly.
 
-Treat the repo as Fu's own source when its top-level contains:
-- `.codex-plugin/plugin.json` with `name: "fu"`
+Treat the repo as ScholarOS's own source when its top-level contains:
+- `.codex-plugin/plugin.json` with `name: "scholaros"`
 - `hooks/codex/hooks.json`
 - `skills/handle-issue/SKILL.md`
 
@@ -42,6 +42,7 @@ Treat the repo as Fu's own source when its top-level contains:
 - `index.html` provides a visual overview page.
 - `README.md` is the human-facing overview.
 - `README.agent.md` is this agent-facing operational guide.
+- `docs/workflows/solo-research-git-flow.md` explains the ScholarOS solo research Git flow.
 
 ## Operating Model
 
@@ -72,7 +73,7 @@ Treat the repo as Fu's own source when its top-level contains:
 
 ## How To Read The Human README
 
-The human README explains why Fu exists and what kind of research practice it supports.
+The human README explains why ScholarOS exists and what kind of research practice it supports.
 
 When translating that README into action, use this mapping:
 
@@ -80,7 +81,7 @@ When translating that README into action, use this mapping:
 - artifact-centered thinking becomes traceability requirements
 - session-level task boundaries become one-task-per-session behavior
 - reproducibility concerns become type-checking, clean state, and explicit commits
-- hidden work by Fu becomes the use of the repo’s tools instead of ad hoc manual steps
+- hidden workflow work becomes the use of the repo’s tools instead of ad hoc manual steps
 
 ## When To Stop and Ask
 

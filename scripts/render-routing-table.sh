@@ -3,8 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-source "$SCRIPT_DIR/fu-git-paths.sh"
-TABLE_PATH="$(fu_git_find_routing_path "$REPO_DIR")"
+source "$SCRIPT_DIR/scholaros-git-paths.sh"
+TABLE_PATH="$(scholaros_git_find_routing_path "$REPO_DIR")"
 
 INPUT="$(cat 2>/dev/null || true)"
 COMMAND="$(printf '%s' "$INPUT" | jq -r '.tool_input.command // .command // ""' 2>/dev/null || true)"
@@ -102,7 +102,7 @@ if [ -z "$ROUTE_COMMAND" ]; then
 fi
 
 if [ ! -f "$TABLE_PATH" ]; then
-  jq -n '{decision:"deny", reason:"Missing .fu-routing.json routing table (legacy .academic-git-routing.json also not found)."}'
+  jq -n '{decision:"deny", reason:"Missing .scholaros-routing.json routing table."}'
   exit 0
 fi
 

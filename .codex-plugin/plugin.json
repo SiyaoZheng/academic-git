@@ -1,5 +1,5 @@
 {
-  "name": "fu",
+  "name": "scholaros",
   "version": "0.2.0-codex",
   "description": "System-level Codex plugin for issue-driven academic Git workflows with local hooks, skills, lint, and HPC CI scaffolding guidance.",
   "author": {
@@ -16,8 +16,8 @@
   "skills": "./skills/",
   "hooks": "./hooks/codex/hooks.json",
   "interface": {
-    "displayName": "Fu",
-    "shortDescription": "Issue-driven academic Git workflow with local hooks, lint, and HPC CI",
+    "displayName": "ScholarOS",
+    "shortDescription": "Issue-driven academic Git workflow for AI-assisted research process governance",
     "longDescription": "System-level Codex plugin for academic research repositories. Skills guide issue, commit, lint, PR, and merge workflows; global Codex hooks activate the packaged definitions under hooks/codex/hooks.json. Stop hooks protect opted-in repositories with Auto-Commit and Auto-Pull-Request routing; project scaffolds can install GitHub Actions and SJTU HPC self-hosted CI gates.",
     "developerName": "Adrian",
     "category": "Coding",
@@ -27,9 +27,9 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Use Fu for issue-driven research work.",
+      "Use ScholarOS for issue-driven research work.",
       "Use codex-gh-issue-start for new GitHub issues.",
-      "Run Fu lint, then prepare a Fu PR."
+      "Run ScholarOS lint, then prepare a ScholarOS PR."
     ],
     "brandColor": "#1F4B99"
   }

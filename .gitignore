@@ -23,10 +23,9 @@ Desktop.ini
 .env
 .env.*
 !.env.example
-.fu_git.json
-.fu-git.json
-.fu.json
-.academic-git.json
+.scholaros_git.json
+.scholaros-git.json
+.scholaros.json
 
 # Local assistant instructions and memory
 /AGENTS.md

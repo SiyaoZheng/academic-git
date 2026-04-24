@@ -10,7 +10,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from self_disable import is_fu_source_repo
+from self_disable import is_scholaros_source_repo
 
 
 HELP_RE = re.compile(r"(^|\s)(--help|-h)(\s|$)")
@@ -127,7 +127,7 @@ def main() -> int:
     except json.JSONDecodeError:
         return 0
 
-    if is_fu_source_repo(payload.get("cwd")):
+    if is_scholaros_source_repo(payload.get("cwd")):
         return 0
 
     command = payload.get("tool_input", {}).get("command", "")
@@ -149,7 +149,7 @@ def main() -> int:
     if has_issue_develop(command) and not has_issue_develop_flag(command, "--list"):
         if has_issue_develop_flag(command, "--checkout") or has_issue_develop_flag(command, "-c"):
             return deny(
-                "`gh issue develop --checkout` is not allowed in fu. "
+                "`gh issue develop --checkout` is not allowed in ScholarOS. "
                 "Use `start_issue` or `/codex-gh-issue-start`, or pair `gh issue develop` with "
                 "`git worktree add` so no existing worktree is switched."
             )

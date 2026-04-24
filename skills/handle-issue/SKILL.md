@@ -2,25 +2,25 @@
 name: handle-issue
 description: Route issue work at message begin or recovery time. Use this skill to decide whether to start a new issue workflow or resume an existing issue branch/worktree, then lock the repository to that issue.
 argument-hint: "[task description or #issue-number]"
-allowed-tools: ["fu"]
+allowed-tools: ["scholaros"]
 ---
 
 # Handle Issue
 
 ## Source Repo Self-Disable
 
-If the current repo top-level contains Fu's own `.codex-plugin/plugin.json`, `hooks/codex/hooks.json`, and `skills/handle-issue/SKILL.md`, then you are developing Fu itself. This skill is disabled there, including linked worktrees of the same repo. Work on the repository in plain code mode instead.
+If the current repo top-level contains ScholarOS's own `.codex-plugin/plugin.json`, `hooks/codex/hooks.json`, and `skills/handle-issue/SKILL.md`, then you are developing ScholarOS itself. This skill is disabled there, including linked worktrees of the same repo. Work on the repository in plain code mode instead.
 
-`handle-issue` is the canonical entry skill for fu.
+`handle-issue` is the canonical entry skill for ScholarOS.
 
 Use it when:
-- a session starts in a Fu repository
+- a session starts in a ScholarOS repository
 - `route-issue` sends the model here
 - `locked_issue` / `locked_branch` is missing or inconsistent
 - Adrian is resuming existing issue work
 - Adrian is explicitly starting new issue work
 
-## Canonical Fu Workflow Paths
+## Canonical ScholarOS Workflow Paths
 
 - `resume_issue(issue?: N, branch?: "codex/issue-N-slug")`
   Use when the issue already exists and the worktree/branch should be locked to it.
@@ -45,7 +45,7 @@ Use it when:
 If `route-commit` or `route-pr` is unsafe, the workflow falls back here.
 
 That means `handle-issue` is the safe recovery path for:
-- missing or stale `.fu.json` locks
+- missing or stale `.scholaros.json` locks
 - wrong branch or wrong worktree
 - unresolved issue ownership
 - stale workflow journal state
