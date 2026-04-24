@@ -35,7 +35,6 @@ Desktop.ini
 /.claude-*/
 /.codex/*
 !/.codex/
-!/.codex/hooks.json
 /.claude-plugin/
 
 # Project-specific generated wiring

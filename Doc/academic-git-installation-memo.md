@@ -55,15 +55,15 @@ Important doc-derived constraints:
 Current working model:
 
 - Source repo:
-  `/Users/siyaozheng/Documents/论文/academic-git`
+  `$ACADEMIC_GIT_REPO`
 - Personal plugin source symlink:
-  `/Users/siyaozheng/plugins/academic-git -> /Users/siyaozheng/Documents/论文/academic-git`
+  `$HOME/plugins/academic-git -> $ACADEMIC_GIT_REPO`
 - Personal marketplace:
   `~/.agents/plugins/marketplace.json`
 - Marketplace plugin path:
   `./plugins/academic-git`
 - Registered marketplace in Codex config:
-  `[marketplaces.home-local] source = "/Users/siyaozheng"`
+  `[marketplaces.home-local] source = "<absolute-home-directory>"`
 - Enabled plugin in Codex config:
   `[plugins."academic-git@home-local"] enabled = true`
 - Stale copied plugin directory:
@@ -122,7 +122,7 @@ print(json.loads(pathlib.Path('~/.agents/plugins/marketplace.json').expanduser()
 PY
 )" = "./plugins/academic-git"
 test -L ~/plugins/academic-git
-test "$(readlink ~/plugins/academic-git)" = "/Users/siyaozheng/Documents/论文/academic-git"
+test "$(readlink ~/plugins/academic-git)" = "$ACADEMIC_GIT_REPO"
 ```
 
 The app UI should also show `Academic Git:*` skills under `Personal`.
@@ -135,19 +135,19 @@ The correct local development shape is not a hand-copied runtime directory under
 Use this source-of-truth link:
 
 ```bash
-ln -sfn "/Users/siyaozheng/Documents/论文/academic-git" "$HOME/plugins/academic-git"
+: "${ACADEMIC_GIT_REPO:?set ACADEMIC_GIT_REPO to the local academic-git checkout}"
+ln -sfn "$ACADEMIC_GIT_REPO" "$HOME/plugins/academic-git"
 ```
 
-The personal marketplace is rooted at `/Users/siyaozheng`, so
+The personal marketplace is rooted at the user's home directory, so
 `~/.agents/plugins/marketplace.json` must use `"path": "./plugins/academic-git"`.
 If it points at `"./.codex/plugins/academic-git"`, Codex will read a stale copied
 directory instead of the repo.
 
 ### 4. Do not hardcode Adrian's home path
 
-Hardcoded paths such as `/Users/siyaozheng/...` are acceptable only as local
-installation records in `~/.codex/config.toml`, not inside public release
-artifacts.
+Account-specific absolute paths are acceptable only as local installation
+records in `~/.codex/config.toml`, not inside public release artifacts.
 
 Use portable defaults:
 
@@ -501,7 +501,8 @@ or install process:
 - Decide whether to vendor `node_modules` or install dependencies during the
   plugin packaging process.
 - Keep `source.path` relative and portable.
-- Do not rely on `/Users/siyaozheng/...` except in local verification notes.
+- Do not rely on account-specific home paths except in private local
+  verification notes.
 - Ensure every `SKILL.md` has valid YAML frontmatter.
 - Run hook contract tests and MCP smoke tests after packaging.
 - Keep `~/.codex/hooks.json` generation or installation explicit, because
