@@ -1,6 +1,6 @@
 #!/bin/bash
 # condition.sh for merge-pr skill
-# Run only before the academic-git MCP merge_pr tool.
+# Run only before the academic-git merge_pr workflow command.
 set -euo pipefail
 
 INPUT="$(cat 2>/dev/null || true)"

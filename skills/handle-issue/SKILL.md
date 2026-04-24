@@ -16,7 +16,7 @@ Use it when:
 - Adrian is resuming existing issue work
 - Adrian is explicitly starting new issue work
 
-## Canonical MCP Paths
+## Canonical Workflow Paths
 
 - `resume_issue(issue?: N, branch?: "codex/issue-N-slug")`
   Use when the issue already exists and the worktree/branch should be locked to it.

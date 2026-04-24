@@ -8,9 +8,9 @@ allowed-tools: ["academic-git"]
 
 `handle-pr` is the canonical executor for `route-pr`.
 
-The hook only routes. This skill prepares the PR body, verifies it, and opens the PR through academic-git MCP.
+The hook only routes. This skill prepares the PR body, verifies it, and opens the PR through the academic-git workflow.
 
-## Canonical MCP Tools
+## Canonical Workflow Commands
 
 1. `prepare_pr(issue: N)`
 2. `open_pr(issue: N, title: "...", body: "<reviewed body>", idempotency_key?: "...")`

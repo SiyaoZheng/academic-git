@@ -1,7 +1,7 @@
 {
   "name": "academic-git",
   "version": "0.2.0-codex",
-  "description": "System-level Codex plugin for issue-driven academic Git workflows with local hooks, skills, MCP tools, lint, and HPC CI scaffolding guidance.",
+  "description": "System-level Codex plugin for issue-driven academic Git workflows with local hooks, skills, lint, and HPC CI scaffolding guidance.",
   "author": {
     "name": "Adrian"
   },
@@ -10,13 +10,11 @@
     "academic",
     "research",
     "git",
-    "mcp",
     "hooks",
     "codex"
   ],
   "skills": "./skills/",
   "hooks": "./hooks/codex/hooks.json",
-  "mcpServers": "./.mcp.codex.json",
   "interface": {
     "displayName": "Academic Git",
     "shortDescription": "Issue-driven academic Git workflow with local hooks, lint, and HPC CI",

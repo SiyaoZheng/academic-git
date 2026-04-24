@@ -194,7 +194,7 @@
     {
       "decision": "deny",
       "match": "(^|[^[:alnum:]_])gh[[:space:]]+api([[:space:]]|$)",
-      "reason": "Direct gh api is blocked. Use narrow MCP tools instead of the raw GitHub API escape hatch.",
+      "reason": "Direct gh api is blocked. Use narrow workflow commands instead of the raw GitHub API escape hatch.",
       "policy": "raw-gh-api-blocked"
     }
   ]

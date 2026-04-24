@@ -1,23 +1,23 @@
 ---
 name: codex-gh-issue-start
-description: Validate and route new issue-bound work through the skill-owned issue-start workflow. Use this skill whenever Adrian asks to create an issue, track a new implementation task, or start new issue-bound work. Do not use the GitHub connector, standalone MCP issue-only tools, or bare gh issue create for issue-bound code work.
+description: Validate and route new issue-bound work through the skill-owned issue-start workflow. Use this skill whenever Adrian asks to create an issue, track a new implementation task, or start new issue-bound work. Do not use the GitHub connector, standalone issue-only commands, or bare gh issue create for issue-bound code work.
 argument-hint: "[issue title or task description]"
 allowed-tools: ["Bash", "academic-git"]
 ---
 
 # Codex GitHub Issue Start
 
-Use this skill as the internal issue-start routine for academic-git. It owns the issue-start policy and body contract, then routes mutation through MCP-owned tools.
+Use this skill as the internal issue-start routine for academic-git. It owns the issue-start policy and body contract, then routes mutation through the CLI-backed workflow commands.
 
 ## Architecture Contract
 
-`codex-gh-issue-start` follows the hook-skill-MCP philosophy:
+`codex-gh-issue-start` follows the hook-skill-workflow philosophy:
 
 - Hooks are involuntary guards. They block bare `gh issue create`, `gh issue develop --checkout`, and any attempt to skip this skill's issue-body check.
 - This skill owns workflow judgment, the issue body template, and the DAG checklist validation. The executable check is `skills/codex-gh-issue-start/check.sh`.
-- MCP tools own ordinary auditable GitHub and Git mutations, such as issue-only bookkeeping, append-only issue refinement, commits, PRs, gates, and lint.
+- Workflow commands own ordinary auditable GitHub and Git mutations, such as issue-only bookkeeping, append-only issue refinement, commits, PRs, gates, and lint.
 
-Mutation must move through MCP-owned tools or an explicitly implemented MCP issue-start primitive.
+Mutation must move through the routed workflow commands or the integrated issue-start CLI.
 
 ## When To Use
 
@@ -25,7 +25,7 @@ Mutation must move through MCP-owned tools or an explicitly implemented MCP issu
 - Adrian asks to track or start a new implementation task.
 - `handle-issue` routes to "new issue".
 - A hook reports that an issue was created through the GitHub connector or bare `gh issue create`.
-- The task needs issue-start policy, DAG validation, and routing into MCP-owned mutation.
+- The task needs issue-start policy, DAG validation, and routing into the workflow command surface.
 
 ## Do Not Use
 
@@ -76,9 +76,9 @@ The check validates the required sections, stable letter IDs, explicit `after:` 
 
 ## Mutation Boundary
 
-For issue-only bookkeeping, use the MCP `create_issue` tool. When assignees are omitted, academic-git defaults the new issue to Adrian via GitHub's `me` assignee.
+For issue-only bookkeeping, use `create_issue`. When assignees are omitted, academic-git defaults the new issue to Adrian via GitHub's `me` assignee.
 
-For issue-bound code work that needs issue + linked branch + dedicated worktree, use the MCP `start_issue` tool after the body passes this skill check. `start_issue` creates the GitHub Issue, linked `codex/issue-*` branch, and dedicated sibling worktree without switching the current worktree. When assignees are omitted, the created issue defaults to Adrian via GitHub's `me` assignee; explicit assignee lists override that default.
+For issue-bound code work that needs issue + linked branch + dedicated worktree, use `start_issue` after the body passes this skill check. `start_issue` creates the GitHub Issue, linked `codex/issue-*` branch, and dedicated sibling worktree without switching the current worktree. When assignees are omitted, the created issue defaults to Adrian via GitHub's `me` assignee; explicit assignee lists override that default.
 
 ## Repair Path
 

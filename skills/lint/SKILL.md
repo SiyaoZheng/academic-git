@@ -30,7 +30,7 @@ Projects may choose stricter commands or leave either command blank. The plugin 
 
 ## Workflow
 
-1. Run the `academic-git` MCP tool `lint` with `target: "all"`.
+1. Run the `academic-git` `lint` workflow command with `target: "all"`.
 2. If only one language is requested, run `lint` with `target: "python"` or `target: "r"`.
 3. Treat non-zero lint results as failures to fix before pushing, but do not confuse lint with the remote CI render gate.
 

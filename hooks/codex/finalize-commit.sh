@@ -51,7 +51,7 @@ SYSTEM_MESSAGE="[academic-git] Detected new commit ${SHORT_SHA} on '${BRANCH}': 
 ADDITIONAL_CONTEXT="A new git commit was created in this academic-git repository after a Bash tool call. Current branch: ${BRANCH}. New HEAD: ${SHORT_SHA}. Subject: ${SUBJECT}."
 
 if [ "$DIRECT_COMMIT" = true ]; then
-  SYSTEM_MESSAGE="${SYSTEM_MESSAGE}. Direct shell commit flow bypasses academic-git MCP commit checks."
+  SYSTEM_MESSAGE="${SYSTEM_MESSAGE}. Direct shell commit flow bypasses academic-git formal commit checks."
   ADDITIONAL_CONTEXT="${ADDITIONAL_CONTEXT} The triggering Bash command appears to have committed directly via git, so issue linkage, DAG checks, pipeline execution, and gates may have been bypassed."
 fi
 

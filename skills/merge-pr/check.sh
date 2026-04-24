@@ -1,6 +1,6 @@
 #!/bin/bash
 # check.sh for merge-pr skill
-# PreToolUse hook: read-only preflight before the MCP merge_pr tool executes.
+# PreToolUse hook: read-only preflight before the merge_pr workflow command executes.
 set -euo pipefail
 
 INPUT="$(cat 2>/dev/null || true)"
@@ -61,7 +61,7 @@ if [ -z "$HEAD_REF" ] || [ -z "$HEAD_OID" ]; then
   deny "[academic-git] PR #${PR_NUMBER} is missing headRefName/headRefOid; refusing merge_pr because branch cleanup would not be auditable."
 fi
 
-CONTEXT="[academic-git] merge_pr preflight passed for PR #${PR_NUMBER}: head=${HEAD_REF} (${HEAD_OID}), base=${BASE_REF:-unknown}, cross_repo=${CROSS_REPO}. MCP merge_pr must merge first, remove clean local worktrees before deleting refs, and delete only refs that still match this head OID."
+CONTEXT="[academic-git] merge_pr preflight passed for PR #${PR_NUMBER}: head=${HEAD_REF} (${HEAD_OID}), base=${BASE_REF:-unknown}, cross_repo=${CROSS_REPO}. The workflow must merge first, remove clean local worktrees before deleting refs, and delete only refs that still match this head OID."
 
 jq -n \
   --arg system_message "[academic-git] merge-pr skill preflight passed" \

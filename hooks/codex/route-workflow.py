@@ -230,7 +230,7 @@ def route_payload(action: str, diagnostics: list[str], state: dict[str, Any], ex
             "locked_branch": state["locked_branch"],
             "branch_issue": state["branch_issue"],
             "dirty_count": state["dirty_count"],
-            "expected_mcp_tools": expected_tools,
+            "expected_tools": expected_tools,
             "open_pr": state["open_pr"],
             "journal": state["journal"],
         },

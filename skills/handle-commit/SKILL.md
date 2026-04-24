@@ -10,7 +10,7 @@ allowed-tools: ["academic-git"]
 
 The hook only routes. This skill decides how to group the diff and then calls `create_commit(...)`.
 
-## Canonical MCP Tool
+## Canonical Workflow Command
 
 `create_commit(issue: N, items: ["A", "C"], type: "feat", description: "...", paths: [...], idempotency_key?: "...")`
 

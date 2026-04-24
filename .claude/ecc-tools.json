@@ -127,7 +127,7 @@
     {
       "moduleId": "runtime-core",
       "path": ".codex/config.toml",
-      "description": "Repo-local Codex MCP and multi-agent baseline aligned with ECC defaults."
+      "description": "Repo-local Codex tool-server and multi-agent baseline aligned with ECC defaults."
     },
     {
       "moduleId": "runtime-core",

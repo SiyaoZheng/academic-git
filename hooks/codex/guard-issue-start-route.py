@@ -137,7 +137,7 @@ def main() -> int:
         if not reason:
             reason = (
                 "blocked raw gh issue create; route to create_issue for standalone issue bookkeeping "
-                "or the codex-gh-issue-start skill/MCP path for issue-bound code work"
+                "or the codex-gh-issue-start workflow path for issue-bound code work"
             )
         return deny(reason)
 

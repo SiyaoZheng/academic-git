@@ -1,10 +1,10 @@
 #!/bin/bash
 # check.sh for handle-pr
-# Non-blocking defense-in-depth: the open_pr MCP tool already validates
+# Non-blocking defense-in-depth: the open_pr workflow command already validates
 # all checklist items are done and runs all 9 gates.
-# This hook runs before open_pr as a PreToolUse check, but since the MCP
-# tool enforces the same rules, we pass through here.
-# If someone bypasses MCP and uses `gh pr create` directly, the guard-write-route
+# This hook runs before open_pr as a PreToolUse check, but since the workflow
+# command enforces the same rules, we pass through here.
+# If someone bypasses the workflow and uses `gh pr create` directly, the guard-write-route
 # hook blocks that instead.
 set -euo pipefail
 

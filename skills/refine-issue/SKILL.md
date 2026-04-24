@@ -6,7 +6,7 @@ allowed-tools: ["academic-git"]
 
 # Refine Issue — Append-Only Comments
 
-The issue body is **immutable** — it's the single source of truth. All changes are made through the `refine_issue` MCP tool, which adds a structured comment to the issue.
+The issue body is **immutable** — it's the single source of truth. All changes are made through the `refine_issue` workflow command, which adds a structured comment to the issue.
 
 ## How It Works
 
