@@ -41,6 +41,8 @@ Desktop.ini
 /hooks.json
 /hooks *.json
 /hooks.local.json
+/.agents/skills/gstack
+/.agents/skills/gstack-*
 
 # Generated or local documentation artifacts
 /TODO.md
