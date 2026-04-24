@@ -4,6 +4,7 @@ set -euo pipefail
 INPUT="$(cat 2>/dev/null || true)"
 REPO_DIR="$(printf '%s' "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")"
 COMMAND_STR="$(printf '%s' "$INPUT" | jq -r '.tool_input.command // ""' 2>/dev/null || echo "")"
+HOOKS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 if [ -z "$REPO_DIR" ]; then
   REPO_DIR="$PWD"
@@ -11,6 +12,11 @@ fi
 
 cd "$REPO_DIR" 2>/dev/null || exit 0
 git rev-parse --git-dir >/dev/null 2>&1 || exit 0
+
+source "$HOOKS_DIR/self-disable.sh"
+if fu_is_source_repo "$REPO_DIR"; then
+  exit 0
+fi
 
 DIRECT_COMMIT=false
 if echo "$COMMAND_STR" | grep -qiE '(^|[^A-Za-z])(git\s+commit|git\s+merge|git\s+cherry-pick|git\s+revert|git\s+am\s+--continue|git\s+rebase\s+--continue)([^A-Za-z]|$)'; then

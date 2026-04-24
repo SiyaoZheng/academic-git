@@ -7,6 +7,10 @@ allowed-tools: ["Bash", "academic-git"]
 
 # Codex GitHub Issue Start
 
+## Source Repo Self-Disable
+
+If the current repo top-level contains the packaged `.codex-plugin/plugin.json`, `hooks/codex/hooks.json`, and `skills/handle-issue/SKILL.md`, then you are developing Fu itself. This skill is disabled there, including linked worktrees of the same repo. Work on the repository in plain code mode instead.
+
 Use this skill as the internal issue-start routine for academic-git. It owns the issue-start policy and body contract, then routes mutation through the CLI-backed workflow commands.
 
 ## Architecture Contract

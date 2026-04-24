@@ -5,6 +5,10 @@ description: Prevent macOS and Windows metadata files from polluting academic-gi
 
 # OS Noise Guard
 
+## Source Repo Self-Disable
+
+If the current repo top-level contains the packaged `.codex-plugin/plugin.json`, `hooks/codex/hooks.json`, and `skills/handle-issue/SKILL.md`, then you are developing Fu itself. This skill is disabled there, including linked worktrees of the same repo. Work on the repository in plain code mode instead.
+
 Prevent macOS and Windows filesystem metadata from making academic-git worktrees
 or nested project checkouts appear dirty.
 
