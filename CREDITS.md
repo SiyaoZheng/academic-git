@@ -23,13 +23,12 @@ Code and patterns in this project were informed by the following open-source pro
 | Repo | Stars | License | What we borrowed |
 |------|-------|---------|-----------------|
 | [calcom/synclinear.com](https://github.com/calcom/synclinear.com) | 412 | AGPL-3.0 | Linear-GitHub bidirectional sync patterns |
-| [jerhadf/linear-mcp-server](https://github.com/jerhadf/linear-mcp-server) | 344 | MIT | Linear integration tool definitions |
 | [schpet/linear-cli](https://github.com/schpet/linear-cli) | 610 | MIT | Agent-friendly CLI patterns, JSON output |
 
 ## Post-Merge Automation (TODO #4)
 
 Patterns informed by `semantic-release/semantic-release` (23.5k stars) and GitHub's native branch cleanup.
 
-## CLI Workflow, Plugin, Research Constitution (TODO #5, #6, #8)
+## Plugin, Workflow, Research Constitution (TODO #5, #6, #8)
 
 _(To be added as implementation proceeds)_

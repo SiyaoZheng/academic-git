@@ -215,7 +215,7 @@ class OfficeMarkdownGuardTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
 
         markdown.write_text(
-            "# paper.docx\n\n<!-- academic-git: source is intentionally empty. -->\n",
+            "# paper.docx\n\n<!-- fu: source is intentionally empty. -->\n",
             encoding="utf-8",
         )
         result = self.guard()

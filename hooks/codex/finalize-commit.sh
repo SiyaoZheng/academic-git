@@ -28,7 +28,7 @@ if [ -z "$HEAD_SHA" ]; then
   exit 0
 fi
 
-STATE_FILE="$(git rev-parse --git-path academic-git-posttool-last-head 2>/dev/null || echo "")"
+STATE_FILE="$(git rev-parse --git-path fu-posttool-last-head 2>/dev/null || echo "")"
 if [ -z "$STATE_FILE" ]; then
   exit 0
 fi
@@ -53,11 +53,11 @@ BRANCH="$(git branch --show-current 2>/dev/null || echo "unknown")"
 SUBJECT="$(git log -1 --pretty=format:%s HEAD 2>/dev/null || echo "(unknown subject)")"
 SHORT_SHA="$(git rev-parse --short HEAD 2>/dev/null || echo "$HEAD_SHA")"
 
-SYSTEM_MESSAGE="[academic-git] Detected new commit ${SHORT_SHA} on '${BRANCH}': ${SUBJECT}"
-ADDITIONAL_CONTEXT="A new git commit was created in this academic-git repository after a Bash tool call. Current branch: ${BRANCH}. New HEAD: ${SHORT_SHA}. Subject: ${SUBJECT}."
+SYSTEM_MESSAGE="[Fu] Detected new commit ${SHORT_SHA} on '${BRANCH}': ${SUBJECT}"
+ADDITIONAL_CONTEXT="A new git commit was created in this Fu repository after a Bash tool call. Current branch: ${BRANCH}. New HEAD: ${SHORT_SHA}. Subject: ${SUBJECT}."
 
 if [ "$DIRECT_COMMIT" = true ]; then
-  SYSTEM_MESSAGE="${SYSTEM_MESSAGE}. Direct shell commit flow bypasses academic-git formal commit checks."
+  SYSTEM_MESSAGE="${SYSTEM_MESSAGE}. Direct shell commit flow bypasses Fu commit checks."
   ADDITIONAL_CONTEXT="${ADDITIONAL_CONTEXT} The triggering Bash command appears to have committed directly via git, so issue linkage, DAG checks, pipeline execution, and gates may have been bypassed."
 fi
 

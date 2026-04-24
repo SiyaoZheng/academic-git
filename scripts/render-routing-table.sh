@@ -3,7 +3,6 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-# shellcheck source=/dev/null
 source "$SCRIPT_DIR/fu-git-paths.sh"
 TABLE_PATH="$(fu_git_find_routing_path "$REPO_DIR")"
 
@@ -103,7 +102,7 @@ if [ -z "$ROUTE_COMMAND" ]; then
 fi
 
 if [ ! -f "$TABLE_PATH" ]; then
-  jq -n '{decision:"deny", reason:"Missing .fu-routing.json routing table. Legacy .academic-git-routing.json is also accepted during migration."}'
+  jq -n '{decision:"deny", reason:"Missing .fu-routing.json routing table (legacy .academic-git-routing.json also not found)."}'
   exit 0
 fi
 

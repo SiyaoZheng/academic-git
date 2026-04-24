@@ -100,6 +100,20 @@
     },
     {
       "decision": "route",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+add([[:space:]]|$)",
+      "tool": "create_commit",
+      "reason": "Direct git add is blocked. Use create_commit(issue, items, type, description, paths?) so staging, validation, commit, and push stay issue-linked and auditable.",
+      "policy": "formal-commit"
+    },
+    {
+      "decision": "route",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+(rm|mv|clean)([[:space:]]|$)",
+      "tool": "create_commit",
+      "reason": "Direct git worktree/index mutation is blocked. Use the fu commit workflow with explicit paths so file changes stay issue-linked and auditable.",
+      "policy": "formal-commit"
+    },
+    {
+      "decision": "route",
       "match": "(^|[^[:alnum:]_])git[[:space:]]+push([[:space:]]|$)",
       "tool": "create_commit",
       "reason": "Direct git push is blocked. Push is automatic after fu_git create_commit ISSUE --items ... --type ... --description ....",
@@ -170,25 +184,25 @@
     {
       "decision": "deny",
       "match": "(^|[^[:alnum:]_])git[[:space:]]+reset([[:space:]]|$)",
-      "reason": "Direct git reset is blocked. History rewrites are not routed through academic-git.",
+      "reason": "Direct git reset is blocked. History rewrites are not routed through fu.",
       "policy": "history-rewrite-not-routed"
     },
     {
       "decision": "deny",
       "match": "(^|[^[:alnum:]_])git[[:space:]]+rebase([[:space:]]|$)",
-      "reason": "Direct git rebase is blocked. History rewrites are not routed through academic-git.",
+      "reason": "Direct git rebase is blocked. History rewrites are not routed through fu.",
       "policy": "history-rewrite-not-routed"
     },
     {
       "decision": "deny",
       "match": "(^|[^[:alnum:]_])git[[:space:]]+cherry-pick([[:space:]]|$)",
-      "reason": "Direct git cherry-pick is blocked. History rewrites are not routed through academic-git.",
+      "reason": "Direct git cherry-pick is blocked. History rewrites are not routed through fu.",
       "policy": "history-rewrite-not-routed"
     },
     {
       "decision": "deny",
       "match": "(^|[^[:alnum:]_])git[[:space:]]+revert([[:space:]]|$)",
-      "reason": "Direct git revert is blocked. History rewrites are not routed through academic-git.",
+      "reason": "Direct git revert is blocked. History rewrites are not routed through fu.",
       "policy": "history-rewrite-not-routed"
     },
     {

@@ -163,7 +163,6 @@ def connector_issue_created(event: dict[str, Any]) -> bool:
     if event.get("type") == "response_item":
         return (
             payload.get("type") == "function_call"
-            and payload.get("namespace") == "mcp__codex_apps__github"
             and payload.get("name") == "_create_issue"
         )
 
@@ -257,7 +256,7 @@ def main() -> int:
     if used_develop_checkout:
         branch = current_branch(payload.get("cwd"))
         return block(
-            "`gh issue develop --checkout` was used, but academic-git must not switch "
+            "`gh issue develop --checkout` was used, but fu must not switch "
             f"the existing workspace with checkout. Current branch: {branch or 'unknown'}. "
             "Continue by opening issue work in a dedicated git worktree instead."
         )

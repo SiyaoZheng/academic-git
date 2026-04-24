@@ -1,10 +1,10 @@
 ```markdown
-# academic-git Development Patterns
+# Fu Development Patterns
 
 > Auto-generated skill from repository analysis
 
 ## Overview
-This skill teaches the core development conventions and workflows used in the `academic-git` JavaScript codebase. It covers file naming, import/export styles, commit message patterns, and testing practices. By following these guidelines, contributors can write consistent, maintainable code and collaborate effectively.
+This skill teaches the core development conventions and workflows used in the Fu JavaScript codebase. It covers file naming, import/export styles, commit message patterns, and testing practices. By following these guidelines, contributors can write consistent, maintainable code and collaborate effectively.
 
 ## Coding Conventions
 

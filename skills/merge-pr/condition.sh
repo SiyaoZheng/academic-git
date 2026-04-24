@@ -1,6 +1,6 @@
 #!/bin/bash
 # condition.sh for merge-pr skill
-# Run only before the academic-git merge_pr workflow command.
+# Run only before the Fu merge_pr workflow.
 set -euo pipefail
 
 INPUT="$(cat 2>/dev/null || true)"
@@ -13,8 +13,7 @@ TOOL_NAMES="$(printf '%s' "$INPUT" | jq -r '
     .tool?.id?,
     .tool_call?.name?,
     .toolCall?.name?,
-    .server_tool_name?,
-    .mcp_tool_name?
+    .server_tool_name?
   ]
   | map(select(type == "string"))
   | .[]

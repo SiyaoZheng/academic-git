@@ -5,11 +5,12 @@ node_modules/
 dist/
 build/
 coverage/
-__pycache__/
 *.tsbuildinfo
 .cache/
 .tmp/
 tmp/
+__pycache__/
+*.py[cod]
 
 # OS and editor noise
 .DS_Store
@@ -24,6 +25,7 @@ Desktop.ini
 !.env.example
 .fu_git.json
 .fu-git.json
+.fu.json
 .academic-git.json
 
 # Local assistant instructions and memory
@@ -44,12 +46,11 @@ Desktop.ini
 /hooks.json
 /hooks *.json
 /hooks.local.json
-/.mcp.json
-/.mcp *.json
+/.agents/skills/gstack
+/.agents/skills/gstack-*
 
 # Generated or local documentation artifacts
 /TODO.md
-/mcp/README.md
 
 # Local reference repositories are for inspection only; do not track them in PRs.
 /references/

@@ -13,8 +13,7 @@ TOOL_NAMES="$(printf '%s' "$INPUT" | jq -r '
     .tool?.id?,
     .tool_call?.name?,
     .toolCall?.name?,
-    .server_tool_name?,
-    .mcp_tool_name?
+    .server_tool_name?
   ]
   | map(select(type == "string"))
   | .[]

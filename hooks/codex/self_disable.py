@@ -46,4 +46,4 @@ def is_fu_source_repo(candidate: str | Path | None) -> bool:
     except (OSError, json.JSONDecodeError):
         return False
 
-    return data.get("name") in {"fu", "academic-git"}
+    return data.get("name") == "fu"

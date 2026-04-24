@@ -142,14 +142,14 @@ def main() -> int:
         if not reason:
             reason = (
                 "blocked raw gh issue create; route to create_issue for standalone issue bookkeeping "
-                "or the codex-gh-issue-start workflow path for issue-bound code work"
+                "or the codex-gh-issue-start workflow for issue-bound code work"
             )
         return deny(reason)
 
     if has_issue_develop(command) and not has_issue_develop_flag(command, "--list"):
         if has_issue_develop_flag(command, "--checkout") or has_issue_develop_flag(command, "-c"):
             return deny(
-                "`gh issue develop --checkout` is not allowed in academic-git. "
+                "`gh issue develop --checkout` is not allowed in fu. "
                 "Use `start_issue` or `/codex-gh-issue-start`, or pair `gh issue develop` with "
                 "`git worktree add` so no existing worktree is switched."
             )

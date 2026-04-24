@@ -1,18 +1,17 @@
 ---
 name: codex-gh-issue-start
-description: Validate and route new issue-bound work through the skill-owned issue-start workflow. Use this skill whenever Adrian asks to create an issue, track a new implementation task, or start new issue-bound work. Do not use the GitHub connector, standalone issue-only commands, or bare gh issue create for issue-bound code work.
+description: Validate and route new issue-bound work through the skill-owned issue-start workflow. Use this skill whenever Adrian asks to create an issue, track a new implementation task, or start new issue-bound work. Do not use the GitHub connector, standalone issue-only tools, or bare gh issue create for issue-bound code work.
 argument-hint: "[issue title or task description]"
-allowed-tools: ["Bash", "academic-git"]
+allowed-tools: ["Bash", "fu"]
 ---
 
 # Codex GitHub Issue Start
 
 ## Source Repo Self-Disable
 
-If the current repo top-level contains the packaged `.codex-plugin/plugin.json`, `hooks/codex/hooks.json`, and `skills/handle-issue/SKILL.md`, then you are developing Fu itself. This skill is disabled there, including linked worktrees of the same repo. Work on the repository in plain code mode instead.
+If the current repo top-level contains Fu's own `.codex-plugin/plugin.json`, `hooks/codex/hooks.json`, and `skills/handle-issue/SKILL.md`, then you are developing Fu itself. This skill is disabled there, including linked worktrees of the same repo. Work on the repository in plain code mode instead.
 
-Use this skill as the internal issue-start routine for academic-git. It owns the issue-start policy and body contract, then routes mutation through the CLI-backed workflow commands.
-In this repository, that CLI-backed workflow surface is provided by the system-installed `fu_git` commands.
+Use this skill as the internal issue-start routine for fu. It owns the issue-start policy and body contract, then routes mutation through Fu workflow tools.
 
 ## Architecture Contract
 
@@ -20,9 +19,9 @@ In this repository, that CLI-backed workflow surface is provided by the system-i
 
 - Hooks are involuntary guards. They block bare `gh issue create`, `gh issue develop --checkout`, and any attempt to skip this skill's issue-body check.
 - This skill owns workflow judgment, the issue body template, and the DAG checklist validation. The executable check is `skills/codex-gh-issue-start/check.sh`.
-- `fu_git` owns ordinary auditable GitHub and Git mutations, such as issue-only bookkeeping, append-only issue refinement, commits, PRs, gates, and lint.
+- Fu workflow tools own ordinary auditable GitHub and Git mutations, such as issue-only bookkeeping, append-only issue refinement, commits, PRs, gates, and lint.
 
-Mutation must move through the routed `fu_git` commands, with `codex-gh-issue-start` serving as the issue-start validation gate for `fu_git start_issue`.
+Mutation must move through Fu workflow tools or an explicitly implemented issue-start primitive.
 
 ## When To Use
 
@@ -30,7 +29,7 @@ Mutation must move through the routed `fu_git` commands, with `codex-gh-issue-st
 - Adrian asks to track or start a new implementation task.
 - `handle-issue` routes to "new issue".
 - A hook reports that an issue was created through the GitHub connector or bare `gh issue create`.
-- The task needs issue-start policy, DAG validation, and routing into the `fu_git` command surface.
+- The task needs issue-start policy, DAG validation, and routing into Fu-owned mutation.
 
 ## Do Not Use
 
@@ -73,7 +72,7 @@ Every checklist item must have a stable letter ID and an `after:` dependency dec
 After drafting the issue body, run the skill-owned validation check:
 
 ```bash
-PLUGIN_ROOT="${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}"
+PLUGIN_ROOT="${FU_PLUGIN_ROOT:-${ACADEMIC_GIT_PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT:-.}}}"
 bash "$PLUGIN_ROOT/skills/codex-gh-issue-start/check.sh" --body-file path/to/issue-body.md
 ```
 
@@ -81,9 +80,9 @@ The check validates the required sections, stable letter IDs, explicit `after:` 
 
 ## Mutation Boundary
 
-For issue-only bookkeeping, use `fu_git create_issue`. When assignees are omitted, academic-git defaults the new issue to Adrian via GitHub's `me` assignee.
+For issue-only bookkeeping, use `create_issue`. When assignees are omitted, fu defaults the new issue to Adrian via GitHub's `me` assignee.
 
-For issue-bound code work that needs issue + linked branch + dedicated worktree, use `fu_git start_issue --title "..." --body-file path/to/issue-body.md` after the body passes this skill check. `fu_git start_issue` creates the GitHub Issue, linked `codex/issue-*` branch, and dedicated sibling worktree without switching the current worktree. When assignees are omitted, the created issue defaults to Adrian via GitHub's `me` assignee; explicit assignee lists override that default.
+For issue-bound code work that needs issue + linked branch + dedicated worktree, use `start_issue` after the body passes this skill check. `start_issue` creates the GitHub Issue, linked `codex/issue-*` branch, and dedicated sibling worktree without switching the current worktree. When assignees are omitted, the created issue defaults to Adrian via GitHub's `me` assignee; explicit assignee lists override that default.
 
 ## Repair Path
 

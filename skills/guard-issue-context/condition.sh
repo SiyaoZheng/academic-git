@@ -3,11 +3,11 @@
 # Run: when Write/Edit/Bash modifies project files AND no locked_issue exists
 set -euo pipefail
 
-PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-# shellcheck source=/dev/null
-source "$PLUGIN_ROOT/scripts/fu-git-paths.sh"
-PROJECT_DIR="$(fu_git_project_dir)"
+PROJECT_DIR="${FU_PROJECT_DIR:-${ACADEMIC_GIT_PROJECT_DIR:-${CODEX_WORKSPACE_ROOT:-${CODEX_PROJECT_DIR:-.}}}}"
 cd "$PROJECT_DIR" 2>/dev/null || exit 1
+
+CONFIG_PATH=".fu.json"
+[ -f "$CONFIG_PATH" ] || CONFIG_PATH=".academic-git.json"
 
 # Not in a git repo → skip (degraded mode, no enforcement)
 git rev-parse --git-dir &>/dev/null || exit 1
@@ -37,16 +37,17 @@ if [ "$TOOL_NAME" = "Bash" ]; then
 
   # For Bash writes we can't easily determine the target file path
   # so we skip the config-file allowlist and just check locked_issue
-  CONFIG_PATH="$(fu_git_find_config_path "$PROJECT_DIR")"
-  LOCKED_ISSUE=$(jq -r '.locked_issue // empty' "$CONFIG_PATH" 2>/dev/null || echo "")
-  if [ -n "$LOCKED_ISSUE" ]; then
-    # Has locked issue → check branch alignment
-    LOCKED_BRANCH=$(jq -r '.locked_branch // empty' "$CONFIG_PATH" 2>/dev/null || echo "")
-    CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "")
-    if [ -n "$LOCKED_BRANCH" ] && [ "$CURRENT_BRANCH" != "$LOCKED_BRANCH" ]; then
-      exit 0  # On wrong branch → condition MET (guard should fire)
+  if [ -f "$CONFIG_PATH" ]; then
+    LOCKED_ISSUE=$(jq -r '.locked_issue // empty' "$CONFIG_PATH" 2>/dev/null || echo "")
+    if [ -n "$LOCKED_ISSUE" ]; then
+      # Has locked issue → check branch alignment
+      LOCKED_BRANCH=$(jq -r '.locked_branch // empty' "$CONFIG_PATH" 2>/dev/null || echo "")
+      CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "")
+      if [ -n "$LOCKED_BRANCH" ] && [ "$CURRENT_BRANCH" != "$LOCKED_BRANCH" ]; then
+        exit 0  # On wrong branch → condition MET (guard should fire)
+      fi
+      exit 1  # Has locked issue, on correct branch → skip guard
     fi
-    exit 1  # Has locked issue, on correct branch → skip guard
   fi
 
   # No locked_issue → condition MET
@@ -63,26 +64,27 @@ REL_PATH="${FILE_PATH#"$PROJECT_DIR/"}"
 REL_PATH="${REL_PATH#"$PWD/"}"
 
 case "$REL_PATH" in
-  .codex/*|.fu_git.json|.fu-git.json|.academic-git.json|.fu-routing.json|AGENTS.md|.gitignore|README.md|.DS_Store)
+  .codex/*|.fu.json|.academic-git.json|AGENTS.md|.gitignore|README.md|.DS_Store)
     exit 1  # Config file → skip guard
     ;;
 esac
 
-# Check if locked_issue exists in the active Fu Git config file.
-CONFIG_PATH="$(fu_git_find_config_path "$PROJECT_DIR")"
-LOCKED_ISSUE=$(jq -r '.locked_issue // empty' "$CONFIG_PATH" 2>/dev/null || echo "")
-if [ -n "$LOCKED_ISSUE" ]; then
-  # Has locked issue → check branch alignment
-  LOCKED_BRANCH=$(jq -r '.locked_branch // empty' "$CONFIG_PATH" 2>/dev/null || echo "")
-  CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "")
+# Check if locked_issue exists in .fu.json
+if [ -f "$CONFIG_PATH" ]; then
+  LOCKED_ISSUE=$(jq -r '.locked_issue // empty' "$CONFIG_PATH" 2>/dev/null || echo "")
+  if [ -n "$LOCKED_ISSUE" ]; then
+    # Has locked issue → check branch alignment
+    LOCKED_BRANCH=$(jq -r '.locked_branch // empty' "$CONFIG_PATH" 2>/dev/null || echo "")
+    CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "")
 
-  if [ -n "$LOCKED_BRANCH" ] && [ "$CURRENT_BRANCH" != "$LOCKED_BRANCH" ]; then
-    # On wrong branch → condition MET (guard should fire)
-    exit 0
+    if [ -n "$LOCKED_BRANCH" ] && [ "$CURRENT_BRANCH" != "$LOCKED_BRANCH" ]; then
+      # On wrong branch → condition MET (guard should fire)
+      exit 0
+    fi
+
+    # Has locked issue and on correct branch → skip guard (allow writing)
+    exit 1
   fi
-
-  # Has locked issue and on correct branch → skip guard (allow writing)
-  exit 1
 fi
 
 # No locked_issue → condition MET (guard should fire)

@@ -1,15 +1,15 @@
 ---
 name: os-noise-guard
-description: Prevent macOS and Windows metadata files from polluting academic-git worktrees and blocking session cleanup.
+description: Prevent macOS and Windows metadata files from polluting fu worktrees and blocking session cleanup.
 ---
 
 # OS Noise Guard
 
 ## Source Repo Self-Disable
 
-If the current repo top-level contains the packaged `.codex-plugin/plugin.json`, `hooks/codex/hooks.json`, and `skills/handle-issue/SKILL.md`, then you are developing Fu itself. This skill is disabled there, including linked worktrees of the same repo. Work on the repository in plain code mode instead.
+If the current repo top-level contains Fu's own `.codex-plugin/plugin.json`, `hooks/codex/hooks.json`, and `skills/handle-issue/SKILL.md`, then you are developing Fu itself. This skill is disabled there, including linked worktrees of the same repo. Work on the repository in plain code mode instead.
 
-Prevent macOS and Windows filesystem metadata from making academic-git worktrees
+Prevent macOS and Windows filesystem metadata from making fu worktrees
 or nested project checkouts appear dirty.
 
 ## Purpose
@@ -41,4 +41,4 @@ they are no longer OS-noise false positives.
   metadata and must not be removed.
 - Do not hide real nested repository changes. Anything remaining after OS-noise
   cleanup is surfaced as a dirty nested repository.
-- Do not depend on `.fu_git.json` or legacy `.academic-git.json`; plugin activation is system-level.
+- Do not depend on `.fu.json`; plugin activation is system-level.

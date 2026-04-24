@@ -24,5 +24,5 @@ fu_is_source_repo() {
   [ -f "$repo_root/skills/handle-issue/SKILL.md" ] || return 1
 
   plugin_name="$(jq -r '.name // empty' "$repo_root/.codex-plugin/plugin.json" 2>/dev/null || echo "")"
-  [ "$plugin_name" = "fu" ] || [ "$plugin_name" = "academic-git" ]
+  [ "$plugin_name" = "fu" ]
 }
