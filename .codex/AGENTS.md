@@ -6,12 +6,12 @@ This supplements the root `AGENTS.md` with a repo-local ECC baseline.
 
 - Repo-generated Codex skill: `.agents/skills/fu/SKILL.md`
 - Claude-facing companion skill: `.claude/skills/fu/SKILL.md`
-- Keep user-specific credentials and private MCPs in `~/.codex/config.toml`, not in this repo.
+- Keep user-specific credentials and personal tool config in `~/.codex/config.toml`, not in this repo.
 
-## MCP Baseline
+## Repo Baseline
 
 Treat `.codex/config.toml` as the default ECC-safe baseline for work in this repository.
-The generated baseline enables GitHub, Context7, Exa, Memory, Playwright, and Sequential Thinking.
+The generated baseline keeps sandbox/web defaults plus multi-agent settings only; repo-local MCP entries have been removed.
 
 ## Multi-Agent Support
 
