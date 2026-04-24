@@ -41,7 +41,7 @@ The repository is organized around enforcement hooks, workflow skills, and suppo
 ## Recommended Workflow
 
 1. Triage the task with the `handle-issue` skill.
-2. If this is new work, use the `codex-gh-issue-start` route so issue-start policy and DAG validation happen before issue, branch, and worktree mutations.
+2. If this is new work, use the `codex-gh-issue-start` route so issue-start policy and DAG validation happen before `fu_git start_issue` creates the issue, branch, and worktree.
 3. If the task already exists, switch to the linked branch and continue there.
 4. Keep the work scoped to the issue or task boundary.
 5. Use the `handle-commit` skill for formal commits tied to checklist items.
@@ -50,15 +50,15 @@ The repository is organized around enforcement hooks, workflow skills, and suppo
 ## Runtime Note
 
 - This repository no longer ships a repo-local backend server or the legacy backend workspace.
-- The issue-start path is exposed through the system-installed `codex-gh-issue-start` CLI plus the repo's hooks and skills.
+- The workflow backend is the system-installed `fu_git` CLI. `codex-gh-issue-start` is the issue-start skill and body-contract gate, not a separate backend.
 - Validation lives in the hook-owned shell/Python checks and any workflow-specific dry runs the current task requires.
 
 ## Workflow Rules
 
 - Never run `git checkout`.
-- Prefer the provided skills and workflow commands over raw `git` or `gh` commands.
+- Prefer the provided skills and `fu_git` commands over raw `git` or `gh` commands.
 - Use the issue-start workflow for new issue-bound work.
-- Treat `codex-gh-issue-start` as the issue SSOT boundary: hooks guard, the skill validates policy, and the routed workflow owns issue/branch/worktree mutation. Do not split a new implementation task across separate issue and branch tools.
+- Treat `codex-gh-issue-start` as the issue SSOT boundary: hooks guard, the skill validates policy, and `fu_git start_issue` owns issue/branch/worktree mutation. Do not split a new implementation task across separate issue and branch tools.
 - Keep issue, branch, and worktree aligned when the task is issue-bound.
 - Preserve user changes unless the user explicitly asks for a revert.
 - Treat hooks as enforcement, not suggestions.

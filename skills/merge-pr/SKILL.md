@@ -6,7 +6,7 @@ allowed-tools: ["academic-git"]
 
 # Merge PR — Worktree-Safe Completion
 
-Use this skill whenever a PR is ready to merge. It is the main workflow skill for the `merge_pr` command; `finalize-pr-merge` is only the after-action follow-up.
+Use this skill whenever a PR is ready to merge. It is the main workflow skill for `fu_git merge_pr`; `finalize-pr-merge` is only the after-action follow-up.
 
 ## Hook Wiring
 
@@ -14,8 +14,8 @@ Use this skill whenever a PR is ready to merge. It is the main workflow skill fo
 
 ## Required Tool
 
-```
-merge_pr(pr: N)
+```bash
+fu_git merge_pr <pr-number>
 ```
 
 ## What The Skill Enforces Before Execution
@@ -27,7 +27,7 @@ merge_pr(pr: N)
 
 ## Cleanup Contract
 
-After the preflight passes, `merge_pr` must:
+After the preflight passes, `fu_git merge_pr` must:
 
 - Squash-merge the PR on GitHub.
 - Return the safe primary worktree to the default branch and pull with `--ff-only`.

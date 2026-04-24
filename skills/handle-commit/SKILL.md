@@ -8,11 +8,11 @@ allowed-tools: ["academic-git"]
 
 `handle-commit` is the canonical executor for `route-commit`.
 
-The hook only routes. This skill decides how to group the diff and then calls `create_commit(...)`.
+The hook only routes. This skill decides how to group the diff and then calls `fu_git create_commit`.
 
 ## Canonical Workflow Command
 
-`create_commit(issue: N, items: ["A", "C"], type: "feat", description: "...", paths: [...], idempotency_key?: "...")`
+`fu_git create_commit N --items A --items C --type feat --description "..." --path path/to/file --idempotency-key "..." `
 
 It produces:
 
@@ -21,10 +21,10 @@ It produces:
 ## Workflow
 
 1. Read `status` and `diff`.
-2. Read `view_issue(issue: N)` so checklist grouping stays issue-scoped.
+2. Read `fu_git view_issue N` so checklist grouping stays issue-scoped.
 3. Group files by research meaning, not by convenience.
 4. Prefer explicit `paths`.
-5. Call `create_commit(...)`.
+5. Call `fu_git create_commit ...`.
 
 ## Guardrails
 
@@ -34,7 +34,7 @@ It produces:
 
 ## After Create Commit
 
-`create_commit` is responsible for:
+`fu_git create_commit` is responsible for:
 - DAG validation
 - configured pipeline checks
 - gate checks

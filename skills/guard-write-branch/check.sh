@@ -3,10 +3,14 @@
 # Block: output error and exit 2
 set -euo pipefail
 
-PROJECT_DIR="${ACADEMIC_GIT_PROJECT_DIR:-${CODEX_WORKSPACE_ROOT:-${CODEX_PROJECT_DIR:-.}}}"
+PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# shellcheck source=/dev/null
+source "$PLUGIN_ROOT/scripts/fu-git-paths.sh"
+PROJECT_DIR="$(fu_git_project_dir)"
 cd "$PROJECT_DIR" 2>/dev/null || exit 1
 
-LOCKED=$(python3 -c "import json; d=json.load(open('.academic-git.json')); print(d.get('locked_branch',''))" 2>/dev/null || echo "")
+CONFIG_PATH="$(fu_git_find_config_path "$PROJECT_DIR")"
+LOCKED=$(python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print(d.get('locked_branch',''))" "$CONFIG_PATH" 2>/dev/null || echo "")
 
 echo "{\"error\": \"[academic-git] Branch locked to '${LOCKED}'. Focus on the active issue, or route through handle-issue to switch tasks.\"}"
 exit 2

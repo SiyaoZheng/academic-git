@@ -5,6 +5,7 @@ node_modules/
 dist/
 build/
 coverage/
+__pycache__/
 *.tsbuildinfo
 .cache/
 .tmp/
@@ -21,6 +22,8 @@ Desktop.ini
 .env
 .env.*
 !.env.example
+.fu_git.json
+.fu-git.json
 .academic-git.json
 
 # Local assistant instructions and memory

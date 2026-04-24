@@ -10,7 +10,7 @@ This guard blocks writes until academic-git has an active issue context.
 
 Config files may still be edited without a locked issue:
 - `.codex/*`
-- `.academic-git.json`
+- `.fu_git.json` and legacy `.academic-git.json`
 - `AGENTS.md`
 - `.gitignore`
 - `README.md`
@@ -18,5 +18,5 @@ Config files may still be edited without a locked issue:
 ## Resolution
 
 Route through `handle-issue`, then use:
-- `resume_issue(...)` for existing issue branches
-- `start_issue(...)` for new issue-bound work
+- `fu_git resume_issue ...` for existing issue branches
+- `fu_git start_issue ...` for new issue-bound work

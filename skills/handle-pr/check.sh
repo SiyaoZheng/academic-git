@@ -8,7 +8,7 @@
 # hook blocks that instead.
 set -euo pipefail
 
-PROJECT_DIR="${ACADEMIC_GIT_PROJECT_DIR:-${CODEX_WORKSPACE_ROOT:-${CODEX_PROJECT_DIR:-.}}}"
+PROJECT_DIR="${FU_GIT_PROJECT_DIR:-${ACADEMIC_GIT_PROJECT_DIR:-${CODEX_WORKSPACE_ROOT:-${CODEX_PROJECT_DIR:-.}}}}"
 cd "$PROJECT_DIR" 2>/dev/null || exit 0
 
 exit 0
