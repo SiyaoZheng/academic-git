@@ -41,4 +41,4 @@ they are no longer OS-noise false positives.
   metadata and must not be removed.
 - Do not hide real nested repository changes. Anything remaining after OS-noise
   cleanup is surfaced as a dirty nested repository.
-- Do not depend on `.academic-git.json`; plugin activation is system-level.
+- Do not depend on `.fu_git.json` or legacy `.academic-git.json`; plugin activation is system-level.

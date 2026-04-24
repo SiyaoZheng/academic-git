@@ -21,7 +21,7 @@ PR_NUMBER="$(printf '%s' "$INPUT" | jq -r '
 MERGE_OUTPUT="$(printf '%s' "$INPUT" | jq -r '[.. | objects | select(.type? == "text") | .text?] | join("\n")' 2>/dev/null || echo "")"
 
 if [ -z "$PROJECT_DIR" ]; then
-  PROJECT_DIR="${ACADEMIC_GIT_PROJECT_DIR:-${CODEX_WORKSPACE_ROOT:-${CODEX_PROJECT_DIR:-.}}}"
+  PROJECT_DIR="${FU_GIT_PROJECT_DIR:-${ACADEMIC_GIT_PROJECT_DIR:-${CODEX_WORKSPACE_ROOT:-${CODEX_PROJECT_DIR:-.}}}}"
 fi
 
 OUTPUT="[academic-git] Post-merge follow-up"
@@ -78,12 +78,18 @@ if printf '%s\n%s' "$MERGE_OUTPUT" "$PR_TEXT" | grep -qiE 'email|meeting|confere
   append_output "[academic-git] Milestone keywords detected. Consider: create_tag(name='email-${TAG_DATE}', message='...')"
 fi
 
-if [ "$CLEANUP_COMPLETED" = true ] && [ -f ".academic-git.json" ]; then
-  python3 - <<'PY' 2>/dev/null || true
+PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# shellcheck source=/dev/null
+source "$PLUGIN_ROOT/scripts/fu-git-paths.sh"
+CONFIG_PATH="$(fu_git_find_config_path "$PROJECT_DIR")"
+
+if [ "$CLEANUP_COMPLETED" = true ] && [ -f "$CONFIG_PATH" ]; then
+  python3 - "$CONFIG_PATH" <<'PY' 2>/dev/null || true
 import json
+import sys
 from pathlib import Path
 
-path = Path(".academic-git.json")
+path = Path(sys.argv[1])
 try:
     data = json.loads(path.read_text())
 except Exception:
@@ -97,7 +103,7 @@ if changed:
     path.write_text(json.dumps(data, indent=2) + "\n")
 PY
   append_output "[academic-git] Branch lock cleared."
-elif [ -f ".academic-git.json" ]; then
+elif [ -f "$CONFIG_PATH" ]; then
   append_output "[academic-git] Branch lock retained because merge_pr cleanup was not confirmed complete."
 fi
 

@@ -53,42 +53,42 @@
       "decision": "route",
       "match": "(^|[^[:alnum:]_])git[[:space:]]+switch[[:space:]]+-c([[:space:]]|$)",
       "tool": "start_issue",
-      "reason": "Direct git switch -c is blocked. For new implementation work, use /codex-gh-issue-start plus start_issue(...) so the Issue, branch, and worktree are created as one SSOT unit. Use create_branch only for explicit non-issue repair work.",
+      "reason": "Direct git switch -c is blocked. For new implementation work, use /codex-gh-issue-start plus fu_git start_issue --body-file ... so the issue, branch, and worktree are created as one SSOT unit. Use create_branch only for explicit non-issue repair work.",
       "policy": "issue-start-ssot"
     },
     {
       "decision": "route",
       "match": "(^|[^[:alnum:]_])git[[:space:]]+checkout[[:space:]]+-b([[:space:]]|$)",
       "tool": "start_issue",
-      "reason": "Direct git checkout -b is blocked. For new implementation work, use /codex-gh-issue-start plus start_issue(...) so the Issue, branch, and worktree are created as one SSOT unit. Use create_branch only for explicit non-issue repair work.",
+      "reason": "Direct git checkout -b is blocked. For new implementation work, use /codex-gh-issue-start plus fu_git start_issue --body-file ... so the issue, branch, and worktree are created as one SSOT unit. Use create_branch only for explicit non-issue repair work.",
       "policy": "issue-start-ssot"
     },
     {
       "decision": "route",
       "match": "(^|[^[:alnum:]_])git[[:space:]]+switch([[:space:]]|$)",
       "tool": "switch_branch",
-      "reason": "Direct git switch is blocked. Use switch_branch(branch) to change to an existing branch.",
+      "reason": "Direct git switch is blocked. Use fu_git switch_branch <branch> to change to an existing branch.",
       "policy": "branch-navigation"
     },
     {
       "decision": "route",
       "match": "(^|[^[:alnum:]_])git[[:space:]]+checkout([[:space:]]|$)",
       "tool": "switch_branch",
-      "reason": "Direct git checkout is blocked. Use switch_branch(branch) for existing branches or create_branch(branch) for new ones.",
+      "reason": "Direct git checkout is blocked. Use fu_git switch_branch <branch> for existing branches or fu_git create_branch <branch> for new ones.",
       "policy": "branch-navigation"
     },
     {
       "decision": "route",
       "match": "(^|[^[:alnum:]_])git[[:space:]]+commit([[:space:]]|$)",
       "tool": "create_commit",
-      "reason": "Direct git commit is blocked. Use create_commit(issue, items, type, description, paths?); it stages, validates, commits, and pushes.",
+      "reason": "Direct git commit is blocked. Use fu_git create_commit ISSUE --items A --type feat --description ...; it stages, validates, commits, and pushes.",
       "policy": "formal-commit"
     },
     {
       "decision": "route",
       "match": "(^|[^[:alnum:]_])git[[:space:]]+add([[:space:]]|$)",
       "tool": "create_commit",
-      "reason": "Direct git add is blocked. Use create_commit(issue, items, type, description, paths?) so staging, validation, commit, and push stay issue-linked and auditable.",
+      "reason": "Direct git add is blocked. Use fu_git create_commit ISSUE --items A --type feat --description ... so staging, validation, commit, and push stay issue-linked and auditable.",
       "policy": "formal-commit"
     },
     {
@@ -102,14 +102,14 @@
       "decision": "route",
       "match": "(^|[^[:alnum:]_])git[[:space:]]+push([[:space:]]|$)",
       "tool": "create_commit",
-      "reason": "Direct git push is blocked. Push is automatic after create_commit(issue, items, type, description, paths?).",
+      "reason": "Direct git push is blocked. Push is automatic after fu_git create_commit ISSUE --items ... --type ... --description ....",
       "policy": "automatic-after-commit"
     },
     {
       "decision": "route",
       "match": "(^|[^[:alnum:]_])git[[:space:]]+merge([[:space:]]|$)",
       "tool": "merge_pr",
-      "reason": "Direct git merge is blocked. Use the merge-pr skill and merge_pr(pr) for the PR completion path.",
+      "reason": "Direct git merge is blocked. Use the merge-pr skill and fu_git merge_pr <pr-number> for the PR completion path.",
       "policy": "pr-merge"
     },
     {
@@ -123,7 +123,7 @@
       "decision": "route",
       "match": "(^|[^[:alnum:]_])gh[[:space:]]+issue[[:space:]]+create([[:space:]]|$)",
       "tool": "start_issue",
-      "reason": "Direct gh issue create is blocked. For implementation work, use /codex-gh-issue-start plus start_issue(...) so the Issue, branch, and worktree are created as one SSOT unit. Use create_issue only for explicit standalone bookkeeping issues.",
+      "reason": "Direct gh issue create is blocked. For implementation work, use /codex-gh-issue-start plus fu_git start_issue --body-file ... so the issue, branch, and worktree are created as one SSOT unit. Use fu_git create_issue only for explicit standalone bookkeeping issues.",
       "policy": "issue-start-ssot"
     },
     {
@@ -144,14 +144,14 @@
       "decision": "route",
       "match": "(^|[^[:alnum:]_])gh[[:space:]]+pr[[:space:]]+create([[:space:]]|$)",
       "tool": "open_pr",
-      "reason": "Direct gh pr create is blocked. Use prepare_pr(issue) and open_pr(issue, title, body) after the checklist is complete.",
+      "reason": "Direct gh pr create is blocked. Use fu_git prepare_pr ISSUE and fu_git open_pr ISSUE --title ... --body ... after the checklist is complete.",
       "policy": "pr-creation"
     },
     {
       "decision": "route",
       "match": "(^|[^[:alnum:]_])gh[[:space:]]+pr[[:space:]]+merge([[:space:]]|$)",
       "tool": "merge_pr",
-      "reason": "Direct gh pr merge is blocked. Use the merge-pr skill and merge_pr(pr) so merge, cleanup, and branch/worktree handling stay coordinated.",
+      "reason": "Direct gh pr merge is blocked. Use the merge-pr skill and fu_git merge_pr <pr-number> so merge, cleanup, and branch/worktree handling stay coordinated.",
       "policy": "pr-merge"
     },
     {

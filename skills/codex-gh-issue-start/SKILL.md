@@ -12,6 +12,7 @@ allowed-tools: ["Bash", "academic-git"]
 If the current repo top-level contains the packaged `.codex-plugin/plugin.json`, `hooks/codex/hooks.json`, and `skills/handle-issue/SKILL.md`, then you are developing Fu itself. This skill is disabled there, including linked worktrees of the same repo. Work on the repository in plain code mode instead.
 
 Use this skill as the internal issue-start routine for academic-git. It owns the issue-start policy and body contract, then routes mutation through the CLI-backed workflow commands.
+In this repository, that CLI-backed workflow surface is provided by the system-installed `fu_git` commands.
 
 ## Architecture Contract
 
@@ -19,9 +20,9 @@ Use this skill as the internal issue-start routine for academic-git. It owns the
 
 - Hooks are involuntary guards. They block bare `gh issue create`, `gh issue develop --checkout`, and any attempt to skip this skill's issue-body check.
 - This skill owns workflow judgment, the issue body template, and the DAG checklist validation. The executable check is `skills/codex-gh-issue-start/check.sh`.
-- Workflow commands own ordinary auditable GitHub and Git mutations, such as issue-only bookkeeping, append-only issue refinement, commits, PRs, gates, and lint.
+- `fu_git` owns ordinary auditable GitHub and Git mutations, such as issue-only bookkeeping, append-only issue refinement, commits, PRs, gates, and lint.
 
-Mutation must move through the routed workflow commands or the integrated issue-start CLI.
+Mutation must move through the routed `fu_git` commands, with `codex-gh-issue-start` serving as the issue-start validation gate for `fu_git start_issue`.
 
 ## When To Use
 
@@ -29,7 +30,7 @@ Mutation must move through the routed workflow commands or the integrated issue-
 - Adrian asks to track or start a new implementation task.
 - `handle-issue` routes to "new issue".
 - A hook reports that an issue was created through the GitHub connector or bare `gh issue create`.
-- The task needs issue-start policy, DAG validation, and routing into the workflow command surface.
+- The task needs issue-start policy, DAG validation, and routing into the `fu_git` command surface.
 
 ## Do Not Use
 
@@ -80,9 +81,9 @@ The check validates the required sections, stable letter IDs, explicit `after:` 
 
 ## Mutation Boundary
 
-For issue-only bookkeeping, use `create_issue`. When assignees are omitted, academic-git defaults the new issue to Adrian via GitHub's `me` assignee.
+For issue-only bookkeeping, use `fu_git create_issue`. When assignees are omitted, academic-git defaults the new issue to Adrian via GitHub's `me` assignee.
 
-For issue-bound code work that needs issue + linked branch + dedicated worktree, use `start_issue` after the body passes this skill check. `start_issue` creates the GitHub Issue, linked `codex/issue-*` branch, and dedicated sibling worktree without switching the current worktree. When assignees are omitted, the created issue defaults to Adrian via GitHub's `me` assignee; explicit assignee lists override that default.
+For issue-bound code work that needs issue + linked branch + dedicated worktree, use `fu_git start_issue --title "..." --body-file path/to/issue-body.md` after the body passes this skill check. `fu_git start_issue` creates the GitHub Issue, linked `codex/issue-*` branch, and dedicated sibling worktree without switching the current worktree. When assignees are omitted, the created issue defaults to Adrian via GitHub's `me` assignee; explicit assignee lists override that default.
 
 ## Repair Path
 

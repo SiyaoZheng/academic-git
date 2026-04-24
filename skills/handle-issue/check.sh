@@ -3,7 +3,10 @@
 # Non-blocking summary for issue routing and recovery context
 set -euo pipefail
 
-PROJECT_DIR="${ACADEMIC_GIT_PROJECT_DIR:-${CODEX_WORKSPACE_ROOT:-${CODEX_PROJECT_DIR:-}}}"
+PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# shellcheck source=/dev/null
+source "$PLUGIN_ROOT/scripts/fu-git-paths.sh"
+PROJECT_DIR="$(fu_git_project_dir)"
 [ -z "$PROJECT_DIR" ] && exit 0
 cd "$PROJECT_DIR" 2>/dev/null || exit 0
 git rev-parse --git-dir &>/dev/null || exit 0
@@ -22,14 +25,13 @@ echo "Branch: ${BRANCH:-unknown} | Dirty files: ${DIRTY:-0} | Commits ahead: ${A
 # --- Enforcement: check locked_issue ---
 LOCKED_ISSUE=""
 LOCKED_BRANCH=""
-if [ -f ".academic-git.json" ]; then
-  LOCKED_ISSUE=$(jq -r '.locked_issue // empty' .academic-git.json 2>/dev/null || echo "")
-  LOCKED_BRANCH=$(jq -r '.locked_branch // empty' .academic-git.json 2>/dev/null || echo "")
-fi
+CONFIG_PATH="$(fu_git_find_config_path "$PROJECT_DIR")"
+LOCKED_ISSUE=$(jq -r '.locked_issue // empty' "$CONFIG_PATH" 2>/dev/null || echo "")
+LOCKED_BRANCH=$(jq -r '.locked_branch // empty' "$CONFIG_PATH" 2>/dev/null || echo "")
 
 if [ -z "$LOCKED_ISSUE" ]; then
   echo ""
-  echo "[academic-git] No issue locked. Route through handle-issue and use resume_issue or start_issue before writing code."
+  echo "[academic-git] No issue locked. Route through handle-issue and use fu_git resume_issue or fu_git start_issue before writing code."
 fi
 
 # --- Enforcement: auto-switch to locked branch ---

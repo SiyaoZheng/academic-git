@@ -20,7 +20,7 @@ PR_NUMBER="$(printf '%s' "$INPUT" | jq -r '
 ' 2>/dev/null || echo "")"
 
 if [ -z "$PROJECT_DIR" ]; then
-  PROJECT_DIR="${ACADEMIC_GIT_PROJECT_DIR:-${CODEX_WORKSPACE_ROOT:-${CODEX_PROJECT_DIR:-.}}}"
+  PROJECT_DIR="${FU_GIT_PROJECT_DIR:-${ACADEMIC_GIT_PROJECT_DIR:-${CODEX_WORKSPACE_ROOT:-${CODEX_PROJECT_DIR:-.}}}}"
 fi
 
 deny() {
@@ -41,7 +41,7 @@ cd "$PROJECT_DIR" 2>/dev/null ||
   deny "[academic-git] Cannot enter project directory '${PROJECT_DIR:-unknown}'; refusing merge_pr preflight."
 
 if ! printf '%s' "$PR_NUMBER" | grep -Eq '^[0-9]+$'; then
-  deny "[academic-git] merge_pr requires a numeric pr argument. Run the merge-pr skill with merge_pr(pr: N)."
+  deny "[academic-git] merge_pr requires a numeric pr argument. Run the merge-pr skill with fu_git merge_pr <pr-number>."
 fi
 
 METADATA="$(gh pr view "$PR_NUMBER" --json number,state,headRefName,headRefOid,baseRefName,isCrossRepository 2>/dev/null)" ||

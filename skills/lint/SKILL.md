@@ -19,7 +19,7 @@ Do not add Quarto lint, research-policy lint, data-pipeline lint, or Git safety 
 
 ## Configuration
 
-Commands live in the project `.academic-git.json` file:
+Commands live in the project `.fu_git.json` file. Legacy `.academic-git.json` remains readable during migration:
 
 ```json
 {
@@ -34,8 +34,8 @@ Projects may choose stricter commands or leave either command blank. The plugin 
 
 ## Workflow
 
-1. Run the `academic-git` `lint` workflow command with `target: "all"`.
-2. If only one language is requested, run `lint` with `target: "python"` or `target: "r"`.
+1. Run `fu_git lint --target all`.
+2. If only one language is requested, run `fu_git lint --target python` or `fu_git lint --target r`.
 3. Treat non-zero lint results as failures to fix before pushing, but do not confuse lint with the remote CI render gate.
 
 ## Boundary

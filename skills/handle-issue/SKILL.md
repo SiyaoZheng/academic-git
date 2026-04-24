@@ -22,21 +22,21 @@ Use it when:
 
 ## Canonical Workflow Paths
 
-- `resume_issue(issue?: N, branch?: "codex/issue-N-slug")`
+- `fu_git resume_issue --issue N --branch "codex/issue-N-slug"`
   Use when the issue already exists and the worktree/branch should be locked to it.
-- `start_issue(title: "...", body: "...", ...)`
+- `fu_git start_issue --title "..." --body-file issue-body.md`
   Use when Adrian is explicitly starting new issue-bound work and the system should create the issue, linked branch, and dedicated worktree together.
 
 ## Resume Existing Work
 
 1. Read `current_branch` and `status`.
-2. If you are already on `codex/issue-N-*`, prefer `resume_issue`.
-3. Read `view_issue(issue: N)` to recover the checklist and current truth.
+2. If you are already on `codex/issue-N-*`, prefer `fu_git resume_issue`.
+3. Read `fu_git view_issue N` to recover the checklist and current truth.
 4. Only after issue context is stable should work continue to `handle-commit` or `handle-pr`.
 
 ## Start New Work
 
-1. If Adrian is creating a new task, use `start_issue(...)`.
+1. If Adrian is creating a new task, use `fu_git start_issue ...`.
 2. Do not use bare `gh issue create`.
 3. Do not switch an existing workspace with checkout; issue work must live in a dedicated worktree.
 
@@ -45,7 +45,7 @@ Use it when:
 If `route-commit` or `route-pr` is unsafe, the workflow falls back here.
 
 That means `handle-issue` is the safe recovery path for:
-- missing or stale `.academic-git.json` locks
+- missing or stale `.fu_git.json` locks
 - wrong branch or wrong worktree
 - unresolved issue ownership
 - stale workflow journal state

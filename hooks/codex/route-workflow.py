@@ -19,6 +19,7 @@ from self_disable import is_fu_source_repo
 
 ISSUE_BRANCH_RE = re.compile(r"^codex/issue-(\d+)")
 PROTECTED_BRANCHES = {"", "main", "master", "develop", "trunk"}
+CONFIG_FILENAMES = (".fu_git.json", ".fu-git.json", ".academic-git.json")
 
 
 def run_cmd(args: list[str], cwd: str, check: bool = True) -> str:
@@ -81,6 +82,15 @@ def parse_json_file(path: Path) -> dict[str, Any]:
         return {}
 
 
+def resolve_config_path(repo_dir: str) -> Path:
+    base = Path(repo_dir)
+    for name in CONFIG_FILENAMES:
+        candidate = base / name
+        if candidate.exists():
+            return candidate
+    return base / CONFIG_FILENAMES[0]
+
+
 def is_linked_worktree(repo_dir: str) -> bool:
     git_dir = git(["rev-parse", "--git-dir"], repo_dir, check=False)
     common_dir = git(["rev-parse", "--git-common-dir"], repo_dir, check=False)
@@ -93,7 +103,8 @@ def is_linked_worktree(repo_dir: str) -> bool:
 
 
 def current_state(repo_dir: str) -> dict[str, Any]:
-    config = parse_json_file(Path(repo_dir) / ".academic-git.json")
+    config_path = resolve_config_path(repo_dir)
+    config = parse_json_file(config_path)
     branch = git(["branch", "--show-current"], repo_dir, check=False)
     head_sha = git(["rev-parse", "HEAD"], repo_dir, check=False)
     branch_issue = issue_from_branch(branch)
@@ -153,6 +164,8 @@ def current_state(repo_dir: str) -> dict[str, Any]:
     return {
         "repo_dir": repo_dir,
         "config": config,
+        "config_path": str(config_path),
+        "config_name": config_path.name,
         "branch": branch,
         "head_sha": head_sha,
         "branch_issue": branch_issue,
@@ -192,9 +205,9 @@ def invariant_diagnostics(state: dict[str, Any]) -> list[str]:
     if branch_issue is None:
         diags.append(f"branch '{branch or 'unknown'}' is not an issue branch")
     if locked_issue in (None, ""):
-        diags.append("locked_issue is missing from .academic-git.json")
+        diags.append(f"locked_issue is missing from {state['config_name']}")
     if locked_branch in (None, ""):
-        diags.append("locked_branch is missing from .academic-git.json")
+        diags.append(f"locked_branch is missing from {state['config_name']}")
     if locked_branch and branch and locked_branch != branch:
         diags.append(f"locked_branch '{locked_branch}' does not match current branch '{branch}'")
     if locked_issue and branch_issue and int(locked_issue) != int(branch_issue):
@@ -246,19 +259,19 @@ def route_text(payload: dict[str, Any]) -> str:
     instructions = {
         "handle-issue": (
             "Use handle-issue now. If this branch already belongs to an issue, prefer "
-            f"resume_issue(issue: {context['issue']}, branch: \"{context['branch']}\"). "
-            "Only use start_issue(...) when Adrian is explicitly beginning new issue work."
+            f"`fu_git resume_issue --issue {context['issue']} --branch \"{context['branch']}\"`. "
+            "Only use `fu_git start_issue ...` when Adrian is explicitly beginning new issue work."
         ),
         "handle-commit": (
             "Use handle-commit now. Read the issue, group the diff by checklist meaning, then call "
-            f"create_commit(issue: {context['issue']}, items: [...], type: \"...\", description: \"...\", "
-            f"paths: [...], idempotency_key: \"{context['idempotency_key']}\")."
+            f"`fu_git create_commit {context['issue']} --items A --type feat --description \"...\" "
+            f"--path path/to/file --idempotency-key \"{context['idempotency_key']}\"` with the real checklist letters and paths."
         ),
         "handle-pr": (
             "Use handle-pr now. Call "
-            f"prepare_pr(issue: {context['issue']}) first, review the body, then call "
-            f"open_pr(issue: {context['issue']}, title: \"...\", body: \"...\", "
-            f"idempotency_key: \"{context['idempotency_key']}\")."
+            f"`fu_git prepare_pr {context['issue']}` first, review the body, then call "
+            f"`fu_git open_pr {context['issue']} --title \"...\" --body \"...\" "
+            f"--idempotency-key \"{context['idempotency_key']}\"`."
         ),
     }[action]
     return "\n".join(
