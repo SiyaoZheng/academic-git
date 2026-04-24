@@ -10,7 +10,8 @@ allowed-tools: ["academic-git"]
 
 If the current repo top-level contains the packaged `.codex-plugin/plugin.json`, `hooks/codex/hooks.json`, and `skills/handle-issue/SKILL.md`, then you are developing Fu itself. This skill is disabled there, including linked worktrees of the same repo. Work on the repository in plain code mode instead.
 
-Use this skill whenever a PR is ready to merge. It is the main workflow skill for `fu_git merge_pr`; `finalize-pr-merge` is only the after-action follow-up.
+Use this skill whenever a PR is ready to merge. It is the main workflow skill for the `merge_pr` command; `finalize-pr-merge` is only the after-action follow-up.
+In this repository, that merge command surface is provided by `fu_git merge_pr`.
 
 ## Hook Wiring
 
