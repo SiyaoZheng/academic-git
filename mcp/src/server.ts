@@ -625,7 +625,7 @@ server.tool(
     title: z.string().describe("Issue title"),
     body: z.string().describe("Issue body"),
     labels: z.array(z.string()).optional().describe("Optional labels to apply"),
-    assignees: z.array(z.string()).optional().describe("Optional assignees to add"),
+    assignees: z.array(z.string()).optional().describe("Optional explicit assignees to add. Defaults to Adrian via `me` when omitted."),
     milestone: z.string().optional().describe("Optional milestone"),
   },
   async ({ title, body, labels, assignees, milestone }) => {
@@ -642,7 +642,7 @@ server.tool(
     title: z.string().describe("Issue title"),
     body: z.string().describe("Issue body in codex-gh-issue-start DAG format"),
     labels: z.array(z.string()).optional().describe("Optional labels to apply"),
-    assignees: z.array(z.string()).optional().describe("Optional assignees to add"),
+    assignees: z.array(z.string()).optional().describe("Optional explicit assignees to add. Defaults to Adrian via `me` when omitted."),
     milestone: z.string().optional().describe("Optional milestone"),
     branch_slug: z.string().optional().describe("Optional short slug source; defaults to the title"),
     base_ref: z.string().optional().describe("Optional branch start point; defaults to the repository default base ref"),
