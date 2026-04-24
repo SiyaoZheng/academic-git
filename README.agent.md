@@ -20,6 +20,19 @@ In Fu, reproducibility does not mean only preserving code and final outputs. It 
 
 The repository is organized around enforcement hooks, workflow skills, and supporting scripts.
 
+## Source Repo Self-Disable
+
+If the current Git repository is Fu's own source repository, or any linked worktree of that same repository, treat Fu as disabled.
+
+- Do not route through Fu skills or workflow tools.
+- Do not rely on Fu hooks to police changes here.
+- Work on this repository in plain code mode and test Fu entrypoints explicitly.
+
+Treat the repo as Fu's own source when its top-level contains:
+- the packaged `.codex-plugin/plugin.json`
+- `hooks/codex/hooks.json`
+- `skills/handle-issue/SKILL.md`
+
 ## Repository Map
 
 - `hooks/` contains enforcement hooks that block unsafe or out-of-policy actions.

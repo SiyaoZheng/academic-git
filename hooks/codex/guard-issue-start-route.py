@@ -10,6 +10,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from self_disable import is_fu_source_repo
+
 
 HELP_RE = re.compile(r"(^|\s)(--help|-h)(\s|$)")
 SHELL_SEPARATORS = {";", "&&", "||", "|", "(", ")"}
@@ -123,6 +125,9 @@ def main() -> int:
     try:
         payload = json.load(sys.stdin)
     except json.JSONDecodeError:
+        return 0
+
+    if is_fu_source_repo(payload.get("cwd")):
         return 0
 
     command = payload.get("tool_input", {}).get("command", "")

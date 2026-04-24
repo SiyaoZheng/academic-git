@@ -14,6 +14,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from self_disable import is_fu_source_repo
+
 
 ISSUE_BRANCH_RE = re.compile(r"^codex/issue-(\d+)")
 PROTECTED_BRANCHES = {"", "main", "master", "develop", "trunk"}
@@ -398,6 +400,8 @@ def main() -> int:
         repo_dir = git(["rev-parse", "--show-toplevel"], repo_dir, check=False) or repo_dir
     except RuntimeError:
         pass
+    if is_fu_source_repo(repo_dir):
+        return 0
     if not repo_dir or not Path(repo_dir).exists():
         return 0
     if git(["rev-parse", "--git-dir"], repo_dir, check=False) == "":

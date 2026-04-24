@@ -11,6 +11,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from self_disable import is_fu_source_repo
+
 
 HELP_RE = re.compile(r"(^|\s)(--help|-h)(\s|$)")
 SHELL_SEPARATORS = {";", "&&", "||", "|", "(", ")"}
@@ -195,6 +197,9 @@ def main() -> int:
     try:
         payload = json.load(sys.stdin)
     except json.JSONDecodeError:
+        return emit_continue()
+
+    if is_fu_source_repo(payload.get("cwd")):
         return emit_continue()
 
     if payload.get("stop_hook_active"):
