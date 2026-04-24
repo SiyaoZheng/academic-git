@@ -168,6 +168,21 @@ test("routing helper prefers route over allow fragments", () => {
   assert.equal(result.tool, "create_commit");
 });
 
+test("routing helper routes direct git index mutations through create_commit", () => {
+  for (const command of ["git add README.md", "git rm old.txt", "git mv old.txt new.txt", "git clean -fd"]) {
+    const result = renderRouting(command);
+    assert.equal(result.decision, "route");
+    assert.equal(result.tool, "create_commit");
+    assert.equal(result.policy, "formal-commit");
+  }
+});
+
+test("routing helper ignores git-looking quoted text inside non-git commands", () => {
+  const result = renderRouting('rg -n "direct git add" README.md');
+  assert.equal(result.decision, "allow");
+  assert.match(result.reason, /No routed git or gh command/);
+});
+
 test("routing helper routes branch creation", () => {
   const result = renderRouting("git switch -c feature");
   assert.equal(result.decision, "route");

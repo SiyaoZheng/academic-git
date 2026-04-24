@@ -113,6 +113,16 @@ function invokeRouter(eventName, cwd, env = {}) {
   }).trim();
 }
 
+function invokeHookWrapper(scriptName, eventCwd, env = {}) {
+  const payload = JSON.stringify({ cwd: eventCwd });
+  return execFileSync("bash", [path.join(repoRoot, "hooks", "codex", scriptName)], {
+    input: payload,
+    cwd: eventCwd,
+    env: { ...process.env, ACADEMIC_GIT_PLUGIN_ROOT: repoRoot, ...env },
+    encoding: "utf-8",
+  }).trim();
+}
+
 test("UserPromptSubmit routes to handle-issue when locks are missing", () => {
   const { issueWorktree, env } = createIssueWorktree({
     issueBody: "- [ ] A. Resume work",
@@ -123,6 +133,19 @@ test("UserPromptSubmit routes to handle-issue when locks are missing", () => {
   const payload = JSON.parse(raw);
   assert.match(payload.systemMessage, /route\(handle-issue\)/);
   assert.match(payload.hookSpecificOutput.additionalContext, /locked_issue is missing/);
+});
+
+test("UserPromptSubmit wrapper uses plugin root while routing target worktree", () => {
+  const { issueWorktree, env } = createIssueWorktree({
+    issueBody: "- [ ] A. Resume work",
+    withLocks: false,
+    dirty: false,
+  });
+  const raw = invokeHookWrapper("user-prompt-submit.sh", issueWorktree, env);
+  const payload = JSON.parse(raw);
+  assert.match(payload.systemMessage, /route\(handle-issue\)/);
+  assert.match(payload.hookSpecificOutput.additionalContext, /worktree_path":/);
+  assert.match(payload.hookSpecificOutput.additionalContext, new RegExp(issueWorktree.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 });
 
 test("Stop routes to handle-commit for a dirty locked issue worktree", () => {
