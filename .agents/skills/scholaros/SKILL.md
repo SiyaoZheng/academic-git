@@ -1,63 +1,71 @@
-# ScholarOS Repository Skill
+```markdown
+# scholaros Development Patterns
 
-This skill captures the real repository conventions for ScholarOS's own source tree.
+> Auto-generated skill from repository analysis
 
-ScholarOS is Adrian's original open-source workflow project, started from scratch. It is a local governance layer for research and open-source implementation work, with primary relevance to computational social science scholars and AI for Social Science scholars.
+## Overview
+This skill teaches the core development conventions and workflows used in the `scholaros` JavaScript codebase. It covers file naming, import/export styles, commit message patterns, and testing practices. By following these guidelines, contributors can write consistent, maintainable code and collaborate effectively.
 
-## Important Scope Rule
+## Coding Conventions
 
-When you are inside ScholarOS's own source repository, ScholarOS is self-disabled.
+### File Naming
+- Use **camelCase** for all file names.
+  - Example: `userProfile.js`, `dataFetcher.js`
 
-- Do not use ScholarOS to govern ScholarOS.
-- Do not rely on ScholarOS hooks or workflow tools as enforcement inside this repository.
-- Work in plain code mode and test the relevant hook, skill, or script entrypoints directly.
+### Imports
+- Use **relative import paths**.
+  - Example:
+    ```javascript
+    import { fetchData } from './dataFetcher';
+    ```
 
-Treat the current repo as ScholarOS's own source when its top-level contains:
+### Exports
+- Use **named exports**.
+  - Example:
+    ```javascript
+    // In dataFetcher.js
+    export function fetchData() { ... }
+    ```
 
-- `.codex-plugin/plugin.json` with `name: "scholaros"`
-- `hooks/codex/hooks.json`
-- `skills/handle-issue/SKILL.md`
+### Commit Messages
+- Follow **conventional commit** style.
+- Use the `chore` prefix for commit messages.
+  - Example:
+    ```
+    chore: update dependencies to latest versions
+    ```
+- Average commit message length: ~46 characters.
 
-## What This Repository Actually Contains
+## Workflows
 
-- `hooks/`: enforcement logic and hook entrypoints
-- `skills/`: workflow playbooks and guard logic
-- `scripts/`: helper scripts and focused tests
-- `.codex-plugin/`, `.claude-plugin/`, `.codex/`: packaged plugin metadata and local baseline config
+### Code Contribution
+**Trigger:** When adding or updating code  
+**Command:** `/contribute-code`
 
-This is not a JavaScript application codebase. Do not infer JS-specific conventions such as `camelCase` file naming, `import/export` style rules, `*.test.*` naming, or generic Node test workflows unless a specific subdirectory explicitly uses them.
+1. Create or update files using camelCase naming.
+2. Use relative imports and named exports in all modules.
+3. Write or update tests in files matching `*.test.*`.
+4. Commit changes using the conventional commit format with the `chore` prefix.
+5. Push changes and open a pull request.
 
-## Core Project Intent
+### Testing
+**Trigger:** Before submitting code or merging changes  
+**Command:** `/run-tests`
 
-When formalizing what ScholarOS is trying to do, emphasize:
+1. Locate or create test files with the `*.test.*` pattern.
+2. Run the test suite using the project's test runner (framework unknown; refer to project documentation or package scripts).
+3. Ensure all tests pass before merging or submitting code.
 
-- research integrity over convenience
-- reproducibility of process, not just final artifacts
-- traceable issue, branch, worktree, commit, and PR boundaries
-- append-only issue history and explicit ex post decisions
-- recoverable local state after interruptions, merges, and tool failures
-- clear task boundaries that reduce HARKing-like drift
-- open, inspectable infrastructure that can support methodological contribution and field-building
+## Testing Patterns
 
-ScholarOS is open-source and public-facing, but it is not a startup pitch, a client services project, or a repair/fork of someone else's system.
+- Test files follow the `*.test.*` naming convention.
+  - Example: `userProfile.test.js`
+- Testing framework is not specified; check the repository for test runner configuration or scripts.
+- Place tests alongside the modules they cover or in a dedicated test directory.
 
-## Working Conventions
-
-- Preferred new-task workflow: `skills/codex-gh-issue-start/SKILL.md`
-- Canonical branch naming: `codex/issue-<number>-<slug>`
-- Canonical task unit: `1 issue = 1 branch = 1 PR`
-- Avoid direct `git` / `gh` mutation in governed repos; use ScholarOS workflows there
-- In ScholarOS's own source repo, edit and test directly because self-disable is intentional
-
-## Build And Verification
-
-- There is no `mcp/` directory or repo-local MCP server in this checkout anymore.
-- No repo-wide build or type-check command is currently configured.
-- Validate changes by running the affected hook, skill, or script entrypoints directly.
-- Workspace config/state may appear as `.scholaros_git.json`, `.scholaros-git.json`, or `.scholaros.json`; none of these are plugin activation flags.
-
-## Practical Guidance
-
-- Read root `AGENTS.md` first for the authoritative repo rules.
-- Use `README.agent.md` for the operator-facing explanation of how to work in the repo.
-- Treat auto-generated repository summaries as suspect if they conflict with actual files, scripts, or tests.
+## Commands
+| Command         | Purpose                                   |
+|-----------------|-------------------------------------------|
+| /contribute-code| Step-by-step guide for contributing code  |
+| /run-tests      | Instructions for running the test suite   |
+```

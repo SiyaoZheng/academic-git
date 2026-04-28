@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "scholaros": {
+      "command": "./scripts/start-mcp.sh",
+      "cwd": ".",
+      "note": "System-level Codex launcher for the scholaros MCP server."
+    }
+  }
+}

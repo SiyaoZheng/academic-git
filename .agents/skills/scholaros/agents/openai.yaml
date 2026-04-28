@@ -1,5 +1,5 @@
 interface:
-  display_name: "ScholarOS"
+  display_name: "Academic Git"
   short_description: "Repo-specific patterns and workflows for ScholarOS"
   default_prompt: "Use the ScholarOS repo skill to follow existing architecture, testing, and workflow conventions."
 policy:

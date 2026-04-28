@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "setup": "bash .conductor/setup-gstack.sh",
+    "archive": "bash .conductor/archive-gstack.sh"
+  }
+}

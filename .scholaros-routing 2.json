@@ -80,15 +80,29 @@
     {
       "decision": "route",
       "match": "(^|[^[:alnum:]_])git[[:space:]]+commit([[:space:]]|$)",
-      "tool": "create_commit",
-      "reason": "Direct git commit is blocked. Use create_commit(issue, items, type, description, paths?); it stages, validates, commits, and pushes.",
+      "tool": "commit",
+      "reason": "Direct git commit is blocked. Use commit(issue, item, type, description); it stages, validates, commits, and pushes.",
+      "policy": "formal-commit"
+    },
+    {
+      "decision": "route",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+add([[:space:]]|$)",
+      "tool": "commit",
+      "reason": "Direct git add is blocked. Use commit(issue, item, type, description, paths?) so staging, validation, commit, and push stay issue-linked and auditable.",
+      "policy": "formal-commit"
+    },
+    {
+      "decision": "route",
+      "match": "(^|[^[:alnum:]_])git[[:space:]]+(rm|mv|clean)([[:space:]]|$)",
+      "tool": "commit",
+      "reason": "Direct git worktree/index mutation is blocked. Use the scholaros commit workflow with explicit paths so file changes stay issue-linked and auditable.",
       "policy": "formal-commit"
     },
     {
       "decision": "route",
       "match": "(^|[^[:alnum:]_])git[[:space:]]+push([[:space:]]|$)",
-      "tool": "create_commit",
-      "reason": "Direct git push is blocked. Push is automatic after create_commit(issue, items, type, description, paths?).",
+      "tool": "commit",
+      "reason": "Direct git push is blocked. Push is automatic after commit(issue, item, type, description).",
       "policy": "automatic-after-commit"
     },
     {
@@ -129,8 +143,8 @@
     {
       "decision": "route",
       "match": "(^|[^[:alnum:]_])gh[[:space:]]+pr[[:space:]]+create([[:space:]]|$)",
-      "tool": "open_pr",
-      "reason": "Direct gh pr create is blocked. Use prepare_pr(issue) and open_pr(issue, title, body) after the checklist is complete.",
+      "tool": "create_pr",
+      "reason": "Direct gh pr create is blocked. Use create_pr(issue, title, body) after the checklist is complete.",
       "policy": "pr-creation"
     },
     {
